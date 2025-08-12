@@ -88,12 +88,22 @@ export default defineConfig(({ command }) => ({
       },
       includeAssets: [],
       manifest: {
-        name: 'LibreChat',
-        short_name: 'LibreChat',
+        name: 'ChatLabs',
+        short_name: 'ChatLabs',
         display: 'standalone',
         background_color: '#000000',
         theme_color: '#009688',
         icons: [
+          {
+            src: 'assets/favicon-16x16.png',
+            sizes: '16x16',
+            type: 'image/png',
+          },
+          {
+            src: 'assets/favicon-16x16.png',
+            sizes: '16x16',
+            type: 'image/png',
+          },
           {
             src: 'assets/favicon-32x32.png',
             sizes: '32x32',
