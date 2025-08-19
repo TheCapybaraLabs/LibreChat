@@ -252,7 +252,7 @@ const registerUser = async (user, additionalData = {}) => {
  */
 const requestPasswordReset = async (req) => {
   const { email } = req.body;
-  const user = await findUser({ email }, 'email _id');
+  const user = await findUser({ email }, 'email _id name');
   const emailEnabled = checkEmailConfig();
 
   logger.warn(`[requestPasswordReset] [Password reset request initiated] [Email: ${email}]`);
@@ -280,7 +280,7 @@ const requestPasswordReset = async (req) => {
   if (emailEnabled) {
     await sendEmail({
       email: user.email,
-      subject: 'Password Reset Request',
+      subject: 'Solicitação de Redefinição de Senha',
       payload: {
         appName: process.env.APP_TITLE || 'ChatLabs',
         name: user.name || user.username || user.email,
@@ -333,7 +333,7 @@ const resetPassword = async (userId, token, password) => {
   if (checkEmailConfig()) {
     await sendEmail({
       email: user.email,
-      subject: 'Password Reset Successfully',
+      subject: 'Senha Redefinida com Sucesso',
       payload: {
         appName: process.env.APP_TITLE || 'ChatLabs',
         name: user.name || user.username || user.email,
@@ -468,7 +468,7 @@ const resendVerificationEmail = async (req) => {
 
     await sendEmail({
       email: user.email,
-      subject: 'Verify your email',
+      subject: 'Verifique seu e-mail',
       payload: {
         appName: process.env.APP_TITLE || 'ChatLabs',
         name: user.name || user.username || user.email,
