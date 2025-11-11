@@ -23,7 +23,7 @@ import {
   useLocalStorage,
   useNavScrolling,
 } from '~/hooks';
-import { useConversationsInfiniteQuery, useTitleGeneration } from '~/data-provider';
+import { useConversationsInfiniteQuery, useTitleGeneration, useGetStartupConfig } from '~/data-provider';
 import { Conversations } from '~/components/Conversations';
 import SearchBar from './SearchBar';
 import NewChat from './NewChat';
@@ -32,6 +32,7 @@ import store from '~/store';
 
 const BookmarkNav = lazy(() => import('./Bookmarks/BookmarkNav'));
 const AccountSettings = lazy(() => import('./AccountSettings'));
+const AgentMarketplaceButton = lazy(() => import('./AgentMarketplaceButton'));
 
 export const NAV_WIDTH = {
   MOBILE: 320,
@@ -77,6 +78,7 @@ const Nav = memo(
     const localize = useLocalize();
     const { isAuthenticated } = useAuthContext();
     useTitleGeneration(isAuthenticated);
+    const { data: startupConfig } = useGetStartupConfig();
 
     const isSmallScreen = useMediaQuery('(max-width: 768px)');
     const [newUser, setNewUser] = useLocalStorage('newUser', true);
@@ -186,6 +188,16 @@ const Nav = memo(
     const headerButtons = useMemo(
       () => (
         <>
+          <div className="mr-1 mt-1 h-8 w-8 items-center">
+            <img
+              src="assets/logo-ALT.svg"
+              className="w-full items-center"
+              alt={startupConfig?.appTitle ?? 'ChatLabel'}
+            />
+          </div>
+          <Suspense fallback={null}>
+            <AgentMarketplaceButton isSmallScreen={isSmallScreen} toggleNav={toggleNavVisible} />
+          </Suspense>
           {hasAccessToBookmarks && (
             <>
               <div className="mt-1.5" />
@@ -196,7 +208,7 @@ const Nav = memo(
           )}
         </>
       ),
-      [hasAccessToBookmarks, tags],
+      [hasAccessToBookmarks, tags, startupConfig, isSmallScreen, toggleNavVisible],
     );
 
     const [isSearchLoading, setIsSearchLoading] = useState(
@@ -248,6 +260,11 @@ const Nav = memo(
               />
             </div>
           </div>
+          <img
+            src="assets/brand_logo_nav.png"
+            className="mb-2 flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active"
+            alt={startupConfig?.appTitle ?? 'ChatLabel'}
+          />
           <Suspense fallback={<Skeleton className="mt-1 h-12 w-full rounded-xl" />}>
             <AccountSettings />
           </Suspense>
