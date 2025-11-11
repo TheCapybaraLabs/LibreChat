@@ -7,6 +7,7 @@ import { Skeleton, Sidebar, Button, TooltipAnchor } from '@librechat/client';
 import type { NavLink } from '~/common';
 import { CLOSE_SIDEBAR_ID } from '~/components/Chat/Menus/OpenSidebar';
 import { useActivePanel, resolveActivePanel, DEFAULT_PANEL } from '~/Providers';
+import { useGetStartupConfig } from '~/data-provider';
 import { useLocalize, useNewConvo } from '~/hooks';
 import { clearMessagesCache, cn } from '~/utils';
 import store from '~/store';
@@ -132,12 +133,20 @@ function ExpandedPanel({
   const localize = useLocalize();
   const { active, setActive } = useActivePanel();
   const effectiveActive = resolveActivePanel(active, links);
+  const { data: startupConfig } = useGetStartupConfig();
 
   const toggleLabel = expanded ? 'com_nav_close_sidebar' : 'com_nav_open_sidebar';
   const toggleClick = expanded ? onCollapse : onExpand;
 
   return (
     <div className="flex h-full flex-shrink-0 flex-col gap-2 border-r border-border-light bg-surface-primary-alt px-2 py-2">
+      <div className="mt-1 flex h-8 w-9 items-center justify-center">
+        <img
+          src="assets/logo-ALT.svg"
+          className="h-8 w-8"
+          alt={startupConfig?.appTitle ?? 'ChatLabs'}
+        />
+      </div>
       <TooltipAnchor
         side="right"
         description={localize(toggleLabel)}
