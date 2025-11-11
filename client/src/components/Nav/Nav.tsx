@@ -11,7 +11,7 @@ import {
   useLocalStorage,
   useNavScrolling,
 } from '~/hooks';
-import { useConversationsInfiniteQuery } from '~/data-provider';
+import { useConversationsInfiniteQuery, useGetStartupConfig } from '~/data-provider';
 import { Conversations } from '~/components/Conversations';
 import SearchBar from './SearchBar';
 import NewChat from './NewChat';
@@ -55,6 +55,7 @@ const Nav = memo(
   }) => {
     const localize = useLocalize();
     const { isAuthenticated } = useAuthContext();
+    const { data: startupConfig } = useGetStartupConfig();
 
     const [navWidth, setNavWidth] = useState(NAV_WIDTH_DESKTOP);
     const isSmallScreen = useMediaQuery('(max-width: 768px)');
@@ -158,6 +159,13 @@ const Nav = memo(
     const headerButtons = useMemo(
       () => (
         <>
+          <div className="mr-1 mt-1 h-8 w-8 items-center">
+            <img
+              src="assets/logo-ALT.svg"
+              className="w-full items-center"
+              alt={startupConfig?.appTitle ?? 'ChatLabel'}
+            />
+          </div>
           <Suspense fallback={null}>
             <AgentMarketplaceButton isSmallScreen={isSmallScreen} toggleNav={toggleNavVisible} />
           </Suspense>
@@ -229,6 +237,11 @@ const Nav = memo(
                         isSearchLoading={isSearchLoading}
                       />
                     </div>
+                    <img
+                      src="assets/brand_logo_nav.png"
+                      className="mb-2 flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active"
+                      alt={startupConfig?.appTitle ?? 'ChatLabel'}
+                    />
                     <Suspense fallback={null}>
                       <AccountSettings />
                     </Suspense>
