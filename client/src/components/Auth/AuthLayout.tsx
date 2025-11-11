@@ -64,9 +64,15 @@ function AuthLayout({
           <img
             src="assets/logo.svg"
             className="h-full w-full object-contain"
-            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'ChatLabs' })}
+            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'ChatIA' })}
           />
         </div>
+        <h1
+          className="mt-6 text-center text-3xl font-semibold text-brand-primary dark:text-brand-primary"
+          style={{ userSelect: 'none' }}
+        >
+          {startupConfig?.appTitle}
+        </h1>
       </BlinkAnimation>
       <DisplayError />
       <div className="absolute bottom-0 left-0 md:m-4">
@@ -74,10 +80,10 @@ function AuthLayout({
       </div>
 
       <div className="flex flex-grow items-center justify-center">
-        <div className="w-authPageWidth overflow-hidden bg-white px-6 py-4 dark:bg-gray-900 sm:max-w-md sm:rounded-lg">
+        <div className="w-authPageWidth overflow-hidden bg-white px-6 pb-4 dark:bg-gray-900 sm:max-w-md sm:rounded-lg">
           {!hasStartupConfigError && !isFetching && (
             <h1
-              className="mb-4 text-center text-3xl font-semibold text-black dark:text-white"
+              className="mb-4 text-center text-2xl font-semibold text-black dark:text-white"
               style={{ userSelect: 'none' }}
             >
               {header}
