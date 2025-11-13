@@ -146,8 +146,30 @@ const userSchema = new Schema<IUser>(
       type: String,
       sparse: true,
     },
+    tokens: {
+      type: {
+        total: { type: Number, default: 0 },
+        used: { type: Number, default: 0 },
+        blocked: { type: Boolean, default: false },
+      },
+      default: { total: 0, used: 0, blocked: false },
+    },
   },
   { timestamps: true },
 );
+
+/**
+ * Update the user's token usage and block if limit reached
+ */
+userSchema.methods.updateTokenUsage = async function (amount: number) {
+  if (!this.tokens) {
+    this.tokens = { total: 0, used: 0, blocked: false } as any;
+  }
+  this.tokens.used += amount;
+  if (this.tokens.used >= this.tokens.total && this.tokens.total > 0) {
+    this.tokens.blocked = true;
+  }
+  await this.save();
+};
 
 export default userSchema;

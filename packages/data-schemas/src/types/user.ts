@@ -29,6 +29,11 @@ export interface IUser extends Document {
   refreshToken?: Array<{
     refreshToken: string;
   }>;
+  tokens?: {
+    total?: number;
+    used?: number;
+    blocked?: boolean;
+  };
   expiresAt?: Date;
   termsAccepted?: boolean;
   personalization?: {
@@ -38,6 +43,9 @@ export interface IUser extends Document {
   updatedAt?: Date;
   /** Field for external source identification (for consistency with TPrincipal schema) */
   idOnTheSource?: string;
+
+  /** Instance method for updating token usage, present on hydrated documents */
+  updateTokenUsage?: (amount: number) => Promise<void>;
 }
 
 export interface BalanceConfig {

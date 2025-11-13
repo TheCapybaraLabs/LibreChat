@@ -8,6 +8,7 @@ const {
   configMiddleware,
   concurrentLimiter,
   messageUserLimiter,
+  checkTokenLimit,
 } = require('~/server/middleware');
 const { v1 } = require('./v1');
 const chat = require('./chat');
@@ -18,12 +19,14 @@ const router = express.Router();
 
 router.use(requireJwtAuth);
 router.use(checkBan);
+router.use(checkTokenLimit);
 router.use(uaParser);
 
 router.use('/', v1);
 
 const chatRouter = express.Router();
 chatRouter.use(configMiddleware);
+chatRouter.use(checkTokenLimit);
 
 if (isEnabled(LIMIT_CONCURRENT_MESSAGES)) {
   chatRouter.use(concurrentLimiter);

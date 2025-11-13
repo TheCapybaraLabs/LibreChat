@@ -10,7 +10,7 @@ const {
   deleteMessages,
 } = require('~/models');
 const { findAllArtifacts, replaceArtifactContent } = require('~/server/services/Artifacts/update');
-const { requireJwtAuth, validateMessageReq } = require('~/server/middleware');
+const { requireJwtAuth, validateMessageReq, checkTokenLimit } = require('~/server/middleware');
 const { cleanUpPrimaryKeyValue } = require('~/lib/utils/misc');
 const { getConvosQueried } = require('~/models/Conversation');
 const { countTokens } = require('~/server/utils');
@@ -189,7 +189,7 @@ router.get('/:conversationId', validateMessageReq, async (req, res) => {
   }
 });
 
-router.post('/:conversationId', validateMessageReq, async (req, res) => {
+router.post('/:conversationId', checkTokenLimit, validateMessageReq, async (req, res) => {
   try {
     const message = req.body;
     const savedMessage = await saveMessage(
