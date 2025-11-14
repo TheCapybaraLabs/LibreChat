@@ -32,7 +32,7 @@ function updateAppIcons() {
   ];
 
   configs.forEach(({ selector, env }) => {
-    if (!env) return; // ❗ Sem ENV, usa o fallback original do index.html
+    if (!env) return; // Sem ENV, usa o fallback original do index.html
     const link = document.querySelector(selector);
     if (link) link.setAttribute("href", env);
   });
