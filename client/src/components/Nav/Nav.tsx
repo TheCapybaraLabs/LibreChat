@@ -86,6 +86,9 @@ const Nav = memo(
     const [showLoading, setShowLoading] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
 
+    const navLogoSrc = import.meta.env.VITE_NAV_LOGO_URL;
+    const brandNavLogoSrc = import.meta.env.VITE_BRAND_NAV_LOGO_URL;
+
     const hasAccessToBookmarks = useHasAccess({
       permissionType: PermissionTypes.BOOKMARKS,
       permission: Permissions.USE,
@@ -188,13 +191,15 @@ const Nav = memo(
     const headerButtons = useMemo(
       () => (
         <>
-          <div className="mr-1 mt-1 h-8 w-8 items-center">
-            <img
-              src="assets/logo-ALT.svg"
-              className="w-full items-center"
-              alt={startupConfig?.appTitle ?? 'ChatLabel'}
-            />
-          </div>
+          {navLogoSrc ? (
+            <div className="mr-1 mt-1 h-8 w-8 items-center">
+              <img
+                src={navLogoSrc}
+                className="w-full items-center"
+                alt={startupConfig?.appTitle ?? 'Chat IA'}
+              />
+            </div>
+          ) : null}
           <Suspense fallback={null}>
             <AgentMarketplaceButton isSmallScreen={isSmallScreen} toggleNav={toggleNavVisible} />
           </Suspense>
