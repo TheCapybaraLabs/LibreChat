@@ -26,6 +26,8 @@ function AuthLayout({
 }) {
   const localize = useLocalize();
 
+  const developedByLogoSrc = import.meta.env.VITE_DEVELOPED_BY_LOGO_URL;
+
   const hasStartupConfigError = startupConfigError !== null && startupConfigError !== undefined;
   const DisplayError = () => {
     if (hasStartupConfigError) {
@@ -62,9 +64,9 @@ function AuthLayout({
       <BlinkAnimation active={isFetching}>
         <div className="mt-12 h-24 w-full bg-cover">
           <img
-            src="assets/logo.svg"
+            src={import.meta.env.VITE_LOGO_URL || '/assets/logo.svg'}
             className="h-full w-full object-contain"
-            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'ChatIA' })}
+            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'Chat IA' })}
           />
         </div>
         <h1
@@ -78,6 +80,14 @@ function AuthLayout({
       <div className="absolute bottom-0 left-0 md:m-4">
         <ThemeSelector />
       </div>
+      {developedByLogoSrc ? (
+        <div className="absolute bottom-0 right-0 md:m-4">
+          <div className="flex flex-col items-center justify-center bg-white p-4 dark:bg-gray-900 md:p-2">
+            <img src={developedByLogoSrc} className="h-8 w-8 object-contain" alt="ChatIA" />
+            <p className="hidden text-sm md:block">Developed by Capybara Labs</p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex flex-grow items-center justify-center">
         <div className="w-authPageWidth overflow-hidden bg-white px-6 py-4 dark:bg-gray-900 sm:max-w-md sm:rounded-lg">
