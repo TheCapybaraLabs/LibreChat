@@ -29,6 +29,7 @@ const ConversationsSection = memo(() => {
   const setSidebarExpanded = useSetRecoilState(store.sidebarExpanded);
   const { isAuthenticated } = useAuthContext();
   const { data: startupConfig } = useGetStartupConfig();
+  const brandNavLogoSrc = import.meta.env.VITE_BRAND_NAV_LOGO_URL;
   useTitleGeneration(isAuthenticated);
 
   const [isChatsExpanded, setIsChatsExpanded] = useLocalStorage('chatsExpanded', true);
@@ -113,13 +114,15 @@ const ConversationsSection = memo(() => {
       role="region"
       aria-label={localize('com_ui_chat_history')}
     >
-      <div className="px-3 pb-2">
-        <img
-          src="assets/brand_logo_nav.png"
-          className="flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active"
-          alt={startupConfig?.appTitle ?? 'ChatLabs'}
-        />
-      </div>
+      {brandNavLogoSrc ? (
+        <div className="px-3 pb-2">
+          <img
+            src={brandNavLogoSrc}
+            className="flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active"
+            alt={startupConfig?.appTitle ?? 'Chat IA'}
+          />
+        </div>
+      ) : null}
       <div className="flex items-center gap-0.5 px-3">
         {hasAccessToBookmarks && (
           <Suspense fallback={null}>
