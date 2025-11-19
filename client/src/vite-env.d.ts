@@ -3,7 +3,8 @@
 interface ImportMetaEnv {
   readonly VITE_ENABLE_LOGGER: string;
   readonly VITE_LOGGER_FILTER: string;
-  // Add other env variables here
+  readonly VITE_BRAND_LOGO: string;
+  readonly VITE_APP_TITLE: string;
 }
 
 interface ImportMeta {
