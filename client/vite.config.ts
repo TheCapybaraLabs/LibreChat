@@ -76,10 +76,10 @@ export default defineConfig(({ command }) => ({
       workbox: {
         globPatterns: [
           '**/*.{js,css,html}',
-          'assets/favicon*.png',
-          'assets/icon-*.png',
-          'assets/apple-touch-icon*.png',
-          'assets/maskable-icon.png',
+          'assets/customization/favicon*.png',
+          'assets/customization/icon-*.png',
+          'assets/customization/apple-touch-icon*.png',
+          'assets/customization/maskable-icon.png',
           'manifest.webmanifest',
         ],
         globIgnores: ['images/**/*', '**/*.map', 'index.html'],
@@ -88,34 +88,34 @@ export default defineConfig(({ command }) => ({
       },
       includeAssets: [],
       manifest: {
-        name: process.env.VITE_CONFIG_APP_TITLE || 'ChatLabs',
-        short_name: process.env.VITE_CONFIG_APP_TITLE || 'ChatLabs',
+        name: process.env.VITE_APP_TITLE || 'GPT Labs',
+        short_name: process.env.VITE_APP_TITLE || 'GPT Labs',
         display: 'standalone',
         background_color: '#000000',
         theme_color: '#009688',
         icons: [
           {
-            src: process.env.VITE_BRAND_ICON_32 || 'assets/favicon-32x32.png',
+            src: 'assets/customization/favicon-32x32.png',
             sizes: '32x32',
             type: 'image/png',
           },
           {
-            src: process.env.VITE_BRAND_ICON_16 || 'assets/favicon-16x16.png',
+            src: 'assets/customization/favicon-16x16.png',
             sizes: '16x16',
             type: 'image/png',
           },
           {
-            src: process.env.VITE_APPLE_TOUCH_ICON_180 || 'assets/apple-touch-icon-180x180.png',
+            src: 'assets/customization/apple-touch-icon-180x180.png',
             sizes: '180x180',
             type: 'image/png',
           },
           {
-            src: process.env.VITE_BRAND_ICON_192 || 'assets/icon-192x192.png',
+            src: 'assets/customization/icon-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: process.env.VITE_BRAND_ICON_MASKABLE || 'assets/maskable-icon.png',
+            src: 'assets/customization/maskable-icon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
