@@ -44,7 +44,7 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
   }, [isAuthenticated, navigate, data]);
 
   useEffect(() => {
-    document.title = startupConfig?.appTitle || 'Chat IA';
+    document.title = startupConfig?.appTitle || 'GPT Labs';
   }, [startupConfig?.appTitle]);
 
   useEffect(() => {

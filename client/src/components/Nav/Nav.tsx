@@ -86,8 +86,7 @@ const Nav = memo(
     const [showLoading, setShowLoading] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
 
-    const navLogoSrc = import.meta.env.VITE_NAV_LOGO_URL;
-    const brandNavLogoSrc = import.meta.env.VITE_BRAND_NAV_LOGO_URL;
+    const brandLogoSrc = import.meta.env.VITE_BRAND_LOGO;
 
     const hasAccessToBookmarks = useHasAccess({
       permissionType: PermissionTypes.BOOKMARKS,
@@ -191,15 +190,13 @@ const Nav = memo(
     const headerButtons = useMemo(
       () => (
         <>
-          {navLogoSrc ? (
-            <div className="mr-1 mt-1 h-8 w-8 items-center">
-              <img
-                src={navLogoSrc}
-                className="w-full items-center"
-                alt={startupConfig?.appTitle ?? 'Chat IA'}
-              />
-            </div>
-          ) : null}
+          <div className="mr-1 mt-1 h-8 w-8 items-center">
+            <img
+              src='/assets/developers-logo.svg'
+              className="w-full items-center"
+              alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
+            />
+          </div>
           <Suspense fallback={null}>
             <AgentMarketplaceButton isSmallScreen={isSmallScreen} toggleNav={toggleNavVisible} />
           </Suspense>
@@ -265,11 +262,13 @@ const Nav = memo(
               />
             </div>
           </div>
-          <img
-            src="assets/brand_logo_nav.png"
-            className="mb-2 flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active"
-            alt={startupConfig?.appTitle ?? 'ChatLabel'}
-          />
+          {brandLogoSrc ? (
+            <img
+              src={brandLogoSrc}
+              className="mb-2 flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active"
+              alt={startupConfig?.appTitle ?? 'ChatLabel'}
+            />
+          ) : null}
           <Suspense fallback={<Skeleton className="mt-1 h-12 w-full rounded-xl" />}>
             <AccountSettings />
           </Suspense>

@@ -99,7 +99,7 @@ const sendVerificationEmail = async (user) => {
     email: user.email,
     subject: 'Verify your email',
     payload: {
-      appName: process.env.APP_TITLE || 'ChatLabs',
+      appName: process.env.APP_TITLE || 'GPT Labs',
       name: user.name || user.username || user.email,
       verificationLink: verificationLink,
       year: new Date().getFullYear(),
@@ -297,7 +297,7 @@ const requestPasswordReset = async (req) => {
       email: user.email,
       subject: 'Solicitação de Redefinição de Senha',
       payload: {
-        appName: process.env.APP_TITLE || 'ChatLabs',
+        appName: process.env.APP_TITLE || 'GPT Labs',
         name: user.name || user.username || user.email,
         link: link,
         year: new Date().getFullYear(),
@@ -353,7 +353,7 @@ const resetPassword = async (userId, token, password) => {
       email: user.email,
       subject: 'Senha Redefinida com Sucesso',
       payload: {
-        appName: process.env.APP_TITLE || 'ChatLabs',
+        appName: process.env.APP_TITLE || 'GPT Labs',
         name: user.name || user.username || user.email,
         year: new Date().getFullYear(),
       },
@@ -558,7 +558,7 @@ const resendVerificationEmail = async (req) => {
       email: user.email,
       subject: 'Verifique seu e-mail',
       payload: {
-        appName: process.env.APP_TITLE || 'ChatLabs',
+        appName: process.env.APP_TITLE || 'GPT Labs',
         name: user.name || user.username || user.email,
         verificationLink: verificationLink,
         year: new Date().getFullYear(),
