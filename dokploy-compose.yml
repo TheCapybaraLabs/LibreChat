@@ -44,6 +44,7 @@ services:
       - GOOGLE_KEY=${GOOGLE_KEY}
       - GOOGLE_MODELS=${GOOGLE_MODELS:-gemini-2.5-flash,gemini-2.5-pro,gemini-2.0-flash}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - XAI_API_KEY=${XAI_API_KEY}
       - ENDPOINTS=${ENDPOINTS:-google,openAI,agents,anthropic}
       # Email Configuration
       - EMAIL_HOST=${EMAIL_HOST}
@@ -104,6 +105,12 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-myuser}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mypassword}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - RAG_OPENAI_API_KEY=${RAG_OPENAI_API_KEY}
+      - GOOGLE_KEY=${GOOGLE_KEY}
+      - RAG_GOOGLE_API_KEY=${RAG_GOOGLE_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - EMBEDDINGS_PROVIDER=${EMBEDDINGS_PROVIDER:-openai}
+      - EMBEDDINGS_MODEL=${EMBEDDINGS_MODEL:-text-embedding-3-small}
     restart: always
     depends_on:
       - vectordb
