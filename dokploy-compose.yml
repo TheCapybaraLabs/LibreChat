@@ -62,6 +62,7 @@ services:
       - ALLOW_EMAIL_LOGIN=${ALLOW_EMAIL_LOGIN:-true}
       - ALLOW_SOCIAL_LOGIN=${ALLOW_SOCIAL_LOGIN:-false}
       - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-false}
+      - JINA_API_KEY=${JINA_API_KEY}
     volumes:
       - ../files/images:/app/client/public/images
       - ../files/uploads:/app/uploads
