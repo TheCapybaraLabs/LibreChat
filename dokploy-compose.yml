@@ -1,0 +1,113 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.multi
+      target: api-build
+      args:
+        VITE_BRAND_LOGO: ${VITE_BRAND_LOGO:-/assets/customization/brand-logo.png}
+        VITE_APP_TITLE: ${VITE_APP_TITLE:-GPT Labs}
+    ports:
+      - 3080:3080
+    restart: always
+    depends_on:
+      - mongodb
+      - rag_api
+    environment:
+      # Server Configuration
+      - HOST=0.0.0.0
+      - PORT=3080
+      - NODE_ENV=production
+      # Domain Configuration
+      - DOMAIN_CLIENT=${DOMAIN_CLIENT}
+      - DOMAIN_SERVER=${DOMAIN_SERVER}
+      # Database and Search Configuration
+      - MONGO_URI=mongodb://mongodb:27017/LibreChat
+      - MEILI_HOST=http://meilisearch:7700
+      - SEARCH=true
+      - NO_INDEX=true
+      - MEILI_NO_ANALYTICS=true
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      # Security & Sessions
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - CREDS_KEY=${CREDS_KEY}
+      - CREDS_IV=${CREDS_IV}
+      # RAG Configuration
+      - RAG_PORT=${RAG_PORT:-8000}
+      - RAG_API_URL=http://rag_api:${RAG_PORT:-8000}
+      # API Keys and Secrets
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODELS=${OPENAI_MODELS:-gpt-5-mini,gpt-5.1,gpt-4o}
+      - DEBUG_OPENAI=${DEBUG_OPENAI:-false}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_KEY=${GOOGLE_KEY}
+      - GOOGLE_MODELS=${GOOGLE_MODELS:-gemini-2.5-flash,gemini-2.5-pro,gemini-2.0-flash}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - ENDPOINTS=${ENDPOINTS:-google,openAI,agents,anthropic}
+      # Email Configuration
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_ENCRYPTION=${EMAIL_ENCRYPTION}
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-GPT Labs}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@updates.capybaralabs.com.br}
+      # UI
+      - APP_TITLE=${APP_TITLE:-GPT Labs}
+      - CUSTOM_FOOTER=${CUSTOM_FOOTER:-Capybara Labs}
+      - HELP_AND_FAQ_URL=${HELP_AND_FAQ_URL:-https://capybaralabs.com.br}
+      # Authentication & Registration
+      - ALLOW_EMAIL_LOGIN=${ALLOW_EMAIL_LOGIN:-true}
+      - ALLOW_SOCIAL_LOGIN=${ALLOW_SOCIAL_LOGIN:-false}
+      - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-false}
+    volumes:
+      - ../files/images:/app/client/public/images
+      - ../files/uploads:/app/uploads
+      - ../files/logs:/app/api/logs
+      - ../files/librechat.yaml:/app/librechat.yaml
+      - ../files/customization:/app/client/dist/assets/customization
+
+  mongodb:
+    image: mongo
+    restart: always
+    volumes:
+      - mongo_data:/data/db
+    command: mongod --noauth
+  
+  meilisearch:
+    image: getmeili/meilisearch:v1.12.3
+    restart: always
+    environment:
+      - MEILI_HOST=http://meilisearch:7700
+      - MEILI_NO_ANALYTICS=true
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+    volumes:
+      - meili_data:/meili_data
+  
+  vectordb:
+    image: pgvector/pgvector:0.8.0-pg15-trixie
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-mydatabase}
+      - POSTGRES_USER=${POSTGRES_USER:-myuser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mypassword}
+    restart: always
+    volumes:
+      - pgdata2:/var/lib/postgresql/data
+  
+  rag_api:
+    image: ghcr.io/danny-avila/librechat-rag-api-dev-lite:latest
+    environment:
+      - DB_HOST=vectordb
+      - RAG_PORT=${RAG_PORT:-8000}
+      - POSTGRES_DB=${POSTGRES_DB:-mydatabase}
+      - POSTGRES_USER=${POSTGRES_USER:-myuser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mypassword}
+    restart: always
+    depends_on:
+      - vectordb
+
+volumes:
+  pgdata2:
+  mongo_data:
+  meili_data:
