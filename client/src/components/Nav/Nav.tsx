@@ -86,7 +86,7 @@ const Nav = memo(
     const [showLoading, setShowLoading] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
 
-    const brandLogoSrc = import.meta.env.VITE_BRAND_LOGO;
+    const brandLogoSrc = import.meta.env.VITE_BRAND_LOGO || "/assets/customization/brand-logo.png";
 
     const hasAccessToBookmarks = useHasAccess({
       permissionType: PermissionTypes.BOOKMARKS,
