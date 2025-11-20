@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile.multi
       target: api-build
       args:
-        VITE_BRAND_LOGO: ${VITE_BRAND_LOGO:-/assets/customization/brand-logo.png}
+        VITE_BRAND_LOGO: ${VITE_BRAND_LOGO}
         VITE_APP_TITLE: ${VITE_APP_TITLE:-GPT Labs}
     ports:
       - 3080:3080
