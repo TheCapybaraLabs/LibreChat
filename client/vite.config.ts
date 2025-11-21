@@ -58,8 +58,8 @@ export default defineConfig(({ command }) => ({
       },
       includeAssets: [],
       manifest: {
-        name: process.env.VITE_APP_TITLE || 'GPT Labs',
-        short_name: process.env.VITE_APP_TITLE || 'GPT Labs',
+        name: process.env.VITE_APP_TITLE || 'Chat IA',
+        short_name: process.env.VITE_APP_TITLE || 'Chat IA',
         display: 'standalone',
         background_color: '#000000',
         theme_color: '#009688',
