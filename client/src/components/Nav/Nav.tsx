@@ -242,8 +242,8 @@ const Nav = memo(
                     {brandLogoSrc ? (
                       <img
                         src={brandLogoSrc}
-                        className="mb-2 flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active"
-                        alt={startupConfig?.appTitle ?? 'ChatLabel'}
+                        className="mb-2 flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active-alt dark:hover:bg-surface-hover-alt"
+                        alt={startupConfig?.appTitle ?? 'Chat IA'}
                       />
                     ) : null}
                     <Suspense fallback={null}>
