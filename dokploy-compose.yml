@@ -42,6 +42,7 @@ services:
       - OPENAI_MODELS=${OPENAI_MODELS:-gpt-5-mini,gpt-5.1,gpt-4o}
       - DEBUG_OPENAI=${DEBUG_OPENAI:-false}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ANTHROPIC_MODELS=${ANTHROPIC_MODELS:-claude-haiku-4-5}
       - GOOGLE_KEY=${GOOGLE_KEY}
       - GOOGLE_MODELS=${GOOGLE_MODELS:-gemini-2.5-flash,gemini-2.5-pro,gemini-2.0-flash}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
