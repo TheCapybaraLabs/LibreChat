@@ -8,15 +8,16 @@ services:
         VITE_BRAND_LOGO: ${VITE_BRAND_LOGO}
         VITE_APP_TITLE: ${VITE_APP_TITLE:-Chat IA}
     ports:
-      - 3080:3080
+      - ${PORT:-3080}:${PORT:-3080}
     restart: always
     depends_on:
       - mongodb
       - rag_api
+      - meilisearch
     environment:
       # Server Configuration
-      - HOST=0.0.0.0
-      - PORT=3080
+      - HOST=${HOST:-localhost}
+      - PORT=${PORT:-3080}
       - NODE_ENV=production
       # Domain Configuration
       - DOMAIN_CLIENT=${DOMAIN_CLIENT}
