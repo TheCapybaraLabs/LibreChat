@@ -4,7 +4,9 @@ services:
       context: .
       dockerfile: Dockerfile.multi
       target: api-build
-    # image: ghcr.io/danny-avila/librechat-dev-api:latest
+      args:
+        VITE_BRAND_LOGO: ${VITE_BRAND_LOGO}
+        VITE_APP_TITLE: ${VITE_APP_TITLE:-Chat IA}
     # container_name: LibreChat-API
     ports:
       - 3080:3080
@@ -30,7 +32,7 @@ services:
       - ./images:/app/client/public/images
       - ./uploads:/app/uploads
       - ./logs:/app/api/logs
-      # - ./mapped/assets:/app/client/dist/assets
+      - ./customization:/app/client/dist/assets/customization
 
   client:
     image: nginx:1.27.0-alpine
