@@ -66,6 +66,9 @@ services:
       - ALLOW_SOCIAL_LOGIN=${ALLOW_SOCIAL_LOGIN:-false}
       - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-false}
       - ALLOW_PASSWORD_RESET=${ALLOW_PASSWORD_RESET:-true}
+      # Extras
+      - CHECK_BALANCE=${CHECK_BALANCE:-false}
+      - START_BALANCE=${START_BALANCE:-1000000}
       - JINA_API_KEY=${JINA_API_KEY}
     volumes:
       - ../files/images:/app/client/public/images
