@@ -29,8 +29,7 @@ const ConversationsSection = memo(() => {
   const setSidebarExpanded = useSetRecoilState(store.sidebarExpanded);
   const { isAuthenticated } = useAuthContext();
   const { data: startupConfig } = useGetStartupConfig();
-  const brandLogoSrc =
-    import.meta.env.VITE_BRAND_LOGO || '/assets/customization/brand-logo.png';
+  const brandLogoSrc = import.meta.env.VITE_BRAND_LOGO;
   useTitleGeneration(isAuthenticated);
 
   const [isChatsExpanded, setIsChatsExpanded] = useLocalStorage('chatsExpanded', true);
