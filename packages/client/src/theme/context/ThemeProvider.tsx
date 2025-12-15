@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAtom } from 'jotai';
-import { IThemeRGB } from '../types';
+import { IThemeRGB, IThemeSet } from '../types';
 import applyTheme from '../utils/applyTheme';
 import { themeModeAtom, themeColorsAtom, themeNameAtom } from '../atoms/themeAtoms';
 
@@ -26,6 +26,7 @@ export const ThemeContext = createContext<ThemeContextType>({
 export interface ThemeProviderProps {
   children: React.ReactNode;
   themeRGB?: IThemeRGB;
+  themeSet?: IThemeSet;
   themeName?: string;
   initialTheme?: string;
 }
@@ -47,6 +48,7 @@ export const isDark = (theme: string): boolean => {
 export function ThemeProvider({
   children,
   themeRGB: propThemeRGB,
+  themeSet: propThemeSet,
   themeName: propThemeName,
   initialTheme,
 }: ThemeProviderProps) {
@@ -57,6 +59,8 @@ export function ThemeProvider({
 
   // Track if props have been initialized
   const propsInitialized = useRef(false);
+  // Store the theme set if provided (for light/dark variants)
+  const themeSetRef = useRef<IThemeSet | undefined>(propThemeSet);
 
   // Initialize from props only once on mount
   useEffect(() => {
@@ -68,9 +72,19 @@ export function ThemeProvider({
         setTheme(initialTheme);
       }
 
-      // Set initial theme colors if provided
+      // Set initial theme colors if provided (single theme)
       if (propThemeRGB) {
         setStoredThemeRGB(propThemeRGB);
+      }
+
+      // If theme set is provided, apply the appropriate variant based on initial theme
+      if (propThemeSet) {
+        themeSetRef.current = propThemeSet;
+        const initialDark = initialTheme ? isDark(initialTheme) : isDark(theme);
+        const initialColors = initialDark ? propThemeSet.dark : propThemeSet.light;
+        if (initialColors) {
+          setStoredThemeRGB(initialColors);
+        }
       }
 
       // Set initial theme name if provided
@@ -78,7 +92,7 @@ export function ThemeProvider({
         setStoredThemeName(propThemeName);
       }
     }
-  }, [initialTheme, propThemeRGB, propThemeName, setTheme, setStoredThemeRGB, setStoredThemeName]);
+  }, [initialTheme, propThemeRGB, propThemeSet, propThemeName, setTheme, setStoredThemeRGB, setStoredThemeName, theme]);
 
   // Apply class-based dark mode
   const applyThemeMode = useCallback((rawTheme: string) => {
@@ -115,6 +129,19 @@ export function ThemeProvider({
       applyTheme(storedThemeRGB);
     }
   }, [storedThemeRGB]);
+
+  // Switch theme variant when mode changes (if theme set is provided)
+  useEffect(() => {
+    if (themeSetRef.current) {
+      const currentDark = isDark(theme);
+      const themeColors = currentDark ? themeSetRef.current.dark : themeSetRef.current.light;
+      if (themeColors) {
+        applyTheme(themeColors);
+        // Update stored theme to maintain consistency
+        setStoredThemeRGB(themeColors);
+      }
+    }
+  }, [theme, setStoredThemeRGB]);
 
   // Reset theme function
   const resetTheme = useCallback(() => {

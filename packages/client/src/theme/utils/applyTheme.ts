@@ -58,6 +58,10 @@ function mapTheme(rgb: IThemeRGB): Partial<IThemeVariables> {
     'rgb-border-heavy': '--border-heavy',
     'rgb-border-xheavy': '--border-xheavy',
     'rgb-brand-purple': '--brand-purple',
+    'rgb-brand-border': '--brand-border',
+    'rgb-brand-footer': '--brand-footer',
+    'rgb-brand-primary': '--brand-primary',
+    'rgb-brand-primary-hover': '--brand-primary-hover',
     'rgb-presentation': '--presentation',
 
     // Utility colors

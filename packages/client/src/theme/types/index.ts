@@ -46,6 +46,10 @@ export interface IThemeRGB {
 
   // Brand colors
   'rgb-brand-purple'?: string;
+  'rgb-brand-border'?: string;
+  'rgb-brand-footer'?: string;
+  'rgb-brand-primary'?: string;
+  'rgb-brand-primary-hover'?: string;
 
   // Presentation
   'rgb-presentation'?: string;
@@ -105,6 +109,10 @@ export interface IThemeVariables {
   '--border-heavy': string;
   '--border-xheavy': string;
   '--brand-purple': string;
+  '--brand-border': string;
+  '--brand-footer': string;
+  '--brand-primary': string;
+  '--brand-primary-hover': string;
   '--presentation': string;
 
   // Utility variables
@@ -162,6 +170,10 @@ export interface IThemeColors {
   'border-heavy'?: string;
   'border-xheavy'?: string;
   'brand-purple'?: string;
+  'brand-border'?: string;
+  'brand-footer'?: string;
+  'brand-primary'?: string;
+  'brand-primary-hover'?: string;
   presentation?: string;
 
   // Utility colors
@@ -186,4 +198,12 @@ export interface IThemeColors {
 export interface Theme {
   name: string;
   colors: IThemeRGB;
+}
+
+/**
+ * Theme set containing both light and dark variants
+ */
+export interface IThemeSet {
+  light?: IThemeRGB;
+  dark?: IThemeRGB;
 }
