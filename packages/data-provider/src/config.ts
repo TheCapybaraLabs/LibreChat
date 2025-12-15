@@ -1374,7 +1374,6 @@ export const supportsBalanceCheck = {
   [EModelEndpoint.azureAssistants]: true,
   [EModelEndpoint.azureOpenAI]: true,
   [EModelEndpoint.bedrock]: true,
-  [EModelEndpoint.google]: true,
 };
 
 export const visionModels = [
