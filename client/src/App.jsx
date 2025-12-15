@@ -42,22 +42,23 @@ const App = () => {
   }, []);
 
   // Load theme from environment variables if available
-  const envTheme = getThemeFromEnv();
+  const envThemeSet = getThemeFromEnv();
 
   return (
     <QueryClientProvider client={queryClient}>
       <RecoilRoot>
         <LiveAnnouncer>
           <ThemeProvider
-            // Only pass initialTheme and themeRGB if environment theme exists
+            // Only pass initialTheme and themeSet if environment theme exists
             // This allows localStorage values to persist when no env theme is set
-            {...(envTheme && { initialTheme: 'system', themeRGB: envTheme })}
+            {...(envThemeSet && { initialTheme: 'system', themeSet: envThemeSet })}
           >
             {/* The ThemeProvider will automatically:
                 1. Apply dark/light mode classes
-                2. Apply custom theme colors if envTheme is provided
-                3. Otherwise use stored theme preferences from localStorage
-                4. Fall back to default theme colors if nothing is stored */}
+                2. Apply custom theme colors if envThemeSet is provided
+                3. Switch between light/dark variants when theme mode changes
+                4. Otherwise use stored theme preferences from localStorage
+                5. Fall back to default theme colors if nothing is stored */}
             <RadixToast.Provider>
               <ToastProvider>
                 <DndProvider backend={HTML5Backend}>
