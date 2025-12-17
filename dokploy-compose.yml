@@ -19,6 +19,9 @@ services:
       - HOST=${HOST:-localhost}
       - PORT=${PORT:-3080}
       - NODE_ENV=production
+      - TRUST_PROXY=${TRUST_PROXY:-1}
+      - DEBUG_LOGGING=${DEBUG_LOGGING:-true}
+      - DEBUG_CONSOLE=${DEBUG_CONSOLE:-false}
       # Domain Configuration
       - DOMAIN_CLIENT=${DOMAIN_CLIENT}
       - DOMAIN_SERVER=${DOMAIN_SERVER}
