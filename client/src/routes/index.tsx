@@ -14,12 +14,14 @@ import { OAuthSuccess, OAuthError } from '~/components/OAuth';
 import { AuthContextProvider } from '~/hooks/AuthContext';
 import RouteErrorBoundary from './RouteErrorBoundary';
 import StartupLayout from './Layouts/Startup';
+import PublicPageLayout from './Layouts/PublicPage';
 import LoginLayout from './Layouts/Login';
 import dashboardRoutes from './Dashboard';
 import ShareRoute from './ShareRoute';
 import ChatRoute from './ChatRoute';
 import Search from './Search';
 import Root from './Root';
+import CookiesPolicy from '~/components/Legal/CookiesPolicy';
 
 const AuthLayout = () => (
   <AuthContextProvider>
@@ -80,6 +82,17 @@ export const router = createBrowserRouter(
       path: 'verify',
       element: <VerifyEmail />,
       errorElement: <RouteErrorBoundary />,
+    },
+    {
+      path: '/',
+      element: <PublicPageLayout />,
+      errorElement: <RouteErrorBoundary />,
+      children: [
+        {
+          path: 'cookies',
+          element: <CookiesPolicy />,
+        },
+      ],
     },
     {
       element: <AuthLayout />,
