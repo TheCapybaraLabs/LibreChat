@@ -77,7 +77,8 @@ html {
   --brand-border: var(--blue-500);
   --brand-footer: var(--blue-500);
   --brand-primary: var(--blue-600);
-  --brand-primary-hover: var(--blue-700);
+  --brand-primary-hover: var(--blue-800);
+  --brand-bg: var(--blue-500);
   --brand-purple: #ab68ff;
   --presentation: var(--white);
   --text-primary: var(--gray-800);
@@ -144,6 +145,7 @@ html {
   --brand-footer: var(--blue-500);
   --brand-primary: var(--blue-400);
   --brand-primary-hover: var(--blue-300);
+  --brand-bg: var(--blue-600);
   --brand-purple: #ab68ff;
   --presentation: var(--gray-800);
   --text-primary: var(--gray-100);
@@ -628,7 +630,7 @@ select {
   background: linear-gradient(90deg, #006880 10.79%, #005366 87.08%);
 }
 
-p>small {
+p > small {
   opacity: 0;
   animation: fadein 3s forwards;
 }
@@ -785,7 +787,6 @@ pre {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0);
@@ -871,7 +872,9 @@ pre {
   color: var(--tw-prose-body);
   max-width: 65ch;
   font-size: var(--markdown-font-size, var(--font-size-base));
-  line-height: calc(22px * var(--markdown-font-size, var(--font-size-base)) / var(--font-size-base));
+  line-height: calc(
+    22px * var(--markdown-font-size, var(--font-size-base)) / var(--font-size-base)
+  );
 }
 
 .prose :where([class~='lead']):not(:where([class~='not-prose'] *)) {
@@ -1413,8 +1416,8 @@ pre[class*='language-'] {
   overflow: auto;
 }
 
-:not(pre)>code.hljs,
-:not(pre)>code[class*='language-'] {
+:not(pre) > code.hljs,
+:not(pre) > code[class*='language-'] {
   border-radius: 0.3em;
   padding: 0.1em;
   white-space: normal;
@@ -1522,8 +1525,10 @@ button {
 }
 
 .btn-primary:focus {
-  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width)
+    var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width))
+    var(--tw-ring-color);
   --tw-ring-offset-width: 2px;
   box-shadow:
     var(--tw-ring-offset-shadow),
@@ -1688,7 +1693,9 @@ html {
 .markdown {
   max-width: none;
   font-size: var(--markdown-font-size, var(--font-size-base));
-  line-height: calc(22px * var(--markdown-font-size, var(--font-size-base)) / var(--font-size-base));
+  line-height: calc(
+    22px * var(--markdown-font-size, var(--font-size-base)) / var(--font-size-base)
+  );
 }
 
 .markdown h1 {
@@ -1887,15 +1894,14 @@ html {
 .form-multiselect:focus,
 .form-select:focus,
 .form-textarea:focus {
-  --tw-ring-inset: var(--tw-empty,
-      /*!*/
-      /*!*/
-    );
+  --tw-ring-inset: var(--tw-empty, /*!*/ /*!*/);
   --tw-ring-offset-width: 0px;
   --tw-ring-offset-color: #fff;
   --tw-ring-color: #2563eb;
-  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width)
+    var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width))
+    var(--tw-ring-color);
   border-color: #2563eb;
   box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   outline: 2px solid transparent;
@@ -1940,8 +1946,12 @@ html {
 }
 
 .transform {
-  -webkit-transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+  -webkit-transform: translate(var(--tw-translate-x), var(--tw-translate-y))
+    rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y))
+    scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate))
+    skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x))
+    scaleY(var(--tw-scale-y));
 }
 
 body,
@@ -2184,7 +2194,6 @@ html {
 }
 
 @-webkit-keyframes pulseSize {
-
   0%,
   to {
     -webkit-transform: scaleX(1);
@@ -2198,7 +2207,6 @@ html {
 }
 
 @keyframes pulseSize {
-
   0%,
   to {
     -webkit-transform: scaleX(1);
@@ -2294,8 +2302,8 @@ html {
   --tw-shadow-colored: inset 0 0 0 0 1px var(--tw-shadow-color);
 }
 
-.result-streaming> :not(ol):not(ul):not(pre):last-child:after,
-.result-streaming>pre:last-child code:after {
+.result-streaming > :not(ol):not(ul):not(pre):last-child:after,
+.result-streaming > pre:last-child code:after {
   display: inline-block;
   content: '⬤';
   width: 12px;
@@ -2318,7 +2326,7 @@ html {
 }
 
 @supports (selector(:has(*))) {
-  .result-streaming> :is(ul, ol):last-child>li:last-child:not(:has(> :is(ul, ol, pre))):after {
+  .result-streaming > :is(ul, ol):last-child > li:last-child:not(:has(> :is(ul, ol, pre))):after {
     content: '⬤';
     font-family:
       system-ui,
@@ -2342,9 +2350,8 @@ html {
 }
 
 @supports not (selector(:has(*))) {
-
-  .result-streaming>ol:last-child>li:last-child:after,
-  .result-streaming>ul:last-child>li:last-child:after {
+  .result-streaming > ol:last-child > li:last-child:after,
+  .result-streaming > ul:last-child > li:last-child:after {
     content: '⬤';
     font-family:
       system-ui,
@@ -2366,13 +2373,13 @@ html {
     height: 12px;
   }
 
-  .result-streaming>ol:last-child>li:last-child> :is(ul, ol, pre)~ :after,
-  .result-streaming>ul:last-child>li:last-child> :is(ul, ol, pre)~ :after {
+  .result-streaming > ol:last-child > li:last-child > :is(ul, ol, pre) ~ :after,
+  .result-streaming > ul:last-child > li:last-child > :is(ul, ol, pre) ~ :after {
     display: none;
   }
 
-  .result-streaming>ol:last-child>li:last-child>pre:last-child code:after,
-  .result-streaming>ul:last-child>li:last-child>pre:last-child code:after {
+  .result-streaming > ol:last-child > li:last-child > pre:last-child code:after,
+  .result-streaming > ul:last-child > li:last-child > pre:last-child code:after {
     display: inline-block;
   }
 }
@@ -2508,14 +2515,14 @@ html {
   list-style-type: decimal;
 }
 
-.prose ol>li,
-.markdown ol>li {
+.prose ol > li,
+.markdown ol > li {
   position: relative;
   padding-left: 0.375em;
 }
 
-.prose ol>li::marker,
-.markdown ol>li::marker {
+.prose ol > li::marker,
+.markdown ol > li::marker {
   color: var(--tw-prose-counters);
   font-weight: 400;
 }
@@ -2537,13 +2544,13 @@ html {
   list-style-type: disc;
 }
 
-.prose ul>li,
-.markdown ul>li {
+.prose ul > li,
+.markdown ul > li {
   padding-left: 0.375em;
 }
 
-.prose ul>li::marker,
-.markdown ul>li::marker {
+.prose ul > li::marker,
+.markdown ul > li::marker {
   color: var(--tw-prose-bullets);
 }
 
@@ -2553,8 +2560,8 @@ html {
   list-style-type: disc;
 }
 
-.prose ul ul>li::marker,
-.markdown ul ul>li::marker {
+.prose ul ul > li::marker,
+.markdown ul ul > li::marker {
   color: var(--tw-prose-bullets);
   font-size: 0.8em;
 }
@@ -2564,8 +2571,8 @@ html {
   list-style-type: square;
 }
 
-.prose ul ul ul>li::marker,
-.markdown ul ul ul>li::marker {
+.prose ul ul ul > li::marker,
+.markdown ul ul ul > li::marker {
   color: var(--tw-prose-bullets);
   font-size: 0.7em;
 }
@@ -2583,10 +2590,10 @@ html {
   margin-bottom: 0.75em;
 }
 
-.prose>ul>li>*:last-child,
-.prose>ol>li>*:last-child,
-.markdown>ul>li>*:last-child,
-.markdown>ol>li>*:last-child {
+.prose > ul > li > *:last-child,
+.prose > ol > li > *:last-child,
+.markdown > ul > li > *:last-child,
+.markdown > ol > li > *:last-child {
   margin-bottom: 1.25em;
 }
 
@@ -3065,10 +3072,12 @@ html {
 .shimmer {
   display: inline-block;
   position: relative;
-  background: linear-gradient(90deg,
-      rgb(33, 33, 33) 25%,
-      rgba(129, 130, 134, 0.18) 50%,
-      rgb(33, 33, 33) 75%);
+  background: linear-gradient(
+    90deg,
+    rgb(33, 33, 33) 25%,
+    rgba(129, 130, 134, 0.18) 50%,
+    rgb(33, 33, 33) 75%
+  );
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
@@ -3077,10 +3086,12 @@ html {
 }
 
 .dark .shimmer {
-  background: linear-gradient(90deg,
-      rgba(255, 255, 255, 0.8) 25%,
-      rgba(179, 179, 179, 0.25) 50%,
-      rgba(255, 255, 255, 0.8) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.8) 25%,
+    rgba(179, 179, 179, 0.25) 50%,
+    rgba(255, 255, 255, 0.8) 75%
+  );
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
@@ -3106,5 +3117,5 @@ html {
 }
 
 .sharepoint-picker-bg {
-  background-color: #F5F5F5;
+  background-color: #f5f5f5;
 }
