@@ -460,7 +460,7 @@ export default function AssistantPanel({
             />
             {/* Submit Button */}
             <button
-              className="btn btn-primary focus:shadow-outline flex w-full items-center justify-center px-4 py-2 font-semibold text-white hover:bg-green-600 focus:border-green-500"
+              className="btn focus:shadow-outline focus:brand-border flex w-full items-center justify-center bg-surface-submit px-4 py-2 font-semibold text-white hover:bg-surface-submit-hover"
               type="submit"
             >
               {submitContext}

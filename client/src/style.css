@@ -63,6 +63,11 @@
   --markdown-font-size: 1rem;
 }
 html {
+  --brand-border: var(--blue-500);
+  --brand-footer: var(--blue-500);
+  --brand-primary: var(--blue-600);
+  --brand-primary-hover: var(--blue-800);
+  --brand-bg: var(--blue-500);
   --brand-purple: #ab68ff;
   --presentation: var(--white);
   --text-primary: var(--gray-800);
@@ -126,6 +131,11 @@ html {
   --switch-unchecked: 0 0% 58%;
 }
 .dark {
+  --brand-border: var(--blue-500);
+  --brand-footer: var(--blue-500);
+  --brand-primary: var(--blue-400);
+  --brand-primary-hover: var(--blue-300);
+  --brand-bg: var(--blue-600);
   --brand-purple: #ab68ff;
   --presentation: var(--gray-800);
   --text-primary: var(--gray-100);
