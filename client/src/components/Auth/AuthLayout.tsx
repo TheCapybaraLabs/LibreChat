@@ -86,6 +86,7 @@ function AuthLayout({
             className="h-8 w-8 object-contain"
             alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
           />
+          {/* eslint-disable-next-line i18next/no-literal-string */}
           <p className="hidden text-sm dark:text-white md:block">Capybara Labs</p>
         </div>
       </div>

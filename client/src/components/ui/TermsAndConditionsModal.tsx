@@ -119,7 +119,7 @@ const TermsAndConditionsModal = ({
             <span className="text-text-primary">
               Confirmo que também aceito a{' '}
               <a
-                href={import.meta.env.VITE_COOKIES_POLICY_URL}
+                href="/cookies"
                 className="text-blue-600 underline hover:text-blue-800"
               >
                 política de cookies.

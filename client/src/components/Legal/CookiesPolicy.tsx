@@ -1,3 +1,4 @@
+// eslint-disable i18next/no-literal-string
 import React from 'react';
 import { useGetStartupConfig } from '~/data-provider';
 
@@ -86,7 +87,7 @@ export default function CookiesPolicy() {
         </div>
 
         <footer className="rounded-xl bg-surface-tertiary px-5 py-4 text-sm text-text-secondary">
-          Última atualização: {import.meta.env.VITE_COOKIES_POLICY_LAST_UPDATE ?? '-'}
+          Última atualização: 27 de janeiro de 2026
         </footer>
       </div>
     </div>
