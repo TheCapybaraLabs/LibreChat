@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import type { TStartupConfig } from 'librechat-data-provider';
 import { useGetStartupConfig } from '~/data-provider';
-import { ThemeSelector, Button } from '@librechat/client';
+import { ThemeSelector } from '@librechat/client';
 import { useLocalize } from '~/hooks';
 
 export default function PublicPageLayout() {
@@ -33,12 +33,6 @@ export default function PublicPageLayout() {
             </span>
           </div>
           <nav className="flex items-center gap-4 text-sm font-medium">
-            {/* <Link
-              to="/login"
-              className="text-text-secondary transition-colors hover:text-brand-primary"
-            >
-              {localize('com_auth_login')}
-            </Link> */}
             <button
               onClick={() => navigate(-1)}
               className="rounded-lg bg-surface-submit px-3 py-2 text-white transition-colors hover:bg-surface-submit-hover"
@@ -64,6 +58,7 @@ export default function PublicPageLayout() {
             className="h-8 w-8 object-contain"
             alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
           />
+          {/* eslint-disable-next-line i18next/no-literal-string */}
           <p className="hidden text-sm dark:text-white md:block">Capybara Labs</p>
         </div>
       </div>
