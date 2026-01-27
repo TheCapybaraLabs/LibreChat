@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import { useMemo, useState } from 'react';
 import { OGDialog, DialogTemplate, useToastContext } from '@librechat/client';
 import type { TTermsOfService } from 'librechat-data-provider';
