@@ -119,10 +119,7 @@ const TermsAndConditionsModal = ({
 
             <span className="text-text-primary">
               Confirmo que também aceito a{' '}
-              <a
-                href="/cookies"
-                className="text-blue-600 underline hover:text-blue-800"
-              >
+              <a href="/cookies" className="text-blue-600 underline hover:text-blue-800">
                 política de cookies.
               </a>
             </span>
