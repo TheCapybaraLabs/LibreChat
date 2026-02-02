@@ -39,7 +39,7 @@ function AuthLayout({
         <div className="mx-auto sm:max-w-sm">
           <ErrorMessage>
             {localize('com_auth_error_invalid_reset_token')}{' '}
-            <a className="font-semibold text-green-600 hover:underline" href="/forgot-password">
+            <a className="font-semibold text-brand-primary hover:underline" href="/forgot-password">
               {localize('com_auth_click_here')}
             </a>{' '}
             {localize('com_auth_to_try_again')}
@@ -68,7 +68,7 @@ function AuthLayout({
           />
         </div>
         <h1
-          className="mt-6 text-center text-3xl font-semibold text-brand-primary dark:text-brand-primary"
+          className="mb-6 mt-6 text-center text-3xl font-semibold text-brand-primary dark:text-brand-primary"
           style={{ userSelect: 'none' }}
         >
           {startupConfig?.appTitle}
@@ -78,14 +78,19 @@ function AuthLayout({
       <div className="absolute bottom-0 left-0 md:m-4">
         <ThemeSelector />
       </div>
-      
+
       <div className="absolute bottom-0 right-0 md:m-4">
-        <div className="flex flex-col items-center justify-center bg-white p-4 dark:bg-gray-900 md:p-2">
-          <img src='/assets/developers-logo.svg' className="h-8 w-8 object-contain" alt={localize('com_ui_logo', { 0: 'Capybara Labs' })} />
-          <p className="hidden text-sm md:block dark:text-white">Capybara Labs</p>
+        <div className="flex flex-col items-center justify-center p-4 md:p-2">
+          <img
+            src="/assets/developers-logo.svg"
+            className="h-8 w-8 object-contain"
+            alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
+          />
+          {/* eslint-disable-next-line i18next/no-literal-string */}
+          <p className="hidden text-sm dark:text-white md:block">Capybara Labs</p>
         </div>
       </div>
-     
+
       <div className="flex flex-grow items-center justify-center">
         <div className="w-authPageWidth overflow-hidden bg-white px-6 py-4 dark:bg-gray-900 sm:max-w-md sm:rounded-lg">
           {!hasStartupConfigError && !isFetching && header && (

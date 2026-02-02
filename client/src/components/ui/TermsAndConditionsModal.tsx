@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+/* eslint-disable i18next/no-literal-string */
+import { useMemo, useState } from 'react';
 import { OGDialog, DialogTemplate, useToastContext } from '@librechat/client';
 import type { TTermsOfService } from 'librechat-data-provider';
 import MarkdownLite from '~/components/Chat/Messages/Content/MarkdownLite';
@@ -32,6 +33,8 @@ const TermsAndConditionsModal = ({
       showToast({ message: 'Failed to accept terms' });
     },
   });
+
+  const [cookiesPolicyState, setCookiesPolicyState] = useState(false);
 
   const handleAccept = () => {
     acceptTermsMutation.mutate();
@@ -86,7 +89,7 @@ const TermsAndConditionsModal = ({
           </section>
         }
         buttons={
-          <>
+          <div className="flex gap-2 whitespace-nowrap">
             <button
               onClick={handleDecline}
               className="inline-flex h-10 items-center justify-center rounded-lg border border-border-heavy bg-surface-secondary px-4 py-2 text-sm text-text-primary hover:bg-surface-active"
@@ -94,12 +97,33 @@ const TermsAndConditionsModal = ({
               {localize('com_ui_decline')}
             </button>
             <button
+              disabled={!cookiesPolicyState}
               onClick={handleAccept}
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-border-heavy bg-surface-secondary px-4 py-2 text-sm text-text-primary hover:bg-green-500 hover:text-white focus:bg-green-500 focus:text-white dark:hover:bg-green-600 dark:focus:bg-green-600"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-border-heavy bg-surface-secondary px-4 py-2 text-sm text-text-primary hover:bg-brand-bg hover:text-white focus:bg-brand-bg focus:text-white disabled:pointer-events-none disabled:opacity-50 dark:hover:bg-brand-bg dark:focus:bg-brand-bg"
             >
               {localize('com_ui_accept')}
             </button>
-          </>
+          </div>
+        }
+        leftButtons={
+          <label htmlFor="cookies-policy" className="flex items-start gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              id="cookies-policy"
+              name="cookies-policy"
+              value="true"
+              className="mt-0.5 h-4 w-4 rounded border-gray-300"
+              checked={cookiesPolicyState}
+              onChange={(e) => setCookiesPolicyState(e.target.checked)}
+            />
+
+            <span className="text-text-primary">
+              Confirmo que também aceito a{' '}
+              <a href="/cookies" className="text-blue-600 underline hover:text-blue-800">
+                política de cookies.
+              </a>
+            </span>
+          </label>
         }
       />
     </OGDialog>
