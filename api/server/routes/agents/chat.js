@@ -4,6 +4,7 @@ const { PermissionTypes, Permissions, PermissionBits } = require('librechat-data
 const {
   setHeaders,
   moderateText,
+  anonymizeMessage,
   // validateModel,
   validateConvoAccess,
   buildEndpointOption,
@@ -17,6 +18,7 @@ const { getRoleByName } = require('~/models/Role');
 const router = express.Router();
 
 router.use(moderateText);
+router.use(anonymizeMessage);
 
 const checkAgentAccess = generateCheckAccess({
   permissionType: PermissionTypes.AGENTS,

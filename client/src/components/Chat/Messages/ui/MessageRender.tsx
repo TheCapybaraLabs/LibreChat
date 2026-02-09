@@ -12,7 +12,7 @@ import { Plugin } from '~/components/Messages/Content';
 import SubRow from '~/components/Chat/Messages/SubRow';
 import { fontSizeAtom } from '~/store/fontSize';
 import { MessageContext } from '~/Providers';
-import { useMessageActions } from '~/hooks';
+import { useMessageActions, useLocalize } from '~/hooks';
 import { cn, logger } from '~/utils';
 import store from '~/store';
 
@@ -60,6 +60,7 @@ const MessageRender = memo(
       isMultiMessage,
       setCurrentEditId,
     });
+    const localize = useLocalize();
     const fontSize = useAtomValue(fontSizeAtom);
     const maximizeChatSpace = useRecoilValue(store.maximizeChatSpace);
 
@@ -165,7 +166,14 @@ const MessageRender = memo(
             msg.isCreatedByUser ? 'user-turn' : 'agent-turn',
           )}
         >
-          <h2 className={cn('select-none font-semibold', fontSize)}>{messageLabel}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className={cn('select-none font-semibold', fontSize)}>{messageLabel}</h2>
+            {msg.anonymized && (
+              <span className="rounded bg-surface-hover px-1.5 py-0.5 text-[10px] font-medium text-text-secondary">
+                {localize('Anonymized')}
+              </span>
+            )}
+          </div>
 
           <div className="flex flex-col gap-1">
             <div className="flex max-w-full flex-grow flex-col gap-0">

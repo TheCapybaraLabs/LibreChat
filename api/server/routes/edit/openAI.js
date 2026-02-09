@@ -7,10 +7,12 @@ const {
   validateEndpoint,
   buildEndpointOption,
   moderateText,
+  anonymizeMessage,
 } = require('~/server/middleware');
 
 const router = express.Router();
 router.use(moderateText);
+router.use(anonymizeMessage);
 
 router.post(
   '/',

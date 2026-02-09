@@ -21,6 +21,7 @@ import {
 } from '~/hooks';
 import { mainTextareaId, BadgeItem } from '~/common';
 import AttachFileChat from './Files/AttachFileChat';
+import AnonymizeToggle from './AnonymizeToggle';
 import FileFormChat from './Files/FileFormChat';
 import { cn, removeFocusRings } from '~/utils';
 import TextareaHeader from './TextareaHeader';
@@ -318,8 +319,9 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
                 isRTL ? 'flex-row-reverse' : 'flex-row',
               )}
             >
-              <div className={`${isRTL ? 'mr-2' : 'ml-2'}`}>
+              <div className={`${isRTL ? 'mr-2' : 'ml-2'} flex gap-1`}>
                 <AttachFileChat conversation={conversation} disableInputs={disableInputs} />
+                <AnonymizeToggle disabled={disableInputs} />
               </div>
               <BadgeRow
                 showEphemeralBadges={!isAgentsEndpoint(endpoint) && !isAssistantsEndpoint(endpoint)}

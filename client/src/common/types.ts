@@ -352,6 +352,7 @@ export type TAskProps = {
   conversationId?: string | null;
   messageId?: string | null;
   clientTimestamp?: string;
+  anonymize?: boolean;
 };
 
 export type TOptions = {

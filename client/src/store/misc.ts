@@ -27,10 +27,13 @@ const chatBadges = atomWithLocalStorage<Pick<BadgeItem, 'id'>[]>('chatBadges', [
   // { id: '2' },
 ]);
 
+const anonymizeEnabled = atomWithLocalStorage('librechat_anonymize_enabled', false);
+
 export default {
   hideBannerHint,
   messageAttachmentsMap,
   queriesEnabled,
   isEditingBadges,
   chatBadges,
+  anonymizeEnabled,
 };

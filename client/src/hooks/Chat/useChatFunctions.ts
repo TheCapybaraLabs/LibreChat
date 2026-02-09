@@ -80,6 +80,7 @@ export default function useChatFunctions({
       parentMessageId = null,
       conversationId = null,
       messageId = null,
+      anonymize = false,
     },
     {
       editedContent = null,
@@ -183,7 +184,7 @@ export default function useChatFunctions({
         endpoint,
         endpointType,
         overrideConvoId,
-        overrideUserMessageId,
+        anonymize,
       },
       convo,
     ) as TEndpointOption;

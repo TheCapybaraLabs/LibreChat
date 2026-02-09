@@ -15,6 +15,7 @@ const requireJwtAuth = require('./requireJwtAuth');
 const configMiddleware = require('./config/app');
 const validateModel = require('./validateModel');
 const moderateText = require('./moderateText');
+const anonymizeMessage = require('./anonymizeMessage');
 const logHeaders = require('./logHeaders');
 const setHeaders = require('./setHeaders');
 const validate = require('./validate');
@@ -36,6 +37,7 @@ module.exports = {
   setHeaders,
   logHeaders,
   moderateText,
+  anonymizeMessage,
   validateModel,
   requireJwtAuth,
   checkInviteUser,

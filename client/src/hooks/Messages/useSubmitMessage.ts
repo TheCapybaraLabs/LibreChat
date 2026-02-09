@@ -20,6 +20,7 @@ export default function useSubmitMessage() {
   const { addedIndex, ask: askAdditional, conversation: addedConvo } = useAddedChatContext();
 
   const autoSendPrompts = useRecoilValue(store.autoSendPrompts);
+  const anonymizeEnabled = useRecoilValue(store.anonymizeEnabled);
   const activeConvos = useRecoilValue(store.allConversationsSelector);
   const setActivePrompt = useSetRecoilState(store.activePromptByIndex(index));
 
@@ -51,6 +52,7 @@ export default function useSubmitMessage() {
         overrideConvoId: appendIndex(rootIndex, overrideConvoId),
         overrideUserMessageId: appendIndex(rootIndex, overrideUserMessageId),
         clientTimestamp,
+        anonymize: anonymizeEnabled,
       });
 
       if (hasAdded) {
@@ -60,6 +62,7 @@ export default function useSubmitMessage() {
             overrideConvoId: appendIndex(addedIndex, overrideConvoId),
             overrideUserMessageId: appendIndex(addedIndex, overrideUserMessageId),
             clientTimestamp,
+            anonymize: anonymizeEnabled,
           },
           { overrideMessages: rootMessages },
         );
