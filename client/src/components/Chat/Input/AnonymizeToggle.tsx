@@ -2,13 +2,19 @@ import React from 'react';
 import { useRecoilState } from 'recoil';
 import { TooltipAnchor, LockIcon } from '@librechat/client';
 import { useLocalize } from '~/hooks';
+import { useGetStartupConfig } from '~/data-provider';
 import { cn } from '~/utils';
 import store from '~/store';
 
 const AnonymizeToggle = ({ disabled }: { disabled?: boolean | null }) => {
   const localize = useLocalize();
+  const { data: startupConfig } = useGetStartupConfig();
   const [anonymizeEnabled, setAnonymizeEnabled] = useRecoilState(store.anonymizeEnabled);
   const isAnonymizeDisabled = disabled ?? false;
+
+  if (!startupConfig?.anonymizeConfig?.enabled) {
+    return null;
+  }
 
   return (
     <TooltipAnchor
