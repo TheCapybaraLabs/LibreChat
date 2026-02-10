@@ -74,6 +74,11 @@ services:
       - CHECK_BALANCE=${CHECK_BALANCE:-false}
       - START_BALANCE=${START_BALANCE:-1000000}
       - JINA_API_KEY=${JINA_API_KEY}
+      # Blurry Configuration
+      - BLURRY_BASE_URL=${BLURRY_BASE_URL}
+      - BLURRY_API_KEY=${BLURRY_API_KEY}
+      - BLURRY_TIMEOUT_MS=${BLURRY_TIMEOUT_MS:-10000}
+      - BLURRY_FAIL_CLOSED=${BLURRY_FAIL_CLOSED:-true}
     volumes:
       - ../files/images:/app/client/public/images
       - ../files/uploads:/app/uploads
