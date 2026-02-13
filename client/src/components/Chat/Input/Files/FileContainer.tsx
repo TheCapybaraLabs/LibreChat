@@ -20,6 +20,8 @@ const FileContainer = ({
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }) => {
   const fileType = getFileType(overrideType ?? file.type);
+  const isAnonymizedPdf =
+    (overrideType ?? file.type) === 'application/pdf' && file.metadata?.anonymized;
 
   return (
     <div
@@ -44,6 +46,11 @@ const FileContainer = ({
               <div className="truncate text-text-secondary" title={fileType.title}>
                 {fileType.title}
               </div>
+              {isAnonymizedPdf && (
+                <div className="mt-1 inline-flex rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-600">
+                  PDF anonimizado
+                </div>
+              )}
             </div>
           </div>
         </div>

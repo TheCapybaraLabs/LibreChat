@@ -20,6 +20,12 @@ export interface IMongoFile extends Omit<Document, 'model'> {
   height?: number;
   metadata?: {
     fileIdentifier?: string;
+    anonymized?: boolean;
+    anonymization_level?: string;
+    stats?: Record<string, unknown>;
+    processing_ms_total?: number;
+    chunks_count?: number;
+    entities_by_chunk?: Array<{ chunk_index: number; entities: unknown[] }>;
   };
   expiresAt?: Date;
   createdAt?: Date;

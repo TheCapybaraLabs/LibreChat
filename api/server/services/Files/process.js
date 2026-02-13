@@ -1,4 +1,5 @@
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const mime = require('mime');
 const { v4 } = require('uuid');
@@ -36,6 +37,8 @@ const { LB_QueueAsyncCall } = require('~/server/utils/queue');
 const { getStrategyFunctions } = require('./strategies');
 const { determineFileType } = require('~/server/utils');
 const { STTService } = require('./Audio/STTService');
+const { extractPdfText } = require('~/server/utils/pdfText');
+const { anonymizeLargeText } = require('~/server/utils/anonymizeLargeText');
 
 /**
  * Creates a modular file upload wrapper that ensures filename sanitization
@@ -58,6 +61,45 @@ const createSanitizedUploadWrapper = (uploadFunction) => {
 
     return uploadFunction({ req, file: sanitizedFile, file_id, ...restParams });
   };
+};
+
+const shouldAnonymizeRequest = (req) => {
+  const value = req?.body?.anonymize;
+  return value === true || value === 'true';
+};
+
+const buildAnonymizeMetadata = (result) => ({
+  anonymized: true,
+  anonymization_level: 'full',
+  stats: result.stats,
+  processing_ms_total: result.processingMsTotal,
+  chunks_count: result.chunksCount,
+  entities_by_chunk: result.entitiesByChunk,
+});
+
+const anonymizePdfFromUpload = async (req, file) => {
+  const failClosed = process.env.BLURRY_FAIL_CLOSED !== 'false';
+
+  try {
+    const { text } = await extractPdfText({ filePath: file.path });
+    if (!text) {
+      throw new Error('PDF sem texto selecionável; OCR não habilitado.');
+    }
+
+    const result = await anonymizeLargeText(text);
+    return {
+      anonymizedText: result.anonymizedText,
+      anonymizeMetadata: buildAnonymizeMetadata(result),
+    };
+  } catch (error) {
+    logger.error('[anonymizePdfFromUpload] Failed to anonymize PDF', error);
+    if (failClosed) {
+      throw new Error(
+        'Falha na anonimização do PDF. O envio foi bloqueado por segurança.',
+      );
+    }
+    return null;
+  }
 };
 
 /**
@@ -432,6 +474,10 @@ const processFileUpload = async ({ req, res, metadata }) => {
   }
 
   const { file } = req;
+  const shouldAnonymize = shouldAnonymizeRequest(req);
+  const isPdf = file.mimetype === 'application/pdf';
+  const anonymizeResult =
+    shouldAnonymize && isPdf ? await anonymizePdfFromUpload(req, file) : null;
   const sanitizedUploadFn = createSanitizedUploadWrapper(handleFileUpload);
   const {
     id,
@@ -484,6 +530,8 @@ const processFileUpload = async ({ req, res, metadata }) => {
       context: isAssistantUpload ? FileContext.assistants : FileContext.message_attachment,
       model: isAssistantUpload ? req.body.model : undefined,
       type: file.mimetype,
+      text: anonymizeResult?.anonymizedText,
+      metadata: anonymizeResult?.anonymizeMetadata,
       embedded,
       source,
       height,
@@ -509,6 +557,10 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
   const { file } = req;
   const appConfig = req.config;
   const { agent_id, tool_resource, file_id, temp_file_id = null } = metadata;
+  const shouldAnonymize = shouldAnonymizeRequest(req);
+  const isPdf = file.mimetype === 'application/pdf';
+  const anonymizeResult =
+    shouldAnonymize && isPdf ? await anonymizePdfFromUpload(req, file) : null;
 
   let messageAttachment = !!metadata.message_file;
 
@@ -528,6 +580,9 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
   let fileInfoMetadata;
   const entity_id = messageAttachment === true ? undefined : agent_id;
   const basePath = mime.getType(file.originalname)?.startsWith('image') ? 'images' : 'uploads';
+  if (anonymizeResult?.anonymizeMetadata) {
+    fileInfoMetadata = anonymizeResult.anonymizeMetadata;
+  }
   if (tool_resource === EToolResources.execute_code) {
     const isCodeEnabled = await checkCapability(req, AgentCapabilities.execute_code);
     if (!isCodeEnabled) {
@@ -561,7 +616,7 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
      * @param {string} params.type
      * @return {Promise<void>}
      */
-    const createTextFile = async ({ text, bytes, filepath, type = 'text/plain' }) => {
+    const createTextFile = async ({ text, bytes, filepath, type = 'text/plain', metadata }) => {
       const fileInfo = removeNullishValues({
         text,
         bytes,
@@ -574,6 +629,7 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
         filename: file.originalname,
         model: messageAttachment ? undefined : req.body.model,
         context: messageAttachment ? FileContext.message_attachment : FileContext.agents,
+        metadata,
       });
 
       if (!messageAttachment && tool_resource) {
@@ -637,6 +693,16 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
       throw new Error(`File type ${file.mimetype} is not supported for text parsing.`);
     }
 
+    if (anonymizeResult?.anonymizedText) {
+      const bytes = Buffer.byteLength(anonymizeResult.anonymizedText, 'utf8');
+      return await createTextFile({
+        text: anonymizeResult.anonymizedText,
+        bytes,
+        type: file.mimetype,
+        metadata: anonymizeResult.anonymizeMetadata,
+      });
+    }
+
     const { text, bytes } = await parseText({ req, file, file_id });
     return await createTextFile({ text, bytes, type: file.mimetype });
   }
@@ -645,6 +711,8 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
   let storageResult, embeddingResult;
   const isImageFile = file.mimetype.startsWith('image');
   const source = getFileStrategy(appConfig, { isImage: isImageFile });
+  const anonymizeMetadata = anonymizeResult?.anonymizeMetadata;
+  const anonymizeText = anonymizeResult?.anonymizedText;
 
   if (tool_resource === EToolResources.file_search) {
     // FIRST: Upload to Storage for permanent backup (S3/local/etc.)
@@ -661,15 +729,39 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
     // SECOND: Upload to Vector DB
     const { uploadVectors } = require('./VectorDB/crud');
 
-    embeddingResult = await uploadVectors({
-      req,
-      file,
-      file_id,
-      entity_id,
-    });
+    let vectorFile = file;
+    let tempFilePath;
+    if (anonymizeText) {
+      const tempName = `${file_id}-anonymized.txt`;
+      tempFilePath = path.join(os.tmpdir(), tempName);
+      await fs.promises.writeFile(tempFilePath, anonymizeText, 'utf8');
+      vectorFile = {
+        ...file,
+        path: tempFilePath,
+        originalname: tempName,
+        mimetype: 'text/plain',
+        size: Buffer.byteLength(anonymizeText, 'utf8'),
+      };
+    }
+
+    try {
+      embeddingResult = await uploadVectors({
+        req,
+        file: vectorFile,
+        file_id,
+        entity_id,
+        storageMetadata: anonymizeMetadata ?? undefined,
+      });
+    } finally {
+      if (tempFilePath) {
+        fs.promises.unlink(tempFilePath).catch((error) => {
+          logger.warn('[processAgentFileUpload] Failed to cleanup temp file', error);
+        });
+      }
+    }
 
     // Vector status will be stored at root level, no need for metadata
-    fileInfoMetadata = {};
+    fileInfoMetadata = anonymizeMetadata ?? {};
   } else {
     // Standard single storage for non-RAG files
     const { handleFileUpload } = getStrategyFunctions(source);
@@ -723,6 +815,7 @@ const processAgentFileUpload = async ({ req, res, metadata }) => {
     model: messageAttachment ? undefined : req.body.model,
     metadata: fileInfoMetadata,
     type: file.mimetype,
+    text: anonymizeResult?.anonymizedText,
     embedded,
     source,
     height,

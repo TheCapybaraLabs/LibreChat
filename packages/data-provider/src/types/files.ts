@@ -114,7 +114,15 @@ export type TFile = {
   height?: number;
   expiresAt?: string | Date;
   preview?: string;
-  metadata?: { fileIdentifier?: string };
+  metadata?: {
+    fileIdentifier?: string;
+    anonymized?: boolean;
+    anonymization_level?: string;
+    stats?: Record<string, unknown>;
+    processing_ms_total?: number;
+    chunks_count?: number;
+    entities_by_chunk?: Array<{ chunk_index: number; entities: unknown[] }>;
+  };
   createdAt?: string | Date;
   updatedAt?: string | Date;
 };

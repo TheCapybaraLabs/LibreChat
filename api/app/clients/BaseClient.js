@@ -1264,8 +1264,18 @@ class BaseClient {
    * @returns {Promise<void>}
    */
   async addFileContextToMessage(message, attachments) {
+    const shouldAnonymize =
+      this.options?.req?.body?.anonymize === true || this.options?.req?.body?.anonymize === 'true';
+    const normalizedAttachments = shouldAnonymize
+      ? attachments.map((file) =>
+          file?.metadata?.anonymized && file?.text
+            ? { ...file, source: FileSources.text }
+            : file,
+        )
+      : attachments;
+
     const fileContext = await extractFileContext({
-      attachments,
+      attachments: normalizedAttachments,
       req: this.options?.req,
       tokenCountFn: (text) => countTokens(text),
     });
@@ -1284,6 +1294,9 @@ class BaseClient {
     };
 
     const allFiles = [];
+    const shouldAnonymize =
+      this.options?.req?.body?.anonymize === true || this.options?.req?.body?.anonymize === 'true';
+    const failClosed = process.env.BLURRY_FAIL_CLOSED !== 'false';
 
     for (const file of attachments) {
       /** @type {FileSources} */
@@ -1293,6 +1306,16 @@ class BaseClient {
         continue;
       }
       if (file.embedded === true || file.metadata?.fileIdentifier != null) {
+        allFiles.push(file);
+        continue;
+      }
+
+      if (file.type === 'application/pdf' && shouldAnonymize) {
+        if (!file.metadata?.anonymized && failClosed) {
+          throw new Error(
+            `PDF anexado requer anonimização; faça upload com "Anonimizar" ativo.`,
+          );
+        }
         allFiles.push(file);
         continue;
       }

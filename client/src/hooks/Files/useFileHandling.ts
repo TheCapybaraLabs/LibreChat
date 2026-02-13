@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { v4 } from 'uuid';
-import { useSetRecoilState } from 'recoil';
+import { useSetRecoilState, useRecoilValue } from 'recoil';
 import { useToastContext } from '@librechat/client';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -24,6 +24,7 @@ import { ephemeralAgentByConvoId } from '~/store';
 import { logger, validateFiles } from '~/utils';
 import useClientResize from './useClientResize';
 import useUpdateFiles from './useUpdateFiles';
+import store from '~/store';
 
 type UseFileHandling = {
   fileSetter?: FileSetter;
@@ -47,6 +48,7 @@ const useFileHandling = (params?: UseFileHandling) => {
     params?.fileSetter ?? setFiles,
   );
   const { resizeImageIfNeeded } = useClientResize();
+  const anonymizeEnabled = useRecoilValue(store.anonymizeEnabled);
 
   const agent_id = params?.additionalMetadata?.agent_id ?? '';
   const assistant_id = params?.additionalMetadata?.assistant_id ?? '';
@@ -164,6 +166,7 @@ const useFileHandling = (params?: UseFileHandling) => {
     formData.append('endpointType', endpointType ?? '');
     formData.append('file', extendedFile.file as File, encodeURIComponent(filename));
     formData.append('file_id', extendedFile.file_id);
+    formData.append('anonymize', anonymizeEnabled ? 'true' : 'false');
 
     const width = extendedFile.width ?? 0;
     const height = extendedFile.height ?? 0;

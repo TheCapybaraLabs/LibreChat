@@ -69,6 +69,12 @@ const file: Schema<IMongoFile> = new Schema(
     height: Number,
     metadata: {
       fileIdentifier: String,
+      anonymized: Boolean,
+      anonymization_level: String,
+      stats: Schema.Types.Mixed,
+      processing_ms_total: Number,
+      chunks_count: Number,
+      entities_by_chunk: Schema.Types.Mixed,
     },
     expiresAt: {
       type: Date,
