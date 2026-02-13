@@ -3,7 +3,7 @@ const { logger } = require('@librechat/data-schemas');
 
 const blurryClient = {
   anonymizeText: async (text, level = 'full', return_entities = true) => {
-    const baseURL = process.env.BLURRY_BASE_URL || 'https://9a39-138-255-244-234.ngrok-free.app';
+    const baseURL = process.env.BLURRY_BASE_URL;
     const apiKey = process.env.BLURRY_API_KEY;
     const timeout = Number(process.env.BLURRY_TIMEOUT_MS) || 10000;
 

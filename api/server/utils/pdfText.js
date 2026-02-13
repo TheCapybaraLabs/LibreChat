@@ -3,7 +3,7 @@ const { logger } = require('@librechat/data-schemas');
 
 let pdfjsLib;
 try {
-  pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+  pdfjsLib = require('pdfjs-dist/legacy/build/pdf.mjs');
 } catch (error) {
   pdfjsLib = null;
 }
