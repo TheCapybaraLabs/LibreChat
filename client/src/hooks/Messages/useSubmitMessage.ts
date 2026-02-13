@@ -71,6 +71,7 @@ export default function useSubmitMessage() {
     },
     [
       ask,
+      anonymizeEnabled,
       methods,
       addedIndex,
       addedConvo,
