@@ -21,7 +21,12 @@ async function anonymizeMessage(req, res, next) {
       return next();
     }
 
-    const result = await blurryClient.anonymizeText(text);
+    const result = await blurryClient.anonymizeText({
+      text,
+      policy: 'default',
+      anonymization_level: 'full',
+      return_entities: true,
+    });
     
     // Replace original text with anonymized version
     req.body.text = result.anonymized_text;
