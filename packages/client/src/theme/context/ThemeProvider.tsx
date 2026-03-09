@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useCallback, useState, useRef } from 'react';
-import { IThemeRGB } from '../types';
+import { IThemeRGB, IThemeSet } from '../types';
 import applyTheme from '../utils/applyTheme';
 
 const THEME_KEY = 'color-theme';
@@ -28,6 +28,7 @@ export const ThemeContext = createContext<ThemeContextType>({
 export interface ThemeProviderProps {
   children: React.ReactNode;
   themeRGB?: IThemeRGB;
+  themeSet?: IThemeSet;
   themeName?: string;
   initialTheme?: string;
 }
@@ -113,6 +114,7 @@ const getInitialThemeName = (): string | undefined => {
 export function ThemeProvider({
   children,
   themeRGB: propThemeRGB,
+  themeSet: propThemeSet,
   themeName: propThemeName,
   initialTheme,
 }: ThemeProviderProps) {
@@ -122,6 +124,7 @@ export function ThemeProvider({
 
   // Track if props have been initialized
   const initialized = useRef(false);
+  const themeSetRef = useRef<IThemeSet | undefined>(propThemeSet);
 
   const setTheme = useCallback((newTheme: string) => {
     setThemeState(newTheme);
@@ -171,8 +174,15 @@ export function ThemeProvider({
       setTheme(initialTheme);
     }
 
-    // Set initial theme colors if provided
-    if (propThemeRGB) {
+    // Set initial theme colors — themeSet takes priority over themeRGB
+    if (propThemeSet) {
+      themeSetRef.current = propThemeSet;
+      const initialDark = initialTheme ? isDark(initialTheme) : isDark(getInitialTheme());
+      const initialColors = initialDark ? propThemeSet.dark : propThemeSet.light;
+      if (initialColors) {
+        setThemeRGB(initialColors);
+      }
+    } else if (propThemeRGB) {
       setThemeRGB(propThemeRGB);
     }
 
@@ -180,7 +190,7 @@ export function ThemeProvider({
     if (propThemeName) {
       setThemeName(propThemeName);
     }
-  }, [initialTheme, propThemeRGB, propThemeName, setTheme, setThemeRGB, setThemeName]);
+  }, [initialTheme, propThemeRGB, propThemeSet, propThemeName, setTheme, setThemeRGB, setThemeName]);
 
   // Apply class-based dark mode
   const applyThemeMode = useCallback((currentTheme: string) => {
@@ -215,6 +225,15 @@ export function ThemeProvider({
       applyTheme(themeRGB);
     }
   }, [themeRGB]);
+
+  // Switch color variant when mode changes (if themeSet is provided)
+  useEffect(() => {
+    if (!themeSetRef.current) return;
+    const colors = isDark(theme) ? themeSetRef.current.dark : themeSetRef.current.light;
+    if (colors) {
+      setThemeRGB(colors);
+    }
+  }, [theme, setThemeRGB]);
 
   // Reset theme function
   const resetTheme = useCallback(() => {
