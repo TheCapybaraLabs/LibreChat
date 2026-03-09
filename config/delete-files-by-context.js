@@ -40,8 +40,12 @@ const connect = require('./connect');
   }
 
   if (!context) {
-    console.orange('Usage: node config/delete-files-by-context.js <context> [--dry-run] [--delete-physical]');
-    console.orange('Available contexts: assistants, agents, execute_code, image_generation, message_attachment');
+    console.orange(
+      'Usage: node config/delete-files-by-context.js <context> [--dry-run] [--delete-physical]',
+    );
+    console.orange(
+      'Available contexts: assistants, agents, execute_code, image_generation, message_attachment',
+    );
     console.orange('Flags:');
     console.orange('  --dry-run          Show what would be deleted without actually deleting');
     console.orange('  --delete-physical  Also delete physical files from disk (use with caution!)');
@@ -75,7 +79,7 @@ const connect = require('./connect');
   }
 
   console.purple(`Found ${files.length} files with context: ${context}`);
-  
+
   // Show sample of files
   const sampleSize = Math.min(5, files.length);
   console.purple('\nSample of files to be deleted:');
@@ -116,21 +120,22 @@ const connect = require('./connect');
     try {
       await File.deleteOne({ _id: file._id });
       dbDeleteCount++;
-      
+
       // Delete physical file if flag is set
       if (deletePhysicalFiles && file.filepath) {
         try {
           // Only attempt to delete local files (source is 'local' or undefined for legacy records)
           const isLocalFile = !file.source || file.source === 'local';
-          const isNotUrl = !file.filepath.startsWith('http://') && !file.filepath.startsWith('https://');
-          
+          const isNotUrl =
+            !file.filepath.startsWith('http://') && !file.filepath.startsWith('https://');
+
           if (isLocalFile && isNotUrl) {
             // Construct absolute path - filepath might be relative or absolute
             let fullPath = file.filepath;
             if (!path.isAbsolute(fullPath)) {
               fullPath = path.resolve(__dirname, '..', fullPath);
             }
-            
+
             // Check if file exists before attempting deletion
             try {
               await fs.access(fullPath);
@@ -142,11 +147,15 @@ const connect = require('./connect');
               console.orange(`  ✓ Deleted from DB: ${file.filename} (Physical file not found)`);
             }
           } else {
-            console.orange(`  ✓ Deleted: ${file.filename} (DB only - Remote file: ${file.source || 'unknown'})`);
+            console.orange(
+              `  ✓ Deleted: ${file.filename} (DB only - Remote file: ${file.source || 'unknown'})`,
+            );
           }
         } catch (fsError) {
           physicalErrorCount++;
-          console.orange(`  ✓ Deleted from DB: ${file.filename} (Physical deletion error: ${fsError.message})`);
+          console.orange(
+            `  ✓ Deleted from DB: ${file.filename} (Physical deletion error: ${fsError.message})`,
+          );
         }
       } else {
         console.purple(`  ✓ Deleted: ${file.filename}`);
@@ -157,11 +166,15 @@ const connect = require('./connect');
     }
   }
 
-  console.green(`\n✓ Database deletion completed: ${dbDeleteCount} successful, ${dbErrorCount} failed`);
+  console.green(
+    `\n✓ Database deletion completed: ${dbDeleteCount} successful, ${dbErrorCount} failed`,
+  );
   if (deletePhysicalFiles) {
-    console.green(`✓ Physical file deletion: ${physicalDeleteCount} successful, ${physicalErrorCount} failed`);
+    console.green(
+      `✓ Physical file deletion: ${physicalDeleteCount} successful, ${physicalErrorCount} failed`,
+    );
   }
-  
+
   silentExit(0);
 })();
 
