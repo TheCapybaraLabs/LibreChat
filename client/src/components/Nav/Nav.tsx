@@ -214,7 +214,7 @@ const Nav = memo(
           )}
         </>
       ),
-      [hasAccessToBookmarks, tags, startupConfig, isSmallScreen, toggleNavVisible],
+      [hasAccessToBookmarks, tags, localize, isSmallScreen, toggleNavVisible],
     );
 
     const [isSearchLoading, setIsSearchLoading] = useState(

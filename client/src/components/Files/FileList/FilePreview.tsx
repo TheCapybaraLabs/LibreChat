@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import React, { useState } from 'react';
 import { TFile } from 'librechat-data-provider/dist/types';
 import { CheckMark, TrashIcon, Button } from '@librechat/client';
@@ -38,10 +39,10 @@ const tempVectorStoresAttached: TVectorStore[] = [
 ];
 
 export default function FilePreview() {
-  const [file, setFile] = useState(tempFile);
-  const [threads, setThreads] = useState(tempThreads);
-  const [vectorStoresAttached, setVectorStoresAttached] = useState(tempVectorStoresAttached);
-  const params = useParams();
+  const [file, _setFile] = useState(tempFile);
+  const [threads, _setThreads] = useState(tempThreads);
+  const [vectorStoresAttached, _setVectorStoresAttached] = useState(tempVectorStoresAttached);
+  const _params = useParams();
 
   return (
     <div className="m-3 bg-white p-2 sm:p-4 md:p-6 lg:p-10">

@@ -7,8 +7,11 @@ export default function Google({
   size?: number;
   className?: string;
 }) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const unit = '41';
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const height = size;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const width = size;
   return (
     <svg

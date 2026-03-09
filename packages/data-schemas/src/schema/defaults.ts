@@ -1,6 +1,5 @@
 import { Schema } from 'mongoose';
 
-// @ts-ignore
 export const conversationPreset = {
   endpoint: {
     type: String,

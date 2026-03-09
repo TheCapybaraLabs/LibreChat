@@ -216,6 +216,7 @@ export default function VectorStoreSidePanel() {
     <div className="flex flex-col">
       <div className="m-3 flex max-h-[10vh] flex-col">
         <h2 className="text-lg">
+          {/* eslint-disable-next-line i18next/no-literal-string */}
           <strong>Vector Stores</strong>
         </h2>
         <div className="m-1 mt-2 flex w-full flex-row justify-between gap-x-2 lg:m-0">

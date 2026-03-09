@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable react-hooks/rules-of-hooks, i18next/no-literal-string */
 import { PlusIcon } from 'lucide-react';
 import { Button, Checkbox, DotsIcon, FileIcon } from '@librechat/client';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -53,7 +53,7 @@ export const fileTableColumns: ColumnDef<TFile>[] = [
       size: '150px',
     },
     accessorKey: 'filename',
-    header: ({ column }) => {
+    header: ({ column: _column }) => {
       const localize = useLocalize();
       return <>{localize('com_ui_name')}</>;
     },
@@ -100,7 +100,7 @@ export const fileTableColumns: ColumnDef<TFile>[] = [
   {
     accessorKey: 'updatedAt',
     header: () => {
-      const localize = useLocalize();
+      const _localize = useLocalize();
       return 'Modified';
     },
     cell: ({ row }) => formatDate(row.original.updatedAt),
@@ -110,7 +110,7 @@ export const fileTableColumns: ColumnDef<TFile>[] = [
     header: () => {
       return 'Actions';
     },
-    cell: ({ row }) => {
+    cell: ({ row: _row }) => {
       return (
         <>
           <Button className="w-min content-center bg-transparent text-gray-500 hover:bg-slate-200">
