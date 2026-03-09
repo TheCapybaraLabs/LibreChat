@@ -11,7 +11,7 @@ function Footer({ startupConfig }: { startupConfig: TStartupConfig | null | unde
 
   const privacyPolicyRender = privacyPolicy?.externalUrl && (
     <a
-      className="text-brand-footer text-sm"
+      className="text-sm text-brand-footer"
       href={privacyPolicy.externalUrl}
       target={privacyPolicy.openNewTab ? '_blank' : undefined}
       rel="noreferrer"
@@ -22,7 +22,7 @@ function Footer({ startupConfig }: { startupConfig: TStartupConfig | null | unde
 
   const termsOfServiceRender = termsOfService?.externalUrl && (
     <a
-      className="text-brand-footer text-sm"
+      className="text-sm text-brand-footer"
       href={termsOfService.externalUrl}
       target={termsOfService.openNewTab ? '_blank' : undefined}
       rel="noreferrer"

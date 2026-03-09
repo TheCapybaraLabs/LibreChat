@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useEffect, useMemo, useCallback, useState, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useCallback,
+  useState,
+  useRef,
+} from 'react';
 import { IThemeRGB, IThemeSet } from '../types';
 import applyTheme from '../utils/applyTheme';
 
@@ -190,7 +198,15 @@ export function ThemeProvider({
     if (propThemeName) {
       setThemeName(propThemeName);
     }
-  }, [initialTheme, propThemeRGB, propThemeSet, propThemeName, setTheme, setThemeRGB, setThemeName]);
+  }, [
+    initialTheme,
+    propThemeRGB,
+    propThemeSet,
+    propThemeName,
+    setTheme,
+    setThemeRGB,
+    setThemeName,
+  ]);
 
   // Apply class-based dark mode
   const applyThemeMode = useCallback((currentTheme: string) => {

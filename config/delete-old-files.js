@@ -60,7 +60,9 @@ const connect = require('./connect');
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysNum);
 
-  console.purple(`Searching for files older than ${daysNum} days (before ${cutoffDate.toISOString()})`);
+  console.purple(
+    `Searching for files older than ${daysNum} days (before ${cutoffDate.toISOString()})`,
+  );
   if (dryRun) {
     console.orange('DRY RUN MODE - No files will be deleted');
   }
@@ -150,8 +152,9 @@ const connect = require('./connect');
         try {
           // Only attempt to delete local files (source is 'local' or undefined for legacy records)
           const isLocalFile = !file.source || file.source === 'local';
-          const isNotUrl = !file.filepath.startsWith('http://') && !file.filepath.startsWith('https://');
-          
+          const isNotUrl =
+            !file.filepath.startsWith('http://') && !file.filepath.startsWith('https://');
+
           if (isLocalFile && isNotUrl) {
             // Construct absolute path - filepath might be relative or absolute
             let fullPath = file.filepath;
@@ -167,10 +170,12 @@ const connect = require('./connect');
             } catch (accessError) {
               physicalErrorCount++;
             }
-            
+
             if (dbDeleteCount % 10 === 0) {
               // Show progress every 10 files
-              console.purple(`  Progress: ${dbDeleteCount}/${files.length} (Physical: ${physicalDeleteCount})`);
+              console.purple(
+                `  Progress: ${dbDeleteCount}/${files.length} (Physical: ${physicalDeleteCount})`,
+              );
             }
           } else {
             physicalSkipCount++;
@@ -191,9 +196,13 @@ const connect = require('./connect');
     }
   }
 
-  console.green(`\n✓ Database deletion completed: ${dbDeleteCount} successful, ${dbErrorCount} failed`);
+  console.green(
+    `\n✓ Database deletion completed: ${dbDeleteCount} successful, ${dbErrorCount} failed`,
+  );
   if (deletePhysicalFiles) {
-    console.green(`✓ Physical file deletion: ${physicalDeleteCount} successful, ${physicalErrorCount} failed/not found, ${physicalSkipCount} skipped (URLs)`);
+    console.green(
+      `✓ Physical file deletion: ${physicalDeleteCount} successful, ${physicalErrorCount} failed/not found, ${physicalSkipCount} skipped (URLs)`,
+    );
   }
 
   silentExit(0);

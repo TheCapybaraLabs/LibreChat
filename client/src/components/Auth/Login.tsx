@@ -105,7 +105,7 @@ function Login() {
           {localize('com_auth_no_account')}{' '}
           <a
             href={registerPage()}
-            className="text-brand-primary hover:text-brand-primary-hover dark:text-brand-primary dark:hover:text-brand-primary-hover inline-flex p-1 text-sm font-medium transition-colors"
+            className="inline-flex p-1 text-sm font-medium text-brand-primary transition-colors hover:text-brand-primary-hover dark:text-brand-primary dark:hover:text-brand-primary-hover"
           >
             {localize('com_auth_sign_up')}
           </a>

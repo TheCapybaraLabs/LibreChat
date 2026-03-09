@@ -23,7 +23,11 @@ import {
   useLocalStorage,
   useNavScrolling,
 } from '~/hooks';
-import { useConversationsInfiniteQuery, useTitleGeneration, useGetStartupConfig } from '~/data-provider';
+import {
+  useConversationsInfiniteQuery,
+  useTitleGeneration,
+  useGetStartupConfig,
+} from '~/data-provider';
 import { Conversations } from '~/components/Conversations';
 import SearchBar from './SearchBar';
 import NewChat from './NewChat';
@@ -192,7 +196,7 @@ const Nav = memo(
         <>
           <div className="mr-1 mt-1 h-8 w-8 items-center">
             <img
-              src='/assets/developers-logo.svg'
+              src="/assets/developers-logo.svg"
               className="w-full items-center"
               alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
             />
