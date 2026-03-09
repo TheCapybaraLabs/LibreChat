@@ -388,4 +388,16 @@ export default [
       ],
     },
   },
+  {
+    // **Tests configuration block**
+    files: ['./src/tests/**/*.ts'],
+    languageOptions: {
+      parser: tsParser,
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      parserOptions: {
+        project: false,
+      },
+    },
+  },
 ];

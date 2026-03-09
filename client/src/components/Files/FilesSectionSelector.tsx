@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+/* eslint-disable i18next/no-literal-string */
+import React from 'react';
 import { Button } from '../ui';
 import { useLocation, useNavigate } from 'react-router-dom';
 

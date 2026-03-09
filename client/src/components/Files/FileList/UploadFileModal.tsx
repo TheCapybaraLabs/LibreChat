@@ -1,13 +1,14 @@
+/* eslint-disable i18next/no-literal-string */
 import React, { useState, ChangeEvent } from 'react';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input } from '@librechat/client';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
 const UploadFileModal = ({ open, onOpenChange }) => {
-  const localize = useLocalize();
-  const [file, setFile] = useState<File | null>(null);
+  const _localize = useLocalize();
+  const [_file, setFile] = useState<File | null>(null);
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const _handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);

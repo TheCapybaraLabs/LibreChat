@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import React, { useState } from 'react';
 import DeleteIconButton from '../DeleteIconButton';
 import { TrashIcon, Button } from '@librechat/client';
@@ -92,10 +93,10 @@ const tempAssistants = [
 
 export default function VectorStorePreview() {
   const [open, setOpen] = useState(false);
-  const [vectorStore, setVectorStore] = useState(tempVectorStore);
-  const [filesAttached, setFilesAttached] = useState(tempFilesAttached);
-  const [assistants, setAssistants] = useState(tempAssistants);
-  const params = useParams();
+  const [vectorStore, _setVectorStore] = useState(tempVectorStore);
+  const [filesAttached, _setFilesAttached] = useState(tempFilesAttached);
+  const [assistants, _setAssistants] = useState(tempAssistants);
+  const _params = useParams();
 
   return (
     <div className="m-3 ml-1 mr-7 bg-white p-2 sm:p-4 md:p-6 lg:p-10">

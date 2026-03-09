@@ -1,5 +1,6 @@
 import type { TFile } from 'librechat-data-provider';
 import type { ExtendedFile } from '~/common';
+import { useLocalize } from '~/hooks';
 import { getFileType, cn } from '~/utils';
 import FilePreview from './FilePreview';
 import RemoveFile from './RemoveFile';
@@ -19,6 +20,7 @@ const FileContainer = ({
   onDelete?: () => void;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }) => {
+  const localize = useLocalize();
   const fileType = getFileType(overrideType ?? file.type);
 
   return (

@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 export const accounts = [
   {
     label: 'Alicia Koch',
