@@ -42,7 +42,6 @@ function MCPToolSelectDialog({
   const [isSavingCustomVars, setIsSavingCustomVars] = useState(false);
   const [isInitializing, setIsInitializing] = useState<string | null>(null);
   const [configuringServer, setConfiguringServer] = useState<string | null>(null);
-
   const {
     maxPage,
     setMaxPage,

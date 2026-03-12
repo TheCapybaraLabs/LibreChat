@@ -203,10 +203,10 @@ function ConvoOptions({
             aria-label={localize('com_nav_convo_menu_options')}
             aria-readonly={undefined}
             className={cn(
-              'inline-flex h-7 w-7 items-center justify-center gap-2 rounded-md border-none p-0 text-sm font-medium ring-ring-primary transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50',
+              'inline-flex h-7 w-7 items-center justify-center rounded-lg border p-0 text-sm font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 disabled:opacity-50',
               isActiveConvo === true || isPopoverActive
-                ? 'opacity-100'
-                : 'opacity-0 focus:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 data-[open]:opacity-100',
+                ? 'opacity-100 [background:var(--sidebar-search-bg)] [border-color:var(--sidebar-item-active-border)]'
+                : 'opacity-0 [background:transparent] [border-color:transparent] focus:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 data-[open]:opacity-100 group-hover:[background:var(--sidebar-search-bg)] group-hover:[border-color:var(--sidebar-shell-border)]',
             )}
             onClick={(e: MouseEvent<HTMLButtonElement>) => {
               e.stopPropagation();
@@ -216,8 +216,14 @@ function ConvoOptions({
                 e.stopPropagation();
               }
             }}
-          >
-            <Ellipsis className="icon-md text-text-secondary" aria-hidden={true} />
+            >
+            <Ellipsis
+              className={cn(
+                'icon-md transition-colors',
+                isActiveConvo || isPopoverActive ? 'icon-accent' : 'text-text-secondary',
+              )}
+              aria-hidden={true}
+            />
           </Menu.MenuButton>
         }
         items={dropdownItems}

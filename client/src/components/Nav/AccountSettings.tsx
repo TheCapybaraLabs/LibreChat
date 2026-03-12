@@ -1,12 +1,13 @@
 import { useState, memo } from 'react';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useSetRecoilState } from 'recoil';
 import * as Select from '@ariakit/react/select';
-import { FileText, LogOut } from 'lucide-react';
-import { LinkIcon, GearIcon, DropdownMenuSeparator, Avatar } from '@librechat/client';
+import { ChevronDown, FileText, LogOut } from 'lucide-react';
+import { LinkIcon, GearIcon, Avatar } from '@librechat/client';
 import { useGetStartupConfig, useGetUserBalance } from '~/data-provider';
 import FilesView from '~/components/Chat/Input/Files/FilesView';
 import { useAuthContext } from '~/hooks/AuthContext';
 import { useLocalize } from '~/hooks';
+import { cn } from '~/utils';
 import Settings from './Settings';
 import store from '~/store';
 
@@ -19,79 +20,119 @@ function AccountSettings() {
   });
   const [showSettings, setShowSettings] = useState(false);
   const [showFiles, setShowFiles] = useRecoilState(store.showFiles);
+  const requestCloseRightSidePanel = useSetRecoilState(store.rightSidePanelCloseNonce);
+  const displayName = user?.name ?? user?.username ?? localize('com_nav_user');
+  const email = user?.email ?? localize('com_nav_user');
+  const menuItemClass = cn(
+    'group relative flex w-full select-item items-center gap-2 rounded-xl px-2.5 py-2 text-sm text-text-primary transition-colors duration-150',
+    'data-[active-item]:[background:var(--sidebar-item-hover)] data-[active-item]:text-text-primary',
+  );
+  const logoutItemClass = cn(
+    menuItemClass,
+    'text-red-600 dark:text-red-400 data-[active-item]:bg-red-500/10 data-[active-item]:text-red-700 dark:data-[active-item]:text-red-300',
+  );
 
   return (
     <Select.SelectProvider>
       <Select.Select
         aria-label={localize('com_nav_account_settings')}
         data-testid="nav-user"
-        className="mt-text-sm flex h-auto w-full items-center gap-2 rounded-xl p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover"
+        className={cn(
+          'group flex w-full items-center gap-2 rounded-xl border p-2 text-sm transition-all duration-200 ease-in-out',
+          '[background:var(--sidebar-search-bg)] [border-color:var(--sidebar-shell-border)]',
+          'hover:[background:var(--sidebar-item-hover)]',
+        )}
       >
-        <div className="-ml-0.9 -mt-0.8 h-8 w-8 flex-shrink-0">
-          <div className="relative flex">
-            <Avatar user={user} size={32} />
-          </div>
+        <div className="ring-border-light/70 relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ring-1">
+          <Avatar user={user} size={32} />
         </div>
-        <div
-          className="mt-2 grow overflow-hidden text-ellipsis whitespace-nowrap text-left text-text-primary"
-          style={{ marginTop: '0', marginLeft: '0' }}
-        >
-          {user?.name ?? user?.username ?? localize('com_nav_user')}
+        <div className="min-w-0 grow overflow-hidden text-left">
+          <p className="truncate text-sm font-medium text-text-primary">{displayName}</p>
+          <p className="truncate text-xs text-text-secondary">{email}</p>
         </div>
+        <ChevronDown
+          className="h-4 w-4 flex-shrink-0 text-text-secondary transition-transform duration-200 group-aria-expanded:rotate-180"
+          aria-hidden="true"
+        />
       </Select.Select>
       <Select.SelectPopover
-        className="popover-ui w-[235px]"
+        className={cn(
+          'popover-ui w-[min(235px,calc(100vw-1rem))] rounded-2xl border p-1.5',
+          '[border-color:var(--sidebar-shell-border)]',
+          '[background:linear-gradient(165deg,var(--sidebar-shell-bg)_0%,var(--sidebar-shell-bg-alt)_62%,var(--sidebar-shell-bg)_100%)]',
+          'shadow-[0_18px_38px_-30px_var(--sidebar-shell-glow)] backdrop-blur-md',
+        )}
         style={{
           transformOrigin: 'bottom',
-          marginRight: '0px',
-          translate: '0px',
         }}
       >
-        <div className="text-token-text-secondary ml-3 mr-2 py-2 text-sm" role="note">
-          {user?.email ?? localize('com_nav_user')}
-        </div>
-        <DropdownMenuSeparator />
+        {/* <div
+          className="mb-1 flex items-center gap-2 rounded-xl border px-2.5 py-2 [background:var(--sidebar-search-bg)] [border-color:var(--sidebar-shell-border)]"
+          role="note"
+        >
+          <Avatar user={user} size={30} />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-text-primary">{displayName}</p>
+            <p className="truncate text-xs text-text-secondary">{email}</p>
+          </div>
+        </div> */}
         {startupConfig?.balance?.enabled === true && balanceQuery.data != null && (
-          <>
-            <div className="text-token-text-secondary ml-3 mr-2 py-2 text-sm" role="note">
-              {localize('com_nav_balance')}:{' '}
+          <div
+            className="mx-1 mb-1 flex items-center justify-between rounded-xl border px-2.5 py-2 [border-color:var(--sidebar-shell-border)] [background:var(--sidebar-footer-bg)]"
+            role="note"
+          >
+            <span className="text-xs font-medium text-text-secondary">
+              {localize('com_nav_balance')}
+            </span>
+            <span className="text-sm font-semibold text-text-primary">
               {new Intl.NumberFormat().format(Math.round(balanceQuery.data.tokenCredits))}
-            </div>
-            <DropdownMenuSeparator />
-          </>
+            </span>
+          </div>
         )}
         <Select.SelectItem
-          value=""
-          onClick={() => setShowFiles(true)}
-          className="select-item text-sm"
+          value="files"
+          onClick={() => {
+            requestCloseRightSidePanel((value) => value + 1);
+            setShowFiles(true);
+          }}
+          className={menuItemClass}
         >
-          <FileText className="icon-md" aria-hidden="true" />
+          <FileText className="icon-md text-text-secondary" aria-hidden="true" />
           {localize('com_nav_my_files')}
         </Select.SelectItem>
-        {startupConfig?.helpAndFaqURL !== '/' && (
+        {startupConfig?.helpAndFaqURL != null && startupConfig.helpAndFaqURL !== '/' && (
           <Select.SelectItem
-            value=""
-            onClick={() => window.open(startupConfig?.helpAndFaqURL, '_blank')}
-            className="select-item text-sm"
+            value="help"
+            onClick={() => {
+              requestCloseRightSidePanel((value) => value + 1);
+              window.open(startupConfig.helpAndFaqURL, '_blank', 'noopener,noreferrer');
+            }}
+            className={menuItemClass}
           >
             <LinkIcon aria-hidden="true" />
             {localize('com_nav_help_faq')}
           </Select.SelectItem>
         )}
         <Select.SelectItem
-          value=""
-          onClick={() => setShowSettings(true)}
-          className="select-item text-sm"
+          value="settings"
+          onClick={() => {
+            requestCloseRightSidePanel((value) => value + 1);
+            setShowSettings(true);
+          }}
+          className={menuItemClass}
         >
-          <GearIcon className="icon-md" aria-hidden="true" />
+          <GearIcon className="icon-md text-text-secondary" aria-hidden="true" />
           {localize('com_nav_settings')}
         </Select.SelectItem>
-        <DropdownMenuSeparator />
+        <div className="bg-border-light/70 mx-1 my-1 h-px" role="none" />
         <Select.SelectItem
           aria-selected={true}
-          onClick={() => logout()}
+          onClick={() => {
+            requestCloseRightSidePanel((value) => value + 1);
+            logout();
+          }}
           value="logout"
-          className="select-item text-sm"
+          className={logoutItemClass}
         >
           <LogOut className="icon-md" />
           {localize('com_nav_log_out')}

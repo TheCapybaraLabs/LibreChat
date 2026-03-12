@@ -30,16 +30,18 @@ export const CustomMenu = React.forwardRef<HTMLDivElement, CustomMenuProps>(func
 ) {
   const parent = Ariakit.useMenuContext();
   const searchable = searchValue != null || !!onSearch || !!combobox;
+  const menuPlacement = parent ? 'right-start' : 'bottom';
 
   const menuStore = Ariakit.useMenuStore({
     showTimeout: 100,
-    placement: parent ? 'right' : 'left',
+    placement: menuPlacement,
     defaultOpen: defaultOpen,
   });
 
   const element = (
     <Ariakit.MenuProvider store={menuStore} values={values} setValues={onValuesChange}>
       <Ariakit.MenuButton
+        store={menuStore}
         ref={ref}
         {...props}
         className={cn(
@@ -56,13 +58,14 @@ export const CustomMenu = React.forwardRef<HTMLDivElement, CustomMenuProps>(func
         <Ariakit.MenuButtonArrow className="stroke-1 text-base opacity-75" />
       </Ariakit.MenuButton>
       <Ariakit.Menu
-        open={menuStore.useState('open')}
+        store={menuStore}
+        placement={menuPlacement}
         portal
         overlap
         unmountOnHide
         gutter={parent ? -4 : 4}
         className={cn(
-          `${parent ? 'animate-popover-left ml-3' : 'animate-popover'} outline-none! z-50 flex max-h-[min(450px,var(--popover-available-height))] w-full`,
+          `${parent ? 'animate-popover-left ml-3' : 'animate-popover'} outline-none! z-50 flex max-h-[min(450px,var(--popover-available-height))]`,
           'w-[var(--menu-width,auto)] min-w-[300px] flex-col overflow-auto rounded-xl border border-border-light',
           'bg-surface-secondary px-3 py-2 text-sm text-text-primary shadow-lg',
           'max-w-[calc(100vw-4rem)] sm:max-h-[calc(65vh)] sm:max-w-[400px]',

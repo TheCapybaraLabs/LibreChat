@@ -30,7 +30,6 @@ export default function SharePointPickerDialog({
 }: SharePointPickerDialogProps) {
   const [containerNode, setContainerNode] = useState<HTMLDivElement | null>(null);
   const localize = useLocalize();
-
   const { openSharePointPicker, closeSharePointPicker, cleanup } = useSharePointPicker({
     containerNode,
     onFilesSelected,

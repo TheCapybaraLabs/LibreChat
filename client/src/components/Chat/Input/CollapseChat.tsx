@@ -41,9 +41,9 @@ const CollapseChat = ({
             )}
           >
             {isCollapsed ? (
-              <ChevronUp className="h-full w-full" />
+              <ChevronUp className="h-4 w-4 text-text-secondary" />
             ) : (
-              <ChevronDown className="h-full w-full" />
+              <ChevronDown className="h-4 w-4 text-text-secondary" />
             )}
           </button>
         }

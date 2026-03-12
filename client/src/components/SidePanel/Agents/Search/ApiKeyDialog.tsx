@@ -38,7 +38,6 @@ export default function ApiKeyDialog({
 }) {
   const localize = useLocalize();
   const { data: config } = useGetStartupConfig();
-
   const [selectedProvider, setSelectedProvider] = useState(
     config?.webSearch?.searchProvider || SearchProviders.SERPER,
   );

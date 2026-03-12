@@ -27,7 +27,13 @@ function getTextSizeClass(text: string | undefined | null) {
   return 'text-lg sm:text-md';
 }
 
-export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: boolean }) {
+export default function Landing({
+  centerFormOnLanding,
+  compact = false,
+}: {
+  centerFormOnLanding: boolean;
+  compact?: boolean;
+}) {
   const { conversation } = useChatContext();
   const agentsMap = useAgentsMapContext();
   const assistantMap = useAssistantsMapContext();
@@ -143,9 +149,14 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
       ? getGreeting()
       : getGreeting() + (user?.name ? ', ' + user.name : '');
 
+  const rootHeightClass = compact
+    ? 'h-auto w-full justify-start pb-0'
+    : 'h-full justify-center pb-16';
+  const rootMarginClass = compact ? 'mb-0' : getDynamicMargin;
+
   return (
     <div
-      className={`flex h-full transform-gpu flex-col items-center justify-center pb-16 transition-all duration-200 ${centerFormOnLanding ? 'max-h-full sm:max-h-0' : 'max-h-full'} ${getDynamicMargin}`}
+      className={`flex transform-gpu flex-col items-center transition-all duration-200 ${rootHeightClass} ${centerFormOnLanding ? 'max-h-full sm:max-h-0' : 'max-h-full'} ${rootMarginClass}`}
     >
       <div ref={contentRef} className="flex flex-col items-center gap-0 p-2">
         <div

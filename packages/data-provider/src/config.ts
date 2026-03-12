@@ -521,6 +521,10 @@ const mcpServersSchema = z.object({
 
 export type TMcpServersConfig = z.infer<typeof mcpServersSchema>;
 
+const newChatAgentShortcutSchema = z.object({
+  agentId: z.string().min(1),
+});
+
 export const interfaceSchema = z
   .object({
     privacyPolicy: z
@@ -531,6 +535,7 @@ export const interfaceSchema = z
       .optional(),
     termsOfService: termsOfServiceSchema.optional(),
     customWelcome: z.string().optional(),
+    newChatAgentShortcut: newChatAgentShortcutSchema.optional(),
     mcpServers: mcpServersSchema.optional(),
     endpointsMenu: z.boolean().optional(),
     modelSelect: z.boolean().optional(),

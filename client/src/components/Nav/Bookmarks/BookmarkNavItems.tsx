@@ -1,8 +1,10 @@
 import { type FC } from 'react';
+import { useSetRecoilState } from 'recoil';
 import { CrossCircledIcon } from '@radix-ui/react-icons';
 import { useBookmarkContext } from '~/Providers/BookmarkContext';
 import { BookmarkItems, BookmarkItem } from '~/components/Bookmarks';
 import { useLocalize } from '~/hooks';
+import store from '~/store';
 
 const BookmarkNavItems: FC<{
   tags: string[];
@@ -10,6 +12,7 @@ const BookmarkNavItems: FC<{
 }> = ({ tags = [], setTags }) => {
   const { bookmarks } = useBookmarkContext();
   const localize = useLocalize();
+  const requestCloseRightSidePanel = useSetRecoilState(store.rightSidePanelCloseNonce);
 
   const getUpdatedSelected = (tag: string) => {
     if (tags.some((selectedTag) => selectedTag === tag)) {
@@ -25,11 +28,13 @@ const BookmarkNavItems: FC<{
     }
     const updatedSelected = getUpdatedSelected(tag);
     setTags(updatedSelected);
+    requestCloseRightSidePanel((value) => value + 1);
     return;
   };
 
   const clear = () => {
     setTags([]);
+    requestCloseRightSidePanel((value) => value + 1);
     return;
   };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useRecoilValue } from 'recoil';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { useParams } from 'react-router-dom';
 import { Constants } from 'librechat-data-provider';
 import { useToastContext, useMediaQuery } from '@librechat/client';
@@ -30,6 +30,7 @@ export default function Conversation({ conversation, retainView, toggleNav }: Co
   const currentConvoId = useMemo(() => params.conversationId, [params.conversationId]);
   const updateConvoMutation = useUpdateConversationMutation(currentConvoId ?? '');
   const activeConvos = useRecoilValue(store.allConversationsSelector);
+  const requestCloseRightSidePanel = useSetRecoilState(store.rightSidePanelCloseNonce);
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
   const { conversationId, title = '' } = conversation;
 
@@ -95,6 +96,8 @@ export default function Conversation({ conversation, retainView, toggleNav }: Co
   };
 
   const handleNavigation = (ctrlOrMetaKey: boolean) => {
+    requestCloseRightSidePanel((value) => value + 1);
+
     if (ctrlOrMetaKey) {
       toggleNav();
       const baseUrl = window.location.origin;
@@ -132,8 +135,10 @@ export default function Conversation({ conversation, retainView, toggleNav }: Co
   return (
     <div
       className={cn(
-        'group relative flex h-12 w-full items-center rounded-lg transition-colors duration-200 md:h-9',
-        isActiveConvo ? 'bg-surface-active-alt' : 'hover:bg-surface-active-alt',
+        'group relative flex h-12 w-full items-center overflow-hidden rounded-xl border transition-all duration-200 md:h-10',
+        isActiveConvo
+          ? '[background:var(--sidebar-item-active)] [border-color:var(--sidebar-item-active-border)] shadow-[0_12px_26px_-22px_var(--sidebar-shell-glow)]'
+          : 'border-transparent hover:[background:var(--sidebar-item-hover)] hover:[border-color:var(--sidebar-shell-border)]',
       )}
       role="button"
       tabIndex={renaming ? -1 : 0}
@@ -158,6 +163,12 @@ export default function Conversation({ conversation, retainView, toggleNav }: Co
       style={{ cursor: renaming ? 'default' : 'pointer' }}
       data-testid="convo-item"
     >
+      <div
+        className={cn(
+          'pointer-events-none absolute bottom-1.5 left-[2px] top-1.5 w-[2px] rounded-full transition-opacity duration-200 [background:linear-gradient(180deg,var(--nu-purple-300),var(--nu-purple-600))]',
+          isActiveConvo ? 'opacity-100' : 'opacity-0 group-hover:opacity-65',
+        )}
+      />
       {renaming ? (
         <RenameForm
           titleInput={titleInput}
@@ -186,8 +197,8 @@ export default function Conversation({ conversation, retainView, toggleNav }: Co
         className={cn(
           'mr-2 flex origin-left',
           isPopoverActive || isActiveConvo
-            ? 'pointer-events-auto max-w-[28px] scale-x-100 opacity-100'
-            : 'pointer-events-none max-w-0 scale-x-0 opacity-0 group-focus-within:pointer-events-auto group-focus-within:max-w-[28px] group-focus-within:scale-x-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:max-w-[28px] group-hover:scale-x-100 group-hover:opacity-100',
+            ? 'pointer-events-auto max-w-[34px] scale-x-100 opacity-100'
+            : 'pointer-events-none max-w-0 scale-x-0 opacity-0 group-focus-within:pointer-events-auto group-focus-within:max-w-[34px] group-focus-within:scale-x-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:max-w-[34px] group-hover:scale-x-100 group-hover:opacity-100',
         )}
         aria-hidden={!(isPopoverActive || isActiveConvo)}
       >

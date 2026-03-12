@@ -33,7 +33,6 @@ function ChatView({ index = 0 }: { index?: number }) {
   const { conversationId } = useParams();
   const rootSubmission = useRecoilValue(store.submissionByIndex(index));
   const addedSubmission = useRecoilValue(store.submissionByIndex(index + 1));
-  const centerFormOnLanding = useRecoilValue(store.centerFormOnLanding);
 
   const fileMap = useFileMapContext();
 
@@ -71,7 +70,7 @@ function ChatView({ index = 0 }: { index?: number }) {
   } else if (!isLandingPage) {
     content = <MessagesView messagesTree={messagesTree} />;
   } else {
-    content = <Landing centerFormOnLanding={centerFormOnLanding} />;
+    content = <Landing centerFormOnLanding={false} compact />;
   }
 
   return (
@@ -81,28 +80,26 @@ function ChatView({ index = 0 }: { index?: number }) {
           <Presentation>
             <div className="flex h-full w-full flex-col">
               {!isLoading && <Header />}
-              <>
-                <div
-                  className={cn(
-                    'flex flex-col',
-                    isLandingPage
-                      ? 'flex-1 items-center justify-end sm:justify-center'
-                      : 'h-full overflow-y-auto',
-                  )}
-                >
-                  {content}
-                  <div
-                    className={cn(
-                      'w-full',
-                      isLandingPage && 'max-w-3xl transition-all duration-200 xl:max-w-4xl',
-                    )}
-                  >
+              {isLandingPage ? (
+                <div className="flex h-full flex-col">
+                  <div className="flex flex-1 flex-col items-center justify-center gap-2 pt-2 sm:gap-3">
+                    {content}
+                    <ConversationStarters />
+                  </div>
+                  <div className="mx-auto w-full max-w-3xl transition-all duration-200 xl:max-w-4xl">
                     <ChatForm index={index} />
-                    {isLandingPage ? <ConversationStarters /> : <Footer />}
+                  </div>
+                  <Footer />
+                </div>
+              ) : (
+                <div className={cn('flex flex-col', 'h-full overflow-y-auto')}>
+                  {content}
+                  <div className={cn('w-full')}>
+                    <ChatForm index={index} />
+                    <Footer />
                   </div>
                 </div>
-                {isLandingPage && <Footer />}
-              </>
+              )}
             </div>
           </Presentation>
         </AddedChatContext.Provider>

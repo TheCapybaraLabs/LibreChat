@@ -28,6 +28,9 @@ cache: true
 # Custom interface configuration
 interface:
   customWelcome: 'Welcome to LibreChat! Enjoy your experience.'
+  # Optional: replace the "Project Ideas" starter card with an agent shortcut
+  # newChatAgentShortcut:
+  #   agentId: "agent_xxxxxxxxxxxxx"
   # Enable/disable file search as a chatarea selection (default: true)
   # Note: This setting does not disable the Agents File Search Capability.
   # To disable the Agents Capability, see the Agents Endpoint configuration instead.

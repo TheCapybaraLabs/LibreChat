@@ -1,7 +1,8 @@
 import React, { forwardRef } from 'react';
 import { useWatch } from 'react-hook-form';
 import type { Control } from 'react-hook-form';
-import { SendIcon, TooltipAnchor } from '@librechat/client';
+import { Button } from '@librechat/client';
+import { CircleArrowUp } from 'lucide-react';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
@@ -13,27 +14,24 @@ type SendButtonProps = {
 const SubmitButton = React.memo(
   forwardRef((props: { disabled: boolean }, ref: React.ForwardedRef<HTMLButtonElement>) => {
     const localize = useLocalize();
+    const label = localize('com_ui_submit');
+
     return (
-      <TooltipAnchor
-        description={localize('com_nav_send_message')}
-        render={
-          <button
-            ref={ref}
-            aria-label={localize('com_nav_send_message')}
-            id="send-button"
-            disabled={props.disabled}
-            className={cn(
-              'rounded-full bg-text-primary p-1.5 text-text-primary outline-offset-4 transition-all duration-200 disabled:cursor-not-allowed disabled:text-text-secondary disabled:opacity-10',
-            )}
-            data-testid="send-button"
-            type="submit"
-          >
-            <span className="" data-state="closed">
-              <SendIcon size={24} />
-            </span>
-          </button>
-        }
-      />
+      <Button
+        ref={ref}
+        variant="submit"
+        aria-label={label}
+        id="send-button"
+        disabled={props.disabled}
+        className={cn(
+          'focus:shadow-outline focus:brand-border flex h-9 w-9 items-center justify-center rounded-full border p-0 font-medium transition-all duration-200 [border-color:var(--sidebar-shell-border)] hover:bg-surface-submit-hover sm:w-auto sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2',
+        )}
+        data-testid="send-button"
+        type="submit"
+      >
+        <span className="hidden sm:inline">{label}</span>
+        <CircleArrowUp className="h-4 w-4" />
+      </Button>
     );
   }),
 );
@@ -41,7 +39,7 @@ const SubmitButton = React.memo(
 const SendButton = React.memo(
   forwardRef((props: SendButtonProps, ref: React.ForwardedRef<HTMLButtonElement>) => {
     const data = useWatch({ control: props.control });
-    return <SubmitButton ref={ref} disabled={props.disabled || !data.text} />;
+    return <SubmitButton ref={ref} disabled={props.disabled || !data.text?.trim()} />;
   }),
 );
 

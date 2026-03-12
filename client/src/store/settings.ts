@@ -7,6 +7,7 @@ import type { TOptionSettings } from '~/common';
 const staticAtoms = {
   abortScroll: atom<boolean>({ key: 'abortScroll', default: false }),
   showFiles: atom<boolean>({ key: 'showFiles', default: false }),
+  rightSidePanelCloseNonce: atom<number>({ key: 'rightSidePanelCloseNonce', default: 0 }),
   optionSettings: atom<TOptionSettings>({ key: 'optionSettings', default: {} }),
   showPluginStoreDialog: atom<boolean>({ key: 'showPluginStoreDialog', default: false }),
   showAgentSettings: atom<boolean>({ key: 'showAgentSettings', default: false }),

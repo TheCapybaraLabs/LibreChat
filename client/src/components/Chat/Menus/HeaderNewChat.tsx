@@ -1,6 +1,7 @@
 import { QueryKeys } from 'librechat-data-provider';
 import { useQueryClient } from '@tanstack/react-query';
-import { TooltipAnchor, Button, NewChatIcon } from '@librechat/client';
+import { TooltipAnchor, Button } from '@librechat/client';
+import { MessageCirclePlus } from 'lucide-react';
 import { useChatContext } from '~/Providers';
 import { clearMessagesCache } from '~/utils';
 import { useLocalize } from '~/hooks';
@@ -25,14 +26,15 @@ export default function HeaderNewChat() {
       description={localize('com_ui_new_chat')}
       render={
         <Button
-          size="icon"
+          size="default"
           variant="outline"
           data-testid="wide-header-new-chat-button"
           aria-label={localize('com_ui_new_chat')}
-          className="rounded-xl border border-border-light bg-surface-secondary p-2 hover:bg-surface-hover max-md:hidden"
+          className="rounded-xl border border-border-light bg-surface-secondary p-3 hover:bg-surface-hover max-md:hidden"
           onClick={clickHandler}
         >
-          <NewChatIcon />
+          {localize('com_ui_new_conversation')}
+          <MessageCirclePlus className="icon-md text-text-primary" />
         </Button>
       }
     />

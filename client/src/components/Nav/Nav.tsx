@@ -1,27 +1,27 @@
 import { useCallback, useEffect, useState, useMemo, memo, lazy, Suspense, useRef } from 'react';
-import { useRecoilValue } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMediaQuery } from '@librechat/client';
-import { PermissionTypes, Permissions } from 'librechat-data-provider';
 import type { ConversationListResponse } from 'librechat-data-provider';
+import { PermissionTypes, Permissions } from 'librechat-data-provider';
 import type { InfiniteQueryObserverResult } from '@tanstack/react-query';
 import {
   useLocalize,
-  useHasAccess,
   useAuthContext,
   useLocalStorage,
   useNavScrolling,
+  useHasAccess,
 } from '~/hooks';
 import { useConversationsInfiniteQuery, useGetStartupConfig } from '~/data-provider';
 import { Conversations } from '~/components/Conversations';
 import SearchBar from './SearchBar';
+import AgentMarketplaceButton from './AgentMarketplaceButton';
+import BookmarkNav from './Bookmarks/BookmarkNav';
 import NewChat from './NewChat';
 import { cn } from '~/utils';
 import store from '~/store';
 
-const BookmarkNav = lazy(() => import('./Bookmarks/BookmarkNav'));
 const AccountSettings = lazy(() => import('./AccountSettings'));
-const AgentMarketplaceButton = lazy(() => import('./AgentMarketplaceButton'));
 
 const NAV_WIDTH_DESKTOP = '260px';
 const NAV_WIDTH_MOBILE = '320px';
@@ -62,21 +62,22 @@ const Nav = memo(
     const isSmallScreen = useMediaQuery('(max-width: 768px)');
     const [newUser, setNewUser] = useLocalStorage('newUser', true);
     const [showLoading, setShowLoading] = useState(false);
-    const [tags, setTags] = useState<string[]>([]);
 
     const brandLogoSrc = import.meta.env.VITE_BRAND_LOGO;
 
+    const search = useRecoilValue(store.search);
+    const [selectedConversationTags, setSelectedConversationTags] = useRecoilState(
+      store.selectedConversationTags,
+    );
     const hasAccessToBookmarks = useHasAccess({
       permissionType: PermissionTypes.BOOKMARKS,
       permission: Permissions.USE,
     });
 
-    const search = useRecoilValue(store.search);
-
     const { data, fetchNextPage, isFetchingNextPage, isLoading, isFetching, refetch } =
       useConversationsInfiniteQuery(
         {
-          tags: tags.length === 0 ? undefined : tags,
+          tags: selectedConversationTags.length === 0 ? undefined : selectedConversationTags,
           search: search.debouncedQuery || undefined,
         },
         {
@@ -130,6 +131,14 @@ const Nav = memo(
       }
     }, [isSmallScreen, toggleNavVisible]);
 
+    const closeNavOnMobile = useCallback(() => {
+      if (!isSmallScreen) {
+        return;
+      }
+      localStorage.setItem('navVisible', JSON.stringify(false));
+      setNavVisible(false);
+    }, [isSmallScreen, setNavVisible]);
+
     useEffect(() => {
       if (isSmallScreen) {
         const savedNavVisible = localStorage.getItem('navVisible');
@@ -144,7 +153,7 @@ const Nav = memo(
 
     useEffect(() => {
       refetch();
-    }, [tags, refetch]);
+    }, [selectedConversationTags, refetch]);
 
     const loadMoreConversations = useCallback(() => {
       if (isFetchingNextPage || !computedHasNextPage) {
@@ -155,34 +164,42 @@ const Nav = memo(
     }, [isFetchingNextPage, computedHasNextPage, fetchNextPage]);
 
     const subHeaders = useMemo(
-      () => search.enabled === true && <SearchBar isSmallScreen={isSmallScreen} />,
-      [search.enabled, isSmallScreen],
+      () => (
+        <>
+          <AgentMarketplaceButton isSmallScreen={isSmallScreen} toggleNav={closeNavOnMobile} />
+          {hasAccessToBookmarks === true && (
+            <BookmarkNav
+              tags={selectedConversationTags}
+              setTags={(tags) => setSelectedConversationTags(tags)}
+              isSmallScreen={isSmallScreen}
+            />
+          )}
+          <div className="rounded-xl border px-0.5 py-0.5 [background:var(--sidebar-search-bg)] [border-color:var(--sidebar-shell-border)]">
+            {search.enabled === true && <SearchBar isSmallScreen={isSmallScreen} />}
+          </div>
+        </>
+      ),
+      [
+        closeNavOnMobile,
+        hasAccessToBookmarks,
+        isSmallScreen,
+        search.enabled,
+        selectedConversationTags,
+        setSelectedConversationTags,
+      ],
     );
 
     const headerButtons = useMemo(
       () => (
-        <>
-          <div className="mr-1 mt-1 h-8 w-8 items-center">
-            <img
-              src='/assets/developers-logo.svg'
-              className="w-full items-center"
-              alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
-            />
-          </div>
-          <Suspense fallback={null}>
-            <AgentMarketplaceButton isSmallScreen={isSmallScreen} toggleNav={toggleNavVisible} />
-          </Suspense>
-          {hasAccessToBookmarks && (
-            <>
-              <div className="mt-1.5" />
-              <Suspense fallback={null}>
-                <BookmarkNav tags={tags} setTags={setTags} isSmallScreen={isSmallScreen} />
-              </Suspense>
-            </>
-          )}
-        </>
+        <div className="mr-1 flex h-10 w-10 items-center justify-center rounded-lg border [background:var(--sidebar-search-bg)] [border-color:var(--sidebar-shell-border)]">
+          <img
+            src="/assets/developers-logo.svg"
+            className="h-8 w-8 object-contain"
+            alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
+          />
+        </div>
       ),
-      [hasAccessToBookmarks, tags, isSmallScreen, toggleNavVisible],
+      [localize],
     );
 
     const [isSearchLoading, setIsSearchLoading] = useState(
@@ -206,7 +223,7 @@ const Nav = memo(
             <motion.div
               data-testid="nav"
               className={cn(
-                'nav active max-w-[320px] flex-shrink-0 overflow-x-hidden bg-surface-primary-alt',
+                'nav active relative max-w-[320px] flex-shrink-0 overflow-x-hidden border-r shadow-[0_20px_40px_-30px_var(--sidebar-shell-glow)] backdrop-blur-md [border-color:var(--sidebar-shell-border)] [background:linear-gradient(165deg,var(--sidebar-shell-bg)_0%,var(--sidebar-shell-bg-alt)_62%,var(--sidebar-shell-bg)_100%)]',
                 'md:max-w-[260px]',
               )}
               initial={{ width: 0 }}
@@ -215,12 +232,15 @@ const Nav = memo(
               transition={{ duration: 0.2 }}
               key="nav"
             >
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-[2px] [background:linear-gradient(180deg,var(--nu-purple-300),var(--nu-purple-600))]" />
+              <div className="pointer-events-none absolute left-[-34px] top-[-20px] h-24 w-44 rounded-full bg-[var(--sidebar-shell-glow)] blur-3xl" />
+
               <div className="h-full w-[320px] md:w-[260px]">
                 <div className="flex h-full flex-col">
                   <nav
                     id="chat-history-nav"
                     aria-label={localize('com_ui_chat_history')}
-                    className="flex h-full flex-col px-2 pb-3.5 md:px-3"
+                    className="relative z-10 flex h-full flex-col px-2 pb-3.5 pt-2 md:px-3"
                   >
                     <div className="flex flex-1 flex-col" ref={outerContainerRef}>
                       <MemoNewChat
@@ -242,7 +262,7 @@ const Nav = memo(
                     {brandLogoSrc ? (
                       <img
                         src={brandLogoSrc}
-                        className="mb-2 flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active-alt dark:hover:bg-surface-hover-alt"
+                        className="mb-2 flex h-12 w-full items-center gap-2 rounded-xl border object-contain p-2 text-sm transition-all duration-200 ease-in-out [border-color:var(--sidebar-shell-border)] [background:var(--sidebar-footer-bg)] hover:[background:var(--sidebar-item-hover)]"
                         alt={startupConfig?.appTitle ?? 'Chat IA'}
                       />
                     ) : null}

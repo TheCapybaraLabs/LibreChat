@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import type { FC } from 'react';
-import { TooltipAnchor } from '@librechat/client';
+import { Button, TooltipAnchor } from '@librechat/client';
 import { Menu, MenuButton, MenuItems } from '@headlessui/react';
-import { BookmarkFilledIcon, BookmarkIcon } from '@radix-ui/react-icons';
+import { Star } from 'lucide-react';
 import { BookmarkContext } from '~/Providers/BookmarkContext';
 import { useGetConversationTags } from '~/data-provider';
 import BookmarkNavItems from './BookmarkNavItems';
@@ -15,9 +15,10 @@ type BookmarkNavProps = {
   isSmallScreen: boolean;
 };
 
-const BookmarkNav: FC<BookmarkNavProps> = ({ tags, setTags, isSmallScreen }: BookmarkNavProps) => {
+const BookmarkNav: FC<BookmarkNavProps> = ({ tags, setTags }: BookmarkNavProps) => {
   const localize = useLocalize();
   const { data } = useGetConversationTags();
+  const hasActiveFilters = tags.length > 0;
   const label = useMemo(
     () => (tags.length > 0 ? tags.join(', ') : localize('com_ui_bookmarks')),
     [tags, localize],
@@ -25,47 +26,50 @@ const BookmarkNav: FC<BookmarkNavProps> = ({ tags, setTags, isSmallScreen }: Boo
 
   return (
     <Menu as="div" className="group relative">
-      {({ open }) => (
-        <>
-          <TooltipAnchor
-            description={label}
-            render={
-              <MenuButton
-                id="bookmark-menu-button"
-                aria-label={localize('com_ui_bookmarks')}
-                className={cn(
-                  'flex items-center justify-center',
-                  'size-10 border-none text-text-primary hover:bg-accent hover:text-accent-foreground',
-                  'rounded-full border-none p-2 hover:bg-surface-hover md:rounded-xl',
-                  open ? 'bg-surface-hover' : '',
-                )}
-                data-testid="bookmark-menu"
-              >
-                {tags.length > 0 ? (
-                  <BookmarkFilledIcon className="icon-lg text-text-primary" aria-hidden="true" />
-                ) : (
-                  <BookmarkIcon className="icon-lg text-text-primary" aria-hidden="true" />
-                )}
-              </MenuButton>
-            }
-          />
-          <MenuItems
-            anchor="bottom"
-            className="absolute left-0 top-full z-[100] mt-1 w-60 translate-y-0 overflow-hidden rounded-lg bg-surface-secondary p-1.5 shadow-lg outline-none"
-          >
-            {data && (
-              <BookmarkContext.Provider value={{ bookmarks: data.filter((tag) => tag.count > 0) }}>
-                <BookmarkNavItems
-                  // List of selected tags(string)
-                  tags={tags}
-                  // When a user selects a tag, this `setTags` function is called to refetch the list of conversations for the selected tag
-                  setTags={setTags}
-                />
-              </BookmarkContext.Provider>
+      <TooltipAnchor
+        description={label}
+        render={
+          <MenuButton
+            as={Button}
+            id="bookmark-menu-button"
+            size="default"
+            variant="outline"
+            data-testid="bookmark-menu"
+            aria-label={localize('com_ui_bookmarks')}
+            className={cn(
+              'w-full rounded-xl border p-3 transition-all duration-200',
+              'border-border-light bg-surface-secondary hover:bg-surface-hover',
+              hasActiveFilters
+                ? '[border-color:var(--sidebar-item-active-border)] [background:var(--sidebar-item-hover)]'
+                : '',
             )}
-          </MenuItems>
-        </>
-      )}
+          >
+            <Star
+              className={cn(
+                'icon-md text-text-primary',
+                hasActiveFilters ? 'fill-current text-[var(--sidebar-item-active-border)]' : '',
+              )}
+              aria-hidden="true"
+            />
+            {localize('com_ui_bookmarks')}
+          </MenuButton>
+        }
+      />
+      <MenuItems
+        anchor="bottom"
+        className="absolute left-0 top-full z-[100] mt-1 w-60 translate-y-0 overflow-hidden rounded-lg bg-surface-secondary p-1.5 shadow-lg outline-none"
+      >
+        {data && (
+          <BookmarkContext.Provider value={{ bookmarks: data.filter((tag) => tag.count > 0) }}>
+            <BookmarkNavItems
+              // List of selected tags(string)
+              tags={tags}
+              // When a user selects a tag, this `setTags` function is called to refetch the list of conversations for the selected tag
+              setTags={setTags}
+            />
+          </BookmarkContext.Provider>
+        )}
+      </MenuItems>
     </Menu>
   );
 };

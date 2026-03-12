@@ -1,37 +1,32 @@
-import { TooltipAnchor } from '@librechat/client';
+import { Button } from '@librechat/client';
+import { CircleStop } from 'lucide-react';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
-export default function StopButton({ stop, setShowStopButton }) {
+type StopButtonProps = {
+  stop: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  setShowStopButton: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+export default function StopButton({ stop, setShowStopButton }: StopButtonProps) {
   const localize = useLocalize();
+  const label = localize('com_ui_stop');
 
   return (
-    <TooltipAnchor
-      description={localize('com_nav_stop_generating')}
-      render={
-        <button
-          type="button"
-          className={cn(
-            'rounded-full bg-text-primary p-1.5 text-text-primary outline-offset-4 transition-all duration-200 disabled:cursor-not-allowed disabled:text-text-secondary disabled:opacity-10',
-          )}
-          aria-label={localize('com_nav_stop_generating')}
-          onClick={(e) => {
-            setShowStopButton(false);
-            stop(e);
-          }}
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="icon-lg text-surface-primary"
-          >
-            <rect x="7" y="7" width="10" height="10" rx="1.25" fill="currentColor"></rect>
-          </svg>
-        </button>
-      }
-    ></TooltipAnchor>
+    <Button
+      type="button"
+      variant="submit"
+      className={cn(
+        'focus:shadow-outline focus:brand-border flex h-9 w-9 items-center justify-center rounded-full border p-0 font-medium transition-all duration-200 [border-color:var(--sidebar-shell-border)] hover:bg-surface-submit-hover sm:w-auto sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2',
+      )}
+      aria-label={localize('com_nav_stop_generating')}
+      onClick={(e) => {
+        setShowStopButton(false);
+        stop(e);
+      }}
+    >
+      <span className="hidden sm:inline">{label}</span>
+      <CircleStop className="h-4 w-4" />
+    </Button>
   );
 }

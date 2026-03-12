@@ -33,7 +33,7 @@ import {
   getEndpointFileConfig,
   type TFile,
 } from 'librechat-data-provider';
-import { useFileMapContext, useChatContext } from '~/Providers';
+import { useFileMapContext, useChatContext, useRightSidePanel } from '~/Providers';
 import { useLocalize, useUpdateFiles } from '~/hooks';
 import { useGetFileConfig } from '~/data-provider';
 import store from '~/store';
@@ -50,6 +50,7 @@ export default function DataTable<TData, TValue>({ columns, data }: DataTablePro
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [{ pageIndex, pageSize }, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const setShowFiles = useSetRecoilState(store.showFiles);
+  const { closeSidePanel } = useRightSidePanel();
 
   const pagination = useMemo(
     () => ({
@@ -179,6 +180,12 @@ export default function DataTable<TData, TValue>({ columns, data }: DataTablePro
   );
 
   const filenameFilter = table.getColumn('filename')?.getFilterValue() as string;
+  const handleManageFiles = useCallback(() => {
+    closeSidePanel();
+    window.setTimeout(() => {
+      setShowFiles(true);
+    }, 200);
+  }, [closeSidePanel, setShowFiles]);
 
   return (
     <div role="region" aria-label={localize('com_files_table')} className="mt-2 space-y-2">
@@ -290,7 +297,7 @@ export default function DataTable<TData, TValue>({ columns, data }: DataTablePro
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowFiles(true)}
+          onClick={handleManageFiles}
           aria-label={localize('com_sidepanel_manage_files')}
         >
           <ArrowUpLeft className="h-4 w-4" aria-hidden="true" />

@@ -21,8 +21,8 @@ const ConvoLink: React.FC<ConvoLinkProps> = ({
   return (
     <div
       className={cn(
-        'flex grow items-center gap-2 overflow-hidden rounded-lg px-2',
-        isActiveConvo ? 'bg-surface-active-alt' : '',
+        'flex grow items-center gap-2 overflow-hidden rounded-[0.72rem] px-2.5 py-1',
+        isActiveConvo ? '[background:var(--sidebar-item-active)]' : '',
       )}
       title={title ?? undefined}
       aria-current={isActiveConvo ? 'page' : undefined}
@@ -30,7 +30,10 @@ const ConvoLink: React.FC<ConvoLinkProps> = ({
     >
       {children}
       <div
-        className="relative flex-1 grow overflow-hidden whitespace-nowrap"
+        className={cn(
+          'relative flex-1 grow overflow-hidden whitespace-nowrap text-sm text-text-primary',
+          isActiveConvo ? 'font-medium' : 'font-normal',
+        )}
         style={{ textOverflow: 'clip' }}
         onDoubleClick={(e) => {
           if (isSmallScreen) {
@@ -46,10 +49,10 @@ const ConvoLink: React.FC<ConvoLinkProps> = ({
       </div>
       <div
         className={cn(
-          'absolute bottom-0 right-0 top-0 w-20 rounded-r-lg bg-gradient-to-l',
+          'absolute bottom-0 right-0 top-0 w-24 rounded-r-lg bg-gradient-to-l',
           isActiveConvo
-            ? 'from-surface-active-alt'
-            : 'from-surface-primary-alt from-0% to-transparent group-hover:from-surface-active-alt group-hover:from-40%',
+            ? 'from-[var(--sidebar-item-active)]'
+            : 'from-[var(--sidebar-shell-bg-alt)] from-0% to-transparent group-hover:from-[var(--sidebar-item-hover)] group-hover:from-40%',
         )}
         aria-hidden="true"
       />

@@ -50,7 +50,6 @@ function AssistantToolsDialog({
     selectedPlugin,
     setSelectedPlugin,
   } = usePluginDialogHelpers();
-
   const updateUserPlugins = useUpdateUserPluginsMutation();
   const handleInstallError = (error: TError) => {
     setError(true);

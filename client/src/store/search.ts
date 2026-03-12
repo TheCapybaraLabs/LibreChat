@@ -19,6 +19,12 @@ export const search = atom<SearchState>({
   },
 });
 
+export const selectedConversationTags = atom<string[]>({
+  key: 'selectedConversationTags',
+  default: [],
+});
+
 export default {
   search,
+  selectedConversationTags,
 };

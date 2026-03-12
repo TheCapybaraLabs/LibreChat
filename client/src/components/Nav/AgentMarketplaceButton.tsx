@@ -1,9 +1,11 @@
 import React, { useCallback, useContext } from 'react';
-import { LayoutGrid } from 'lucide-react';
+import { useSetRecoilState } from 'recoil';
+import { Gem } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PermissionTypes, Permissions } from 'librechat-data-provider';
 import { TooltipAnchor, Button } from '@librechat/client';
 import { useLocalize, useHasAccess, AuthContext } from '~/hooks';
+import store from '~/store';
 
 interface AgentMarketplaceButtonProps {
   isSmallScreen?: boolean;
@@ -17,6 +19,7 @@ export default function AgentMarketplaceButton({
   const navigate = useNavigate();
   const localize = useLocalize();
   const authContext = useContext(AuthContext);
+  const requestCloseRightSidePanel = useSetRecoilState(store.rightSidePanelCloseNonce);
 
   const hasAccessToAgents = useHasAccess({
     permissionType: PermissionTypes.AGENTS,
@@ -29,11 +32,14 @@ export default function AgentMarketplaceButton({
   });
 
   const handleAgentMarketplace = useCallback(() => {
+    localStorage.setItem('fullPanelCollapse', 'true');
+    localStorage.setItem('react-resizable-panels:collapsed', 'true');
+    requestCloseRightSidePanel((value) => value + 1);
     navigate('/agents');
     if (isSmallScreen) {
       toggleNav();
     }
-  }, [navigate, isSmallScreen, toggleNav]);
+  }, [navigate, isSmallScreen, toggleNav, requestCloseRightSidePanel]);
 
   // Check if auth is ready (avoid race conditions)
   const authReady =
@@ -52,13 +58,15 @@ export default function AgentMarketplaceButton({
       description={localize('com_agents_marketplace')}
       render={
         <Button
+          size="default"
           variant="outline"
           data-testid="nav-agents-marketplace-button"
           aria-label={localize('com_agents_marketplace')}
-          className="rounded-full border-none bg-transparent p-2 hover:bg-surface-hover md:rounded-xl"
+          className="rounded-xl w-full border border-border-light bg-surface-secondary p-3 hover:bg-surface-hover"
           onClick={handleAgentMarketplace}
         >
-          <LayoutGrid className="icon-lg text-text-primary" />
+          <Gem className="icon-md text-text-primary" />
+          {localize('com_ui_agents')}
         </Button>
       }
     />

@@ -75,7 +75,7 @@ const MinimalIcon: React.FC<IconProps> = (props) => {
         height: size,
       }}
       className={cn(
-        'relative flex items-center justify-center rounded-sm text-text-secondary',
+        'relative flex items-center justify-center rounded-sm text-text-primary',
         props.className ?? '',
       )}
     >

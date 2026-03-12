@@ -11,8 +11,8 @@ module.exports = {
   darkMode: ['class'],
   theme: {
     fontFamily: {
-      sans: ['Inter', 'sans-serif'],
-      mono: ['Roboto Mono', 'monospace'],
+      sans: ['Nunito Sans', 'Inter', 'Segoe UI', 'system-ui', 'sans-serif'],
+      mono: ['Roboto Mono', 'JetBrains Mono', 'ui-monospace', 'monospace'],
     },
     // fontFamily: {
     //   sans: ['Söhne', 'sans-serif'],
@@ -159,6 +159,12 @@ module.exports = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      boxShadow: {
+        soft: 'var(--elevation-1)',
+        medium: 'var(--elevation-2)',
+        strong: 'var(--elevation-3)',
+        focus: 'var(--elevation-focus)',
       },
     },
   },

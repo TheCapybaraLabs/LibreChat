@@ -79,6 +79,8 @@ export default function Message(props: TMessageProps) {
     return null;
   }
 
+  const isUserMessage = isCreatedByUser === true;
+
   const baseClasses = {
     common: 'group mx-auto flex flex-1 gap-3 transition-all duration-300 transform-gpu',
     chat: maximizeChatSpace
@@ -97,64 +99,83 @@ export default function Message(props: TMessageProps) {
           <div
             id={messageId ?? ''}
             aria-label={`message-${message.depth}-${messageId}`}
-            className={cn(baseClasses.common, baseClasses.chat, 'message-render')}
+            className={cn(
+              baseClasses.common,
+              baseClasses.chat,
+              'message-render msg-row final-completion',
+              isUserMessage ? 'msg-row-user' : 'msg-row-assistant',
+            )}
           >
-            <div className="relative flex flex-shrink-0 flex-col items-center">
-              <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full pt-0.5">
+            <div className="msg-avatar-wrap relative flex flex-shrink-0 flex-col items-center">
+              <div className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full pt-0.5 sm:h-6 sm:w-6">
                 <MessageIcon iconData={iconData} assistant={assistant} agent={agent} />
               </div>
             </div>
             <div
               className={cn(
-                'relative flex w-11/12 flex-col',
-                isCreatedByUser ? 'user-turn' : 'agent-turn',
+                'msg-body relative flex w-full flex-col',
+                isUserMessage ? 'msg-body-user' : 'msg-body-assistant',
               )}
             >
-              <h2 className={cn('select-none font-semibold text-text-primary', fontSize)}>
-                {name}
-              </h2>
-              <div className="flex flex-col gap-1">
-                <div className="flex max-w-full flex-grow flex-col gap-0">
-                  <ContentParts
-                    edit={edit}
-                    isLast={isLast}
-                    enterEdit={enterEdit}
-                    siblingIdx={siblingIdx}
-                    attachments={attachments}
-                    isSubmitting={isSubmitting}
-                    searchResults={searchResults}
-                    messageId={message.messageId}
-                    setSiblingIdx={setSiblingIdx}
-                    isCreatedByUser={message.isCreatedByUser}
-                    conversationId={conversation?.conversationId}
-                    isLatestMessage={messageId === latestMessage?.messageId}
-                    content={message.content as Array<TMessageContentParts | undefined>}
-                  />
-                </div>
-                {isLast && isSubmitting ? (
-                  <div className="mt-1 h-[27px] bg-transparent" />
-                ) : (
-                  <SubRow classes="text-xs">
-                    <SiblingSwitch
-                      siblingIdx={siblingIdx}
-                      siblingCount={siblingCount}
-                      setSiblingIdx={setSiblingIdx}
-                    />
-                    <HoverButtons
-                      index={index}
-                      isEditing={edit}
-                      message={message}
-                      enterEdit={enterEdit}
-                      isSubmitting={isSubmitting}
-                      conversation={conversation ?? null}
-                      regenerate={() => regenerateMessage()}
-                      copyToClipboard={copyToClipboard}
-                      handleContinue={handleContinue}
-                      latestMessage={latestMessage}
-                      isLast={isLast}
-                    />
-                  </SubRow>
+              <div
+                className={cn(
+                  'msg-bubble',
+                  isUserMessage ? 'msg-bubble-user' : 'msg-bubble-assistant',
                 )}
+              >
+                <h2
+                  className={cn('msg-title select-none font-semibold text-text-primary', fontSize)}
+                >
+                  {name}
+                </h2>
+                <div className="flex flex-col gap-1">
+                  <div className="flex max-w-full flex-grow flex-col gap-0">
+                    <ContentParts
+                      edit={edit}
+                      isLast={isLast}
+                      enterEdit={enterEdit}
+                      siblingIdx={siblingIdx}
+                      attachments={attachments}
+                      isSubmitting={isSubmitting}
+                      searchResults={searchResults}
+                      messageId={message.messageId}
+                      setSiblingIdx={setSiblingIdx}
+                      isCreatedByUser={message.isCreatedByUser}
+                      conversationId={conversation?.conversationId}
+                      isLatestMessage={messageId === latestMessage?.messageId}
+                      content={message.content as Array<TMessageContentParts | undefined>}
+                    />
+                  </div>
+                  {isLast && isSubmitting ? (
+                    <div className="mt-1 h-[27px] bg-transparent" />
+                  ) : (
+                    <SubRow
+                      classes={cn(
+                        'text-xs msg-subrow',
+                        isUserMessage ? 'msg-subrow-user' : 'msg-subrow-assistant',
+                      )}
+                    >
+                      <SiblingSwitch
+                        siblingIdx={siblingIdx}
+                        siblingCount={siblingCount}
+                        setSiblingIdx={setSiblingIdx}
+                      />
+                      <HoverButtons
+                        index={index}
+                        isEditing={edit}
+                        message={message}
+                        enterEdit={enterEdit}
+                        isSubmitting={isSubmitting}
+                        conversation={conversation ?? null}
+                        regenerate={() => regenerateMessage()}
+                        copyToClipboard={copyToClipboard}
+                        handleContinue={handleContinue}
+                        latestMessage={latestMessage}
+                        isLast={isLast}
+                      />
+                    </SubRow>
+                  )}
+                </div>
               </div>
             </div>
           </div>

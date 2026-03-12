@@ -75,19 +75,23 @@ export default function Presentation({ children }: { children: React.ReactNode }
   }, [artifactsVisibility, artifacts]);
 
   return (
-    <DragDropWrapper className="relative flex w-full grow overflow-hidden bg-presentation">
-      <SidePanelProvider>
-        <SidePanelGroup
-          defaultLayout={defaultLayout}
-          fullPanelCollapse={fullCollapse}
-          defaultCollapsed={defaultCollapsed}
-          artifacts={artifactsElement}
-        >
-          <main className="flex h-full flex-col overflow-y-auto" role="main">
-            {children}
-          </main>
-        </SidePanelGroup>
-      </SidePanelProvider>
+    <DragDropWrapper className="relative flex w-full grow overflow-hidden bg-surface-primary">
+      <div className="relative z-10 flex h-full w-full backdrop-blur-[1.5px] shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+        <SidePanelProvider>
+          <SidePanelGroup
+            defaultLayout={defaultLayout}
+            fullPanelCollapse={fullCollapse}
+            defaultCollapsed={defaultCollapsed}
+            artifacts={artifactsElement}
+          >
+            <main className="flex h-full flex-col overflow-y-auto p-1.5 md:p-2.5" role="main">
+              <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border-light bg-surface-primary/75 shadow-[0_20px_44px_-34px_rgba(130,10,209,0.55)] backdrop-blur-sm">
+                {children}
+              </div>
+            </main>
+          </SidePanelGroup>
+        </SidePanelProvider>
+      </div>
     </DragDropWrapper>
   );
 }

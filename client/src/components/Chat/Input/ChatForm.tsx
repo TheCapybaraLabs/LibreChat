@@ -52,7 +52,6 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   const chatDirection = useRecoilValue(store.chatDirection);
   const automaticPlayback = useRecoilValue(store.automaticPlayback);
   const maximizeChatSpace = useRecoilValue(store.maximizeChatSpace);
-  const centerFormOnLanding = useRecoilValue(store.centerFormOnLanding);
   const isTemporary = useRecoilValue(store.isTemporary);
 
   const [badges, setBadges] = useRecoilState(store.chatBadges);
@@ -197,7 +196,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   const baseClasses = useMemo(
     () =>
       cn(
-        'md:py-3.5 m-0 w-full resize-none py-[13px] placeholder-black/50 bg-transparent dark:placeholder-white/50 [&:has(textarea:focus)]:shadow-[0_2px_6px_rgba(0,0,0,.05)]',
+        'md:py-3.5 m-0 w-full resize-none bg-transparent py-[13px] placeholder-text-secondary',
         isCollapsed ? 'max-h-[52px]' : 'max-h-[45vh] md:max-h-[55vh]',
         isMoreThanThreeRows ? 'pl-5' : 'px-5',
       ),
@@ -210,11 +209,10 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
       className={cn(
         'mx-auto flex w-full flex-row gap-3 transition-[max-width] duration-300 sm:px-2',
         maximizeChatSpace ? 'max-w-full' : 'md:max-w-3xl xl:max-w-4xl',
-        centerFormOnLanding &&
-          (conversationId == null || conversationId === Constants.NEW_CONVO) &&
+        (conversationId == null || conversationId === Constants.NEW_CONVO) &&
           !isSubmitting &&
           conversation?.messages?.length === 0
-          ? 'transition-all duration-200 sm:mb-28'
+          ? 'transition-all duration-200 sm:mb-4'
           : 'sm:mb-10',
       )}
     >
@@ -243,11 +241,13 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
           <div
             onClick={handleContainerClick}
             className={cn(
-              'relative flex w-full flex-grow flex-col overflow-hidden rounded-t-3xl border pb-4 text-text-primary transition-all duration-200 sm:rounded-3xl sm:pb-0',
-              isTextAreaFocused ? 'shadow-lg' : 'shadow-md',
+              'relative flex w-full flex-grow flex-col overflow-hidden rounded-t-3xl border pb-1 text-text-primary transition-all duration-200 sm:rounded-3xl sm:pb-0',
+              isTextAreaFocused
+                ? 'shadow-[var(--elevation-focus)] [border-color:var(--border-heavy)]'
+                : 'shadow-[0_16px_32px_-28px_rgba(0,0,0,0.35)] [border-color:var(--border-light)]',
               isTemporary
-                ? 'border-violet-800/60 bg-violet-950/10'
-                : 'border-border-light bg-surface-chat',
+                ? 'bg-surface-chat [border-color:var(--brand-border)]'
+                : 'bg-surface-chat',
             )}
           >
             <TextareaHeader addedConvo={addedConvo} setAddedConvo={setAddedConvo} />
@@ -277,7 +277,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
                     id={mainTextareaId}
                     tabIndex={0}
                     data-testid="text-input"
-                    rows={1}
+                    rows={2}
                     onFocus={() => {
                       handleFocusOrClick();
                       setIsTextAreaFocused(true);
@@ -285,22 +285,14 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
                     onBlur={setIsTextAreaFocused.bind(null, false)}
                     aria-label={localize('com_ui_message_input')}
                     onClick={handleFocusOrClick}
-                    style={{ height: 44, overflowY: 'auto' }}
                     className={cn(
                       baseClasses,
                       removeFocusRings,
-                      'scrollbar-hover transition-[max-height] duration-200 disabled:cursor-not-allowed',
+                      'scrollbar-hover min-h-11 overflow-y-auto transition-[max-height] duration-200 disabled:cursor-not-allowed',
                     )}
                   />
                   {isCollapsed && (
-                    <div
-                      className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 transition-all duration-200"
-                      style={{
-                        backdropFilter: 'blur(2px)',
-                        WebkitMaskImage: 'linear-gradient(to top, black 15%, transparent 75%)',
-                        maskImage: 'linear-gradient(to top, black 15%, transparent 75%)',
-                      }}
-                    />
+                    <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 transition-all duration-200 [backdrop-filter:blur(2px)] [mask-image:linear-gradient(to_top,black_15%,transparent_75%)]" />
                   )}
                 </div>
                 <div className="flex flex-col items-start justify-start pr-2.5 pt-1.5">
@@ -314,7 +306,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
             )}
             <div
               className={cn(
-                '@container items-between flex gap-2 pb-2',
+                '@container items-between flex gap-2 border-t px-1 pb-2 pt-1.5 [background:var(--surface-secondary)] [border-color:var(--border-light)]',
                 isRTL ? 'flex-row-reverse' : 'flex-row',
               )}
             >

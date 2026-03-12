@@ -57,29 +57,22 @@ function AuthLayout({
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-white dark:bg-gray-900">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-surface-primary">
+      <img
+        src="/assets/customization/brand-logo.png"
+        className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-20 blur-3xl"
+        alt=""
+        aria-hidden="true"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-surface-primary via-surface-primary/95 to-surface-secondary/90" />
+
       <Banner />
-      <BlinkAnimation active={isFetching}>
-        <div className="mt-12 h-24 w-full bg-cover">
-          <img
-            src={'/assets/customization/logo.svg'}
-            className="h-full w-full object-contain"
-            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'Chat IA' })}
-          />
-        </div>
-        <h1
-          className="mb-6 mt-6 text-center text-3xl font-semibold text-brand-primary dark:text-brand-primary"
-          style={{ userSelect: 'none' }}
-        >
-          {startupConfig?.appTitle}
-        </h1>
-      </BlinkAnimation>
-      <DisplayError />
-      <div className="absolute bottom-0 left-0 md:m-4">
+
+      <div className="absolute bottom-0 left-0 z-20 md:m-4">
         <ThemeSelector />
       </div>
 
-      <div className="absolute bottom-0 right-0 md:m-4">
+      <div className="absolute bottom-0 right-0 z-20 md:m-4">
         <div className="flex flex-col items-center justify-center p-4 md:p-2">
           <img
             src="/assets/developers-logo.svg"
@@ -87,27 +80,62 @@ function AuthLayout({
             alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
           />
           {/* eslint-disable-next-line i18next/no-literal-string */}
-          <p className="hidden text-sm dark:text-white md:block">Capybara Labs</p>
+          <p className="hidden text-sm text-text-primary md:block">Capybara Labs</p>
         </div>
       </div>
 
-      <div className="flex flex-grow items-center justify-center">
-        <div className="w-authPageWidth overflow-hidden bg-white px-6 py-4 dark:bg-gray-900 sm:max-w-md sm:rounded-lg">
-          {!hasStartupConfigError && !isFetching && header && (
-            <h1
-              className="mb-4 text-center text-2xl font-semibold text-black dark:text-white"
-              style={{ userSelect: 'none' }}
-            >
-              {header}
-            </h1>
-          )}
-          {children}
-          {!pathname.includes('2fa') &&
-            (pathname.includes('login') || pathname.includes('register')) && (
-              <SocialLoginRender startupConfig={startupConfig} />
+      <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-8 md:px-8">
+        <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl border border-border-light bg-surface-dialog shadow-2xl backdrop-blur-md md:grid-cols-2">
+          <section className="relative hidden min-h-[560px] overflow-hidden md:flex">
+            <img
+              src="/assets/customization/brand-logo.png"
+              className="absolute inset-0 h-full w-full object-cover opacity-90"
+              alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'Chat IA' })}
+            />
+            <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" />
+            <div className="relative z-10 flex h-full w-full flex-col items-center justify-center p-10 text-center">
+              <img
+                src="/assets/customization/logo.svg"
+                className="h-28 w-full object-contain"
+                alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'Chat IA' })}
+              />
+              <h2 className="mt-8 text-3xl font-semibold text-white" style={{ userSelect: 'none' }}>
+                {startupConfig?.appTitle}
+              </h2>
+            </div>
+          </section>
+
+          <section className="flex min-h-[560px] flex-col justify-center px-6 py-8 sm:px-10">
+            <BlinkAnimation active={isFetching}>
+              <div className="mb-8 flex items-center justify-center md:hidden">
+                <img
+                  src="/assets/customization/logo.svg"
+                  className="h-16 w-full object-contain"
+                  alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'Chat IA' })}
+                />
+              </div>
+            </BlinkAnimation>
+
+            <DisplayError />
+
+            {!hasStartupConfigError && !isFetching && header && (
+              <h1
+                className="mb-4 text-center text-2xl font-semibold text-text-primary"
+                style={{ userSelect: 'none' }}
+              >
+                {header}
+              </h1>
             )}
+
+            {children}
+            {!pathname.includes('2fa') &&
+              (pathname.includes('login') || pathname.includes('register')) && (
+                <SocialLoginRender startupConfig={startupConfig} />
+              )}
+          </section>
         </div>
       </div>
+
       <Footer startupConfig={startupConfig} />
     </div>
   );

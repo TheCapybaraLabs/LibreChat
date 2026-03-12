@@ -114,6 +114,9 @@ const MessageRender = memo(
       return null;
     }
 
+    const isUserMessage = msg.isCreatedByUser === true;
+    const useBubbleLayout = !isCard;
+
     const baseClasses = {
       common: 'group mx-auto flex flex-1 gap-3 transition-all duration-300 transform-gpu ',
       card: 'relative w-full gap-1 rounded-lg border border-border-medium bg-surface-primary-alt p-2 md:w-1/2 md:gap-3 md:p-4',
@@ -138,7 +141,9 @@ const MessageRender = memo(
           conditionalClasses.latestCard,
           conditionalClasses.cardRender,
           conditionalClasses.focus,
-          'message-render',
+          useBubbleLayout && 'msg-row',
+          useBubbleLayout && (isUserMessage ? 'msg-row-user' : 'msg-row-assistant'),
+          'message-render final-completion',
         )}
         onClick={clickHandler}
         onKeyDown={(e) => {
@@ -153,76 +158,155 @@ const MessageRender = memo(
           <div className="absolute right-0 top-0 m-2 h-3 w-3 rounded-full bg-text-primary" />
         )}
 
-        <div className="relative flex flex-shrink-0 flex-col items-center">
-          <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full">
+        <div className="msg-avatar-wrap relative flex flex-shrink-0 flex-col items-center">
+          <div className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full sm:h-6 sm:w-6">
             <MessageIcon iconData={iconData} assistant={assistant} agent={agent} />
           </div>
         </div>
 
-        <div
-          className={cn(
-            'relative flex w-11/12 flex-col',
-            msg.isCreatedByUser ? 'user-turn' : 'agent-turn',
-          )}
-        >
-          <h2 className={cn('select-none font-semibold', fontSize)}>{messageLabel}</h2>
-
-          <div className="flex flex-col gap-1">
-            <div className="flex max-w-full flex-grow flex-col gap-0">
-              <MessageContext.Provider
-                value={{
-                  messageId: msg.messageId,
-                  conversationId: conversation?.conversationId,
-                  isExpanded: false,
-                  isSubmitting: effectiveIsSubmitting,
-                  isLatestMessage,
-                }}
-              >
-                {msg.plugin && <Plugin plugin={msg.plugin} />}
-                <MessageContent
-                  ask={ask}
-                  edit={edit}
-                  isLast={isLast}
-                  text={msg.text || ''}
-                  message={msg}
-                  enterEdit={enterEdit}
-                  error={!!(msg.error ?? false)}
-                  isSubmitting={effectiveIsSubmitting}
-                  unfinished={msg.unfinished ?? false}
-                  isCreatedByUser={msg.isCreatedByUser ?? true}
-                  siblingIdx={siblingIdx ?? 0}
-                  setSiblingIdx={setSiblingIdx ?? (() => ({}))}
-                />
-              </MessageContext.Provider>
-            </div>
-
-            {hasNoChildren && (isSubmittingFamily === true || effectiveIsSubmitting) ? (
-              <PlaceholderRow isCard={isCard} />
-            ) : (
-              <SubRow classes="text-xs">
-                <SiblingSwitch
-                  siblingIdx={siblingIdx}
-                  siblingCount={siblingCount}
-                  setSiblingIdx={setSiblingIdx}
-                />
-                <HoverButtons
-                  index={index}
-                  isEditing={edit}
-                  message={msg}
-                  enterEdit={enterEdit}
-                  isSubmitting={isSubmitting}
-                  conversation={conversation ?? null}
-                  regenerate={handleRegenerateMessage}
-                  copyToClipboard={copyToClipboard}
-                  handleContinue={handleContinue}
-                  latestMessage={latestMessage}
-                  handleFeedback={handleFeedback}
-                  isLast={isLast}
-                />
-              </SubRow>
+        {useBubbleLayout ? (
+          <div
+            className={cn(
+              'msg-body relative flex w-full flex-col',
+              isUserMessage ? 'msg-body-user' : 'msg-body-assistant',
             )}
+          >
+            <div
+              className={cn(
+                'msg-bubble',
+                isUserMessage ? 'msg-bubble-user' : 'msg-bubble-assistant',
+              )}
+            >
+              <h2 className={cn('msg-title select-none font-semibold', fontSize)}>
+                {messageLabel}
+              </h2>
+              <div className="flex flex-col gap-1">
+                <div className="flex max-w-full flex-grow flex-col gap-0">
+                  <MessageContext.Provider
+                    value={{
+                      messageId: msg.messageId,
+                      conversationId: conversation?.conversationId,
+                      isExpanded: false,
+                      isSubmitting: effectiveIsSubmitting,
+                      isLatestMessage,
+                    }}
+                  >
+                    {msg.plugin && <Plugin plugin={msg.plugin} />}
+                    <MessageContent
+                      ask={ask}
+                      edit={edit}
+                      isLast={isLast}
+                      text={msg.text || ''}
+                      message={msg}
+                      enterEdit={enterEdit}
+                      error={!!(msg.error ?? false)}
+                      isSubmitting={effectiveIsSubmitting}
+                      unfinished={msg.unfinished ?? false}
+                      isCreatedByUser={msg.isCreatedByUser ?? true}
+                      siblingIdx={siblingIdx ?? 0}
+                      setSiblingIdx={setSiblingIdx ?? (() => ({}))}
+                    />
+                  </MessageContext.Provider>
+                </div>
+                {hasNoChildren && (isSubmittingFamily === true || effectiveIsSubmitting) ? (
+                  <PlaceholderRow isCard={isCard} />
+                ) : (
+                  <SubRow
+                    classes={cn(
+                      'text-xs msg-subrow',
+                      isUserMessage ? 'msg-subrow-user' : 'msg-subrow-assistant',
+                    )}
+                  >
+                    <SiblingSwitch
+                      siblingIdx={siblingIdx}
+                      siblingCount={siblingCount}
+                      setSiblingIdx={setSiblingIdx}
+                    />
+                    <HoverButtons
+                      index={index}
+                      isEditing={edit}
+                      message={msg}
+                      enterEdit={enterEdit}
+                      isSubmitting={isSubmitting}
+                      conversation={conversation ?? null}
+                      regenerate={handleRegenerateMessage}
+                      copyToClipboard={copyToClipboard}
+                      handleContinue={handleContinue}
+                      latestMessage={latestMessage}
+                      handleFeedback={handleFeedback}
+                      isLast={isLast}
+                    />
+                  </SubRow>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div
+            className={cn(
+              'relative flex w-11/12 flex-col',
+              msg.isCreatedByUser ? 'user-turn' : 'agent-turn',
+            )}
+          >
+            <h2 className={cn('select-none font-semibold', fontSize)}>{messageLabel}</h2>
+
+            <div className="flex flex-col gap-1">
+              <div className="flex max-w-full flex-grow flex-col gap-0">
+                <MessageContext.Provider
+                  value={{
+                    messageId: msg.messageId,
+                    conversationId: conversation?.conversationId,
+                    isExpanded: false,
+                    isSubmitting: effectiveIsSubmitting,
+                    isLatestMessage,
+                  }}
+                >
+                  {msg.plugin && <Plugin plugin={msg.plugin} />}
+                  <MessageContent
+                    ask={ask}
+                    edit={edit}
+                    isLast={isLast}
+                    text={msg.text || ''}
+                    message={msg}
+                    enterEdit={enterEdit}
+                    error={!!(msg.error ?? false)}
+                    isSubmitting={effectiveIsSubmitting}
+                    unfinished={msg.unfinished ?? false}
+                    isCreatedByUser={msg.isCreatedByUser ?? true}
+                    siblingIdx={siblingIdx ?? 0}
+                    setSiblingIdx={setSiblingIdx ?? (() => ({}))}
+                  />
+                </MessageContext.Provider>
+              </div>
+
+              {hasNoChildren && (isSubmittingFamily === true || effectiveIsSubmitting) ? (
+                <PlaceholderRow isCard={isCard} />
+              ) : (
+                <SubRow classes="text-xs">
+                  <SiblingSwitch
+                    siblingIdx={siblingIdx}
+                    siblingCount={siblingCount}
+                    setSiblingIdx={setSiblingIdx}
+                  />
+                  <HoverButtons
+                    index={index}
+                    isEditing={edit}
+                    message={msg}
+                    enterEdit={enterEdit}
+                    isSubmitting={isSubmitting}
+                    conversation={conversation ?? null}
+                    regenerate={handleRegenerateMessage}
+                    copyToClipboard={copyToClipboard}
+                    handleContinue={handleContinue}
+                    latestMessage={latestMessage}
+                    handleFeedback={handleFeedback}
+                    isLast={isLast}
+                  />
+                </SubRow>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   },
