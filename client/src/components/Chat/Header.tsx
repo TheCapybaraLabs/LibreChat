@@ -77,7 +77,7 @@ export default function Header() {
     canShowBookmarkAction || canShowAddMultiAction || canShowExportShareAction;
 
   return (
-    <div className="sticky top-0 z-10 mb-2 grid h-14 w-full grid-cols-[1fr_auto_1fr] items-center gap-2 overflow-hidden border-b border-border-light bg-gradient-to-r from-[#f7f1ff]/50 via-white to-[#f5ecff]/50 px-2 py-1 font-semibold text-text-primary shadow-[0_8px_24px_-20px_rgba(130,10,209,0.55)] backdrop-blur-sm dark:border-[#4a3b63] dark:bg-gradient-to-r dark:from-[#20182c]/50 dark:via-[#17171f]/50 dark:to-[#261d35]/50">
+    <div className="sticky top-0 z-10 mb-2 grid min-h-14 w-full grid-cols-[1fr_auto_1fr] items-center gap-2 overflow-hidden border-b border-border-light bg-gradient-to-r from-[#f7f1ff]/50 via-white to-[#f5ecff]/50 px-2 py-0.5 font-semibold text-text-primary shadow-[0_8px_24px_-20px_rgba(130,10,209,0.55)] backdrop-blur-sm dark:border-[#4a3b63] dark:bg-gradient-to-r dark:from-[#20182c]/50 dark:via-[#17171f]/50 dark:to-[#261d35]/50">
       <div className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-[#bc8cff] to-[#820ad1]" />
 
       <div className="relative z-10 flex min-w-0 items-center justify-start">

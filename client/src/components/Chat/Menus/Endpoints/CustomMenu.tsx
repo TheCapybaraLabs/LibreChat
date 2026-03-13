@@ -59,7 +59,8 @@ export const CustomMenu = React.forwardRef<HTMLDivElement, CustomMenuProps>(func
       </Ariakit.MenuButton>
       <Ariakit.Menu
         store={menuStore}
-        placement={menuPlacement}
+        modal={false}
+        fixed
         portal
         overlap
         unmountOnHide

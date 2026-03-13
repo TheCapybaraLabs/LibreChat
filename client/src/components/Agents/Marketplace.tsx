@@ -287,7 +287,7 @@ const AgentMarketplace: React.FC<AgentMarketplaceProps> = ({ className = '' }) =
     <Presentation>
       <div className={cn('flex h-full min-h-0 w-full flex-col', className)}>
         {!isSmallScreen && (
-          <div className="relative z-30 isolate grid h-14 w-full shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 overflow-hidden border-b border-border-light bg-gradient-to-r from-[#f7f1ff] via-white to-[#f5ecff] px-2 py-1 font-semibold text-text-primary shadow-[0_8px_24px_-20px_rgba(130,10,209,0.55)] dark:border-[#4a3b63] dark:bg-gradient-to-r dark:from-[#20182c] dark:via-[#17171f] dark:to-[#261d35]">
+          <div className="relative z-30 isolate grid min-h-14 w-full shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 overflow-hidden border-b border-border-light bg-gradient-to-r from-[#f7f1ff] via-white to-[#f5ecff] px-2 py-0.5 font-semibold text-text-primary shadow-[0_8px_24px_-20px_rgba(130,10,209,0.55)] dark:border-[#4a3b63] dark:bg-gradient-to-r dark:from-[#20182c] dark:via-[#17171f] dark:to-[#261d35]">
             <div className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-[#bc8cff] to-[#820ad1]" />
             <div className="relative z-10 flex min-w-0 items-center gap-2">
               {!navVisible && (
