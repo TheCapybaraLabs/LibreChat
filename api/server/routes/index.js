@@ -1,6 +1,7 @@
 const accessPermissions = require('./accessPermissions');
 const assistants = require('./assistants');
 const categories = require('./categories');
+const adminInvites = require('./admin/invites');
 const adminAuth = require('./admin/auth');
 const adminConfig = require('./admin/config');
 const adminGrants = require('./admin/grants');
@@ -39,6 +40,7 @@ module.exports = {
   adminConfig,
   adminGrants,
   adminGroups,
+  adminInvites,
   adminRoles,
   adminUsers,
   keys,

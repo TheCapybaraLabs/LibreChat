@@ -1087,3 +1087,15 @@ export interface ActiveJobsResponse {
 export const getActiveJobs = (): Promise<ActiveJobsResponse> => {
   return request.get(endpoints.activeJobs());
 };
+
+export function getAdminInvites(): Promise<q.AdminInvite[]> {
+  return request.get(endpoints.adminInvites());
+}
+
+export function createAdminInvite(email: string): Promise<q.CreateAdminInviteResponse> {
+  return request.post(endpoints.adminInvites(), { email });
+}
+
+export function revokeAdminInvite(id: string): Promise<void> {
+  return request.delete(endpoints.adminInvite(id));
+}

@@ -225,3 +225,16 @@ export type GraphTokenResponse = {
   expires_in: number;
   scope: string;
 };
+
+export type AdminInvite = {
+  _id: string;
+  email: string;
+  createdAt: string;
+  expiresAt: string;
+};
+
+export type CreateAdminInviteResponse = {
+  success: boolean;
+  email: string;
+  expiresAt: string;
+};
