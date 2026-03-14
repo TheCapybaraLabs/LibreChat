@@ -279,6 +279,9 @@ export const mcpServer = (serverName: string) => `${BASE_URL}/api/mcp/servers/${
 
 export const revertAgentVersion = (agent_id: string) => `${agents({ path: `${agent_id}/revert` })}`;
 
+export const adminInvites = () => `${BASE_URL}/api/admin/invites`;
+export const adminInvite = (id: string) => `${BASE_URL}/api/admin/invites/${encodeURIComponent(id)}`;
+
 export const files = () => `${BASE_URL}/api/files`;
 export const fileUpload = () => `${BASE_URL}/api/files`;
 export const fileDelete = () => `${BASE_URL}/api/files`;

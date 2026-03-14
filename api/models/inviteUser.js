@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { logger, hashToken, getRandomValues } = require('@librechat/data-schemas');
 const { createToken, findToken } = require('~/models');
+const { Token } = require('~/db/models');
 
 /**
  * @module inviteUser
@@ -26,6 +27,7 @@ const createInvite = async (email) => {
       userId: fakeUserId,
       email,
       token: hash,
+      type: 'invite',
       createdAt: Date.now(),
       expiresIn: 604800,
     });
@@ -62,7 +64,22 @@ const getInvite = async (encodedToken, email) => {
   }
 };
 
+/**
+ * @function listInvites
+ * @description Returns all pending invite tokens
+ * @returns {Promise<Array>}
+ */
+const listInvites = async () => {
+  try {
+    return await Token.find({ type: 'invite' }, '_id email createdAt expiresAt').lean();
+  } catch (error) {
+    logger.error('[listInvites] Error listing invites', error);
+    return [];
+  }
+};
+
 module.exports = {
   createInvite,
   getInvite,
+  listInvites,
 };
