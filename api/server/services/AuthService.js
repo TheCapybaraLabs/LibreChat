@@ -99,7 +99,7 @@ const sendVerificationEmail = async (user) => {
     email: user.email,
     subject: 'Verify your email',
     payload: {
-      appName: process.env.APP_TITLE || 'Chat IA',
+      appName: process.env.APP_TITLE || 'LabsChat',
       name: user.name || user.username || user.email,
       verificationLink: verificationLink,
       year: new Date().getFullYear(),
@@ -138,7 +138,10 @@ const verifyEmail = async (req) => {
     return { message: 'Email already verified', status: 'success' };
   }
 
-  let emailVerificationData = await findToken({ email: decodedEmail }, { sort: { createdAt: -1 } });
+  const emailVerificationData = await findToken(
+    { email: decodedEmail },
+    { sort: { createdAt: -1 } },
+  );
 
   if (!emailVerificationData) {
     logger.warn(`[verifyEmail] [No email verification data found] [Email: ${decodedEmail}]`);
@@ -154,7 +157,9 @@ const verifyEmail = async (req) => {
     return new Error('Invalid or expired email verification token');
   }
 
-  const updatedUser = await updateUser(emailVerificationData.userId, { emailVerified: true });
+  const updatedUser = await updateUser(emailVerificationData.userId, {
+    emailVerified: true,
+  });
 
   if (!updatedUser) {
     logger.warn(`[verifyEmail] [User update failed] [Email: ${decodedEmail}]`);
@@ -297,7 +302,7 @@ const requestPasswordReset = async (req) => {
       email: user.email,
       subject: 'Solicitação de Redefinição de Senha',
       payload: {
-        appName: process.env.APP_TITLE || 'Chat IA',
+        appName: process.env.APP_TITLE || 'LabsChat',
         name: user.name || user.username || user.email,
         link: link,
         year: new Date().getFullYear(),
@@ -328,7 +333,7 @@ const requestPasswordReset = async (req) => {
  * @returns
  */
 const resetPassword = async (userId, token, password) => {
-  let passwordResetToken = await findToken(
+  const passwordResetToken = await findToken(
     {
       userId,
     },
@@ -353,7 +358,7 @@ const resetPassword = async (userId, token, password) => {
       email: user.email,
       subject: 'Senha Redefinida com Sucesso',
       payload: {
-        appName: process.env.APP_TITLE || 'Chat IA',
+        appName: process.env.APP_TITLE || 'LabsChat',
         name: user.name || user.username || user.email,
         year: new Date().getFullYear(),
       },
@@ -558,7 +563,7 @@ const resendVerificationEmail = async (req) => {
       email: user.email,
       subject: 'Verifique seu e-mail',
       payload: {
-        appName: process.env.APP_TITLE || 'Chat IA',
+        appName: process.env.APP_TITLE || 'LabsChat',
         name: user.name || user.username || user.email,
         verificationLink: verificationLink,
         year: new Date().getFullYear(),

@@ -1,38 +1,38 @@
+import { Skeleton, useMediaQuery } from '@librechat/client';
+import type { InfiniteQueryObserverResult } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import type { ConversationListResponse } from 'librechat-data-provider';
+import { Permissions, PermissionTypes } from 'librechat-data-provider';
 import {
+  lazy,
+  memo,
+  Suspense,
+  startTransition,
   useCallback,
   useEffect,
-  useState,
   useMemo,
-  memo,
-  lazy,
-  Suspense,
   useRef,
-  startTransition,
+  useState,
 } from 'react';
-import { useRecoilValue } from 'recoil';
-import { motion } from 'framer-motion';
-import { Skeleton, useMediaQuery } from '@librechat/client';
-import { PermissionTypes, Permissions } from 'librechat-data-provider';
-import type { InfiniteQueryObserverResult } from '@tanstack/react-query';
-import type { ConversationListResponse } from 'librechat-data-provider';
 import type { List } from 'react-virtualized';
+import { useRecoilValue } from 'recoil';
+import { Conversations } from '~/components/Conversations';
 import {
-  useLocalize,
-  useHasAccess,
+  useConversationsInfiniteQuery,
+  useGetStartupConfig,
+  useTitleGeneration,
+} from '~/data-provider';
+import {
   useAuthContext,
+  useHasAccess,
+  useLocalize,
   useLocalStorage,
   useNavScrolling,
 } from '~/hooks';
-import {
-  useConversationsInfiniteQuery,
-  useTitleGeneration,
-  useGetStartupConfig,
-} from '~/data-provider';
-import { Conversations } from '~/components/Conversations';
-import SearchBar from './SearchBar';
-import NewChat from './NewChat';
-import { cn } from '~/utils';
 import store from '~/store';
+import { cn } from '~/utils';
+import NewChat from './NewChat';
+import SearchBar from './SearchBar';
 
 const BookmarkNav = lazy(() => import('./Bookmarks/BookmarkNav'));
 const AccountSettings = lazy(() => import('./AccountSettings'));
@@ -270,7 +270,7 @@ const Nav = memo(
             <img
               src={brandLogoSrc}
               className="mb-2 flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active-alt dark:hover:bg-surface-hover-alt"
-              alt={startupConfig?.appTitle ?? 'Chat IA'}
+              alt={startupConfig?.appTitle ?? 'LabsChat'}
             />
           ) : null}
           <Suspense fallback={<Skeleton className="mt-1 h-12 w-full rounded-xl" />}>
@@ -308,7 +308,10 @@ const Nav = memo(
     return (
       <div
         className="flex-shrink-0 overflow-hidden"
-        style={{ width: navVisible ? sidebarWidth : 0, transition: 'width 0.2s ease-out' }}
+        style={{
+          width: navVisible ? sidebarWidth : 0,
+          transition: 'width 0.2s ease-out',
+        }}
       >
         <motion.div
           data-testid="nav"

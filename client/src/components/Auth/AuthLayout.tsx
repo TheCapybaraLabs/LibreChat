@@ -64,7 +64,7 @@ function AuthLayout({
           <img
             src={'/assets/customization/logo.svg'}
             className="h-full w-full object-contain"
-            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'Chat IA' })}
+            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LabsChat' })}
           />
         </div>
         <h1

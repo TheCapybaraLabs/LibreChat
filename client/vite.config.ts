@@ -1,11 +1,11 @@
 import react from '@vitejs/plugin-react';
-import path from 'path';
-import { defineConfig } from 'vite';
 import { createRequire } from 'module';
-import { VitePWA } from 'vite-plugin-pwa';
+import path from 'path';
+import type { Plugin } from 'vite';
+import { defineConfig } from 'vite';
 import { compression } from 'vite-plugin-compression2';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
-import type { Plugin } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 const require = createRequire(import.meta.url);
 
@@ -17,15 +17,12 @@ const require = createRequire(import.meta.url);
  * the shim specifiers to absolute paths via CJS require.resolve anchored to the client directory.
  */
 const NODE_POLYFILL_SHIMS: Record<string, string> = {
-  'vite-plugin-node-polyfills/shims/process': require.resolve(
-    'vite-plugin-node-polyfills/shims/process',
-  ),
-  'vite-plugin-node-polyfills/shims/buffer': require.resolve(
-    'vite-plugin-node-polyfills/shims/buffer',
-  ),
-  'vite-plugin-node-polyfills/shims/global': require.resolve(
-    'vite-plugin-node-polyfills/shims/global',
-  ),
+  'vite-plugin-node-polyfills/shims/process':
+    require.resolve('vite-plugin-node-polyfills/shims/process'),
+  'vite-plugin-node-polyfills/shims/buffer':
+    require.resolve('vite-plugin-node-polyfills/shims/buffer'),
+  'vite-plugin-node-polyfills/shims/global':
+    require.resolve('vite-plugin-node-polyfills/shims/global'),
 };
 
 // https://vitejs.dev/config/
@@ -88,8 +85,8 @@ export default defineConfig(({ command }) => ({
       },
       includeAssets: [],
       manifest: {
-        name: process.env.VITE_APP_TITLE || 'Chat IA',
-        short_name: process.env.VITE_APP_TITLE || 'Chat IA',
+        name: process.env.VITE_APP_TITLE || 'LabsChat',
+        short_name: process.env.VITE_APP_TITLE || 'LabsChat',
         display: 'standalone',
         background_color: '#000000',
         theme_color: '#009688',

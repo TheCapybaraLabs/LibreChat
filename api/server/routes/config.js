@@ -21,7 +21,7 @@ const publicSharedLinksEnabled =
 const sharePointFilePickerEnabled = isEnabled(process.env.ENABLE_SHAREPOINT_FILEPICKER);
 const openidReuseTokens = isEnabled(process.env.OPENID_REUSE_TOKENS);
 
-router.get('/', async function (req, res) {
+router.get('/', async (req, res) => {
   const cache = getLogStores(CacheKeys.CONFIG_STORE);
 
   const cachedStartupConfig = await cache.get(CacheKeys.STARTUP_CONFIG);
@@ -58,7 +58,7 @@ router.get('/', async function (req, res) {
 
     /** @type {TStartupConfig} */
     const payload = {
-      appTitle: process.env.APP_TITLE || 'Chat IA',
+      appTitle: process.env.APP_TITLE || 'LabsChat',
       socialLogins: appConfig?.registration?.socialLogins ?? defaultSocialLogins,
       discordLoginEnabled: !!process.env.DISCORD_CLIENT_ID && !!process.env.DISCORD_CLIENT_SECRET,
       facebookLoginEnabled:

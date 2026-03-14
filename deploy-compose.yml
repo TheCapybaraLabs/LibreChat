@@ -6,7 +6,7 @@ services:
       target: api-build
       args:
         VITE_BRAND_LOGO: ${VITE_BRAND_LOGO}
-        VITE_APP_TITLE: ${VITE_APP_TITLE:-Chat IA}
+        VITE_APP_TITLE: ${VITE_APP_TITLE:-LabsChat}
         # Theme variables - Light mode
         VITE_THEME_LIGHT_SURFACE_SUBMIT: ${VITE_THEME_LIGHT_SURFACE_SUBMIT}
         VITE_THEME_LIGHT_SURFACE_SUBMIT_HOVER: ${VITE_THEME_LIGHT_SURFACE_SUBMIT_HOVER}
