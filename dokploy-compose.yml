@@ -6,7 +6,7 @@ services:
       target: api-build
       args:
         VITE_BRAND_LOGO: ${VITE_BRAND_LOGO}
-        VITE_APP_TITLE: ${VITE_APP_TITLE:-Chat IA}
+        VITE_APP_TITLE: ${VITE_APP_TITLE:-LabsChat}
     ports:
       - ${PORT:-3080}:${PORT:-3080}
     restart: always
@@ -59,10 +59,10 @@ services:
       - EMAIL_ENCRYPTION=${EMAIL_ENCRYPTION}
       - EMAIL_USERNAME=${EMAIL_USERNAME}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD}
-      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-Chat IA}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-LabsChat}
       - EMAIL_FROM=${EMAIL_FROM:-noreply@updates.capybaralabs.com.br}
       # UI
-      - APP_TITLE=${APP_TITLE:-Chat IA}
+      - APP_TITLE=${APP_TITLE:-LabsChat}
       - CUSTOM_FOOTER=${CUSTOM_FOOTER:-Capybara Labs}
       - HELP_AND_FAQ_URL=${HELP_AND_FAQ_URL:-https://capybaralabs.com.br}
       # Authentication & Registration

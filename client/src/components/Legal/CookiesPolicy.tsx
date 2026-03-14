@@ -65,7 +65,7 @@ export default function CookiesPolicy() {
           </p>
           <h1 className="text-3xl font-semibold text-text-primary">Nenhum Cookie Utilizado</h1>
           <p className="text-base text-text-secondary">
-            O sistema {startupConfig?.appTitle ?? 'Chat IA'} não utiliza cookies ou tecnologias
+            O sistema {startupConfig?.appTitle ?? 'LabsChat'} não utiliza cookies ou tecnologias
             similares de rastreamento.
           </p>
         </header>

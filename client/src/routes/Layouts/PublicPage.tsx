@@ -1,8 +1,8 @@
+import { ThemeSelector } from '@librechat/client';
+import type { TStartupConfig } from 'librechat-data-provider';
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import type { TStartupConfig } from 'librechat-data-provider';
 import { useGetStartupConfig } from '~/data-provider';
-import { ThemeSelector } from '@librechat/client';
 import { useLocalize } from '~/hooks';
 
 export default function PublicPageLayout() {
@@ -26,10 +26,12 @@ export default function PublicPageLayout() {
             <img
               src="/assets/customization/logo.svg"
               className="h-9 w-auto object-contain"
-              alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'Chat IA' })}
+              alt={localize('com_ui_logo', {
+                0: startupConfig?.appTitle ?? 'LabsChat',
+              })}
             />
             <span className="text-lg font-semibold text-text-primary">
-              {startupConfig?.appTitle ?? 'Chat IA'}
+              {startupConfig?.appTitle ?? 'LabsChat'}
             </span>
           </div>
           <nav className="flex items-center gap-4 text-sm font-medium">
