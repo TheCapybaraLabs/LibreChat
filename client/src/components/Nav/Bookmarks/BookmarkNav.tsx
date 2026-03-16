@@ -1,10 +1,9 @@
-import { useState, useId, useMemo, useCallback } from 'react';
 import * as Ariakit from '@ariakit/react';
-import { CrossCircledIcon } from '@radix-ui/react-icons';
 import { DropdownPopup, TooltipAnchor } from '@librechat/client';
-import { BookmarkFilledIcon, BookmarkIcon } from '@radix-ui/react-icons';
-import type * as t from '~/common';
+import { BookmarkFilledIcon, BookmarkIcon, CrossCircledIcon } from '@radix-ui/react-icons';
 import type { FC } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
+import type * as t from '~/common';
 import { useGetConversationTags } from '~/data-provider';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
@@ -12,9 +11,14 @@ import { cn } from '~/utils';
 type BookmarkNavProps = {
   tags: string[];
   setTags: (tags: string[]) => void;
+  listStyle?: boolean;
 };
 
-const BookmarkNav: FC<BookmarkNavProps> = ({ tags, setTags }: BookmarkNavProps) => {
+const BookmarkNav: FC<BookmarkNavProps> = ({
+  tags,
+  setTags,
+  listStyle = false,
+}: BookmarkNavProps) => {
   const localize = useLocalize();
   const menuId = useId();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -99,30 +103,44 @@ const BookmarkNav: FC<BookmarkNavProps> = ({ tags, setTags }: BookmarkNavProps) 
       keyPrefix="bookmark-nav-"
       className="z-[125]"
       trigger={
-        <TooltipAnchor
-          description={label}
-          render={
-            <Ariakit.MenuButton
-              id="bookmark-nav-menu-button"
-              aria-label={buttonAriaLabel}
-              aria-pressed={tags.length > 0}
-              className={cn(
-                'flex items-center justify-center',
-                'size-10 border-none text-text-primary hover:bg-accent hover:text-accent-foreground',
-                'rounded-full border-none p-2 hover:bg-surface-active-alt md:rounded-xl',
-                'outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-black dark:focus-visible:ring-white',
-                isMenuOpen ? 'bg-surface-hover' : '',
-              )}
-              data-testid="bookmark-menu"
-            >
+        <Ariakit.MenuButton
+          id="bookmark-nav-menu-button"
+          aria-label={buttonAriaLabel}
+          aria-pressed={tags.length > 0}
+          className={cn(
+            listStyle
+              ? 'group relative flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm text-text-primary outline-none hover:bg-surface-active-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-inset dark:focus-visible:ring-white'
+              : cn(
+                  'flex items-center justify-center',
+                  'size-10 border-none text-text-primary hover:bg-accent hover:text-accent-foreground',
+                  'rounded-full border-none p-2 hover:bg-surface-active-alt md:rounded-xl',
+                  'outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-inset dark:focus-visible:ring-white',
+                ),
+            isMenuOpen ? 'bg-surface-hover' : '',
+          )}
+          data-testid="bookmark-menu"
+        >
+          {listStyle ? (
+            <div className="flex flex-1 items-center truncate pr-6">
+              <div className="mr-2 h-5 w-5">
+                {tags.length > 0 ? (
+                  <BookmarkFilledIcon aria-hidden="true" className="h-5 w-5 text-text-primary" />
+                ) : (
+                  <BookmarkIcon aria-hidden="true" className="h-5 w-5 text-text-primary" />
+                )}
+              </div>
+              <span className="truncate">{label}</span>
+            </div>
+          ) : (
+            <>
               {tags.length > 0 ? (
                 <BookmarkFilledIcon aria-hidden="true" className="icon-lg text-text-primary" />
               ) : (
                 <BookmarkIcon aria-hidden="true" className="icon-lg text-text-primary" />
               )}
-            </Ariakit.MenuButton>
-          }
-        />
+            </>
+          )}
+        </Ariakit.MenuButton>
       }
       items={dropdownItems}
     />

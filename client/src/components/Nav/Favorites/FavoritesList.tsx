@@ -1,15 +1,16 @@
-import React, { useRef, useCallback, useMemo, useEffect } from 'react';
+import React, { lazy, Suspense, useRef, useCallback, useMemo, useEffect } from 'react';
 import { LayoutGrid } from 'lucide-react';
 import { useDrag, useDrop } from 'react-dnd';
-import { NewChatIcon, Skeleton } from '@librechat/client';
+import { Skeleton } from '@librechat/client';
 import { useNavigate } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { useRecoilValue } from 'recoil';
-import { QueryKeys, dataService } from 'librechat-data-provider';
+import { QueryKeys, dataService, Permissions, PermissionTypes } from 'librechat-data-provider';
 import type t from 'librechat-data-provider';
 import type { AgentQueryResult } from '~/common';
 import {
   useGetConversation,
+  useHasAccess,
   useShowMarketplace,
   useFavorites,
   useLocalize,
@@ -20,6 +21,8 @@ import useSelectMention from '~/hooks/Input/useSelectMention';
 import { useGetEndpointsQuery } from '~/data-provider';
 import FavoriteItem from './FavoriteItem';
 import store from '~/store';
+
+const BookmarkNav = lazy(() => import('../Bookmarks/BookmarkNav'));
 
 const FavoriteItemSkeleton = () => (
   <div className="flex w-full items-center rounded-lg px-3 py-2">
@@ -119,11 +122,14 @@ export default function FavoritesList({
   isSmallScreen,
   toggleNav,
   onHeightChange,
+  tags,
+  setTags,
 }: {
   isSmallScreen?: boolean;
   toggleNav?: () => void;
-  /** Callback when the list height might have changed (e.g., agents finished loading) */
   onHeightChange?: () => void;
+  tags: string[];
+  setTags: (tags: string[]) => void;
 }) {
   const navigate = useNavigate();
   const localize = useLocalize();
@@ -131,6 +137,10 @@ export default function FavoritesList({
   const getConversation = useGetConversation(0);
   const { favorites, reorderFavorites, isLoading: isFavoritesLoading } = useFavorites();
   const showAgentMarketplace = useShowMarketplace();
+  const hasAccessToBookmarks = useHasAccess({
+    permissionType: PermissionTypes.BOOKMARKS,
+    permission: Permissions.USE,
+  });
 
   const { newConversation } = useNewConvo();
   const assistantsMap = useAssistantsMapContext();
@@ -146,16 +156,8 @@ export default function FavoritesList({
     returnHandlers: true,
   });
 
-  const newChatRef = useRef<HTMLDivElement>(null);
   const marketplaceRef = useRef<HTMLDivElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
-
-  const handleNewChat = useCallback(() => {
-    newConversation();
-    if (isSmallScreen && toggleNav) {
-      toggleNav();
-    }
-  }, [newConversation, isSmallScreen, toggleNav]);
 
   const handleAgentMarketplace = useCallback(() => {
     navigate('/agents');
@@ -300,29 +302,6 @@ export default function FavoritesList({
           </>
         ) : (
           <>
-            {/* New Chat button */}
-            <div
-              ref={newChatRef}
-              role="button"
-              tabIndex={0}
-              aria-label={localize('com_ui_new_chat')}
-              className="group relative flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm text-text-primary outline-none hover:bg-surface-active-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-black dark:focus-visible:ring-white"
-              onClick={handleNewChat}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleNewChat();
-                }
-              }}
-              data-testid="nav-new-chat-favorites-button"
-            >
-              <div className="flex flex-1 items-center truncate pr-6">
-                <div className="mr-2 h-5 w-5">
-                  <NewChatIcon className="h-5 w-5 text-text-primary" />
-                </div>
-                <span className="truncate">{localize('com_ui_new_chat')}</span>
-              </div>
-            </div>
             {/* Agent Marketplace button */}
             {showAgentMarketplace && (
               <div
@@ -347,6 +326,11 @@ export default function FavoritesList({
                   <span className="truncate">{localize('com_agents_marketplace')}</span>
                 </div>
               </div>
+            )}
+            {hasAccessToBookmarks && (
+              <Suspense fallback={<MarketplaceSkeleton />}>
+                <BookmarkNav tags={tags} setTags={setTags} listStyle />
+              </Suspense>
             )}
             {safeFavorites.map((fav, index) => {
               if (fav.agentId) {

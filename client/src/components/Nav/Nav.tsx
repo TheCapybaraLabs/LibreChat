@@ -2,7 +2,6 @@ import { Skeleton, useMediaQuery } from '@librechat/client';
 import type { InfiniteQueryObserverResult } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import type { ConversationListResponse } from 'librechat-data-provider';
-import { Permissions, PermissionTypes } from 'librechat-data-provider';
 import {
   lazy,
   memo,
@@ -24,7 +23,6 @@ import {
 } from '~/data-provider';
 import {
   useAuthContext,
-  useHasAccess,
   useLocalize,
   useLocalStorage,
   useNavScrolling,
@@ -34,9 +32,7 @@ import { cn } from '~/utils';
 import NewChat from './NewChat';
 import SearchBar from './SearchBar';
 
-const BookmarkNav = lazy(() => import('./Bookmarks/BookmarkNav'));
 const AccountSettings = lazy(() => import('./AccountSettings'));
-const AgentMarketplaceButton = lazy(() => import('./AgentMarketplaceButton'));
 
 export const NAV_WIDTH = {
   MOBILE: 320,
@@ -91,11 +87,6 @@ const Nav = memo(
     const [tags, setTags] = useState<string[]>([]);
 
     const brandLogoSrc = import.meta.env.VITE_BRAND_LOGO;
-
-    const hasAccessToBookmarks = useHasAccess({
-      permissionType: PermissionTypes.BOOKMARKS,
-      permission: Permissions.USE,
-    });
 
     const search = useRecoilValue(store.search);
 
@@ -193,28 +184,15 @@ const Nav = memo(
 
     const headerButtons = useMemo(
       () => (
-        <>
-          <div className="mr-1 mt-1 h-8 w-8 items-center">
-            <img
-              src="/assets/developers-logo.svg"
-              className="w-full items-center"
-              alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
-            />
-          </div>
-          <Suspense fallback={null}>
-            <AgentMarketplaceButton isSmallScreen={isSmallScreen} toggleNav={toggleNavVisible} />
-          </Suspense>
-          {hasAccessToBookmarks && (
-            <>
-              <div className="mt-1.5" />
-              <Suspense fallback={null}>
-                <BookmarkNav tags={tags} setTags={setTags} />
-              </Suspense>
-            </>
-          )}
-        </>
+        <div className="mr-1 mt-1 h-8 w-8 items-center">
+          <img
+            src="/assets/developers-logo.svg"
+            className="w-full items-center"
+            alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
+          />
+        </div>
       ),
-      [hasAccessToBookmarks, tags, localize, isSmallScreen, toggleNavVisible],
+      [localize],
     );
 
     const [isSearchLoading, setIsSearchLoading] = useState(
@@ -263,6 +241,8 @@ const Nav = memo(
                 isSearchLoading={isSearchLoading}
                 isChatsExpanded={isChatsExpanded}
                 setIsChatsExpanded={setIsChatsExpanded}
+                tags={tags}
+                setTags={setTags}
               />
             </div>
           </div>

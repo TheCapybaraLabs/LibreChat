@@ -1,7 +1,7 @@
 import { QueryKeys } from 'librechat-data-provider';
 import { useRecoilValue } from 'recoil';
 import { useQueryClient } from '@tanstack/react-query';
-import { TooltipAnchor, Button, NewChatIcon } from '@librechat/client';
+import { Button, NewChatIcon } from '@librechat/client';
 import { useNewConvo, useLocalize } from '~/hooks';
 import { clearMessagesCache } from '~/utils';
 import store from '~/store';
@@ -23,20 +23,15 @@ export default function HeaderNewChat() {
   };
 
   return (
-    <TooltipAnchor
-      description={localize('com_ui_new_chat')}
-      render={
-        <Button
-          size="icon"
-          variant="outline"
-          data-testid="wide-header-new-chat-button"
-          aria-label={localize('com_ui_new_chat')}
-          className="rounded-xl bg-presentation duration-0 hover:bg-surface-active-alt max-md:hidden"
-          onClick={clickHandler}
-        >
-          <NewChatIcon />
-        </Button>
-      }
-    />
+    <Button
+      variant="outline"
+      data-testid="wide-header-new-chat-button"
+      aria-label={localize('com_ui_new_chat')}
+      className="flex items-center gap-2 rounded-xl bg-presentation px-3 duration-0 hover:bg-surface-active-alt max-md:hidden"
+      onClick={clickHandler}
+    >
+      <NewChatIcon className="shrink-0" />
+      {localize('com_ui_new_chat')}
+    </Button>
   );
 }

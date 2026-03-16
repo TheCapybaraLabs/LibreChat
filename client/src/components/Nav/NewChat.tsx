@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { TooltipAnchor, NewChatIcon, MobileSidebar, Sidebar, Button } from '@librechat/client';
 import { CLOSE_SIDEBAR_ID, OPEN_SIDEBAR_ID } from '~/components/Chat/Menus/OpenSidebar';
 import { useLocalize, useNewConvo } from '~/hooks';
-import { clearMessagesCache } from '~/utils';
+import { clearMessagesCache, cn } from '~/utils';
 import store from '~/store';
 
 export default function NewChat({
@@ -77,28 +77,22 @@ export default function NewChat({
             </Button>
           }
         />
-        <div className="flex gap-0.5">
-          {headerButtons}
-
-          <TooltipAnchor
-            description={localize('com_ui_new_chat')}
-            render={
-              <Button
-                asChild
-                size="icon"
-                variant="outline"
-                data-testid="nav-new-chat-button"
-                aria-label={localize('com_ui_new_chat')}
-                className="rounded-full border-none bg-transparent duration-0 hover:bg-surface-active-alt focus-visible:ring-inset focus-visible:ring-black focus-visible:ring-offset-0 dark:focus-visible:ring-white md:rounded-xl"
-              >
-                <Link to="/c/new" state={{ focusChat: true }} onClick={clickHandler}>
-                  <NewChatIcon className="icon-lg text-text-primary" />
-                </Link>
-              </Button>
-            }
-          />
-        </div>
+        <div className="flex gap-0.5">{headerButtons}</div>
       </div>
+      <Link
+        to="/c/new"
+        state={{ focusChat: true }}
+        onClick={clickHandler}
+        data-testid="nav-new-chat-button"
+        aria-label={localize('com_ui_new_chat')}
+        className={cn(
+          'mb-2 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-opacity duration-150',
+          'bg-text-primary text-surface-primary hover:opacity-90',
+        )}
+      >
+        <NewChatIcon className="icon-md shrink-0 text-white dark:text-gray-900" />
+        {localize('com_ui_new_chat')}
+      </Link>
       {subHeaders != null ? subHeaders : null}
     </>
   );

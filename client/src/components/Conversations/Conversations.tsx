@@ -32,6 +32,8 @@ interface ConversationsProps {
   isSearchLoading: boolean;
   isChatsExpanded: boolean;
   setIsChatsExpanded: (expanded: boolean) => void;
+  tags: string[];
+  setTags: (tags: string[]) => void;
 }
 
 interface MeasuredRowProps {
@@ -157,6 +159,8 @@ const Conversations: FC<ConversationsProps> = ({
   isSearchLoading,
   isChatsExpanded,
   setIsChatsExpanded,
+  tags,
+  setTags,
 }) => {
   const localize = useLocalize();
   const search = useRecoilValue(store.search);
@@ -281,6 +285,8 @@ const Conversations: FC<ConversationsProps> = ({
               isSmallScreen={isSmallScreen}
               toggleNav={toggleNav}
               onHeightChange={clearFavoritesCache}
+              tags={tags}
+              setTags={setTags}
             />
           </MeasuredRow>
         );
