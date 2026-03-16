@@ -104,11 +104,11 @@ export const refreshListAvatars = async ({
             );
             stats.updated++;
           } catch (persistErr) {
-            logger.error('[refreshListAvatars] Avatar refresh persist error: %o', persistErr);
+            logger.error('[refreshListAvatars] Avatar refresh persist error:', persistErr);
             stats.persist_error++;
           }
         } catch (err) {
-          logger.error('[refreshListAvatars] S3 avatar refresh error: %o', err);
+          logger.error('[refreshListAvatars] S3 avatar refresh error:', err);
           stats.s3_error++;
         }
       }),
@@ -116,7 +116,7 @@ export const refreshListAvatars = async ({
   }
 
   const { urlCache: _urlCache, ...loggableStats } = stats;
-  logger.info('[refreshListAvatars] Avatar refresh summary: %o', {
+  logger.info('[refreshListAvatars] Avatar refresh summary:', {
     ...loggableStats,
     urlCacheSize: Object.keys(_urlCache).length,
   });
