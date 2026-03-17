@@ -20,7 +20,9 @@ const fmt = (n, d = 0) => Number(n || 0).toFixed(d);
 
   const since = new Date(Date.now() - DAYS * 24 * 60 * 60 * 1000);
 
-  printSection(`Cost Report by User & Model — last ${DAYS} days (since ${since.toISOString().slice(0, 10)})`);
+  printSection(
+    `Cost Report by User & Model — last ${DAYS} days (since ${since.toISOString().slice(0, 10)})`,
+  );
 
   // ── Per-user + per-model breakdown ─────────────────────────────────────────
   const byUserModelPipeline = [
