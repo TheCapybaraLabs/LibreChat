@@ -5,6 +5,7 @@ import { TranslationKeys, useLocalize } from '~/hooks';
 import SocialLoginRender from './SocialLoginRender';
 import { BlinkAnimation } from './BlinkAnimation';
 import { Banner } from '../Banners';
+import { LOGO_PATH } from '~/utils/logoPath';
 import Footer from './Footer';
 
 function AuthLayout({
@@ -62,7 +63,7 @@ function AuthLayout({
       <BlinkAnimation active={isFetching}>
         <div className="mt-12 h-24 w-full bg-cover">
           <img
-            src={'/assets/customization/logo.svg'}
+            src={LOGO_PATH}
             className="h-full w-full object-contain"
             alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LabsChat' })}
           />
