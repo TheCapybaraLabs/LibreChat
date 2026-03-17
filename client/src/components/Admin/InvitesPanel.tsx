@@ -18,16 +18,25 @@ export default function InvitesPanel() {
   const createInvite = useCreateAdminInviteMutation({
     onSuccess: () => {
       setEmail('');
-      showToast({ message: localize('com_admin_invite_sent'), severity: NotificationSeverity.SUCCESS });
+      showToast({
+        message: localize('com_admin_invite_sent'),
+        severity: NotificationSeverity.SUCCESS,
+      });
     },
     onError: () => {
-      showToast({ message: localize('com_admin_invite_error'), severity: NotificationSeverity.ERROR });
+      showToast({
+        message: localize('com_admin_invite_error'),
+        severity: NotificationSeverity.ERROR,
+      });
     },
   });
 
   const revokeInvite = useRevokeAdminInviteMutation({
     onError: () => {
-      showToast({ message: localize('com_admin_invite_error'), severity: NotificationSeverity.ERROR });
+      showToast({
+        message: localize('com_admin_invite_error'),
+        severity: NotificationSeverity.ERROR,
+      });
     },
   });
 
@@ -40,7 +49,9 @@ export default function InvitesPanel() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <h2 className="text-lg font-semibold text-text-primary">{localize('com_admin_invite_users')}</h2>
+      <h2 className="text-lg font-semibold text-text-primary">
+        {localize('com_admin_invite_users')}
+      </h2>
 
       <div className="flex gap-2">
         <input
@@ -63,11 +74,15 @@ export default function InvitesPanel() {
       </div>
 
       <div>
-        <h3 className="mb-3 text-sm font-medium text-text-secondary">{localize('com_admin_invite_pending')}</h3>
+        <h3 className="mb-3 text-sm font-medium text-text-secondary">
+          {localize('com_admin_invite_pending')}
+        </h3>
         {isLoading ? (
           <div className="text-sm text-text-secondary">…</div>
         ) : invites.length === 0 ? (
-          <div className="text-sm text-text-secondary">{localize('com_admin_invite_no_pending')}</div>
+          <div className="text-sm text-text-secondary">
+            {localize('com_admin_invite_no_pending')}
+          </div>
         ) : (
           <table className="w-full text-sm">
             <thead>

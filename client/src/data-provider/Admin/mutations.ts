@@ -20,9 +20,7 @@ export const useCreateAdminInviteMutation = (
   );
 };
 
-export const useRevokeAdminInviteMutation = (
-  options?: UseMutationOptions<void, Error, string>,
-) => {
+export const useRevokeAdminInviteMutation = (options?: UseMutationOptions<void, Error, string>) => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>(
     [MutationKeys.revokeAdminInvite],
