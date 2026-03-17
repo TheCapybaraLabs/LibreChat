@@ -3,6 +3,7 @@ import type { TStartupConfig } from 'librechat-data-provider';
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useGetStartupConfig } from '~/data-provider';
+import { LOGO_PATH } from '~/utils/logoPath';
 import { useLocalize } from '~/hooks';
 
 export default function PublicPageLayout() {
@@ -24,7 +25,7 @@ export default function PublicPageLayout() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8 md:px-10">
           <div className="flex items-center gap-3">
             <img
-              src="/assets/customization/logo.svg"
+              src={LOGO_PATH}
               className="h-9 w-auto object-contain"
               alt={localize('com_ui_logo', {
                 0: startupConfig?.appTitle ?? 'LabsChat',
