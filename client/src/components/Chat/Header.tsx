@@ -58,10 +58,7 @@ function Header() {
             <motion.div
               layout
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className={cn(
-                'flex items-center gap-2',
-                !navVisible && !isSmallScreen ? 'pl-2' : '',
-              )}
+              className={cn('flex items-center gap-2', !navVisible && !isSmallScreen ? 'pl-2' : '')}
             >
               <ModelSelector startupConfig={startupConfig} />
               {interfaceConfig.presets === true && interfaceConfig.modelSelect && <PresetsMenu />}

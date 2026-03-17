@@ -21,12 +21,7 @@ import {
   useGetStartupConfig,
   useTitleGeneration,
 } from '~/data-provider';
-import {
-  useAuthContext,
-  useLocalize,
-  useLocalStorage,
-  useNavScrolling,
-} from '~/hooks';
+import { useAuthContext, useLocalize, useLocalStorage, useNavScrolling } from '~/hooks';
 import store from '~/store';
 import { cn } from '~/utils';
 import NewChat from './NewChat';
