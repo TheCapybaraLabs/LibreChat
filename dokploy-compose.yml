@@ -5,7 +5,9 @@ services:
       dockerfile: Dockerfile.multi
       target: api-build
       args:
-        VITE_BRAND_LOGO: ${VITE_BRAND_LOGO}
+        VITE_CLIENT_BANNER: ${VITE_CLIENT_BANNER}
+        VITE_PLATFORM_IMAGE: ${VITE_PLATFORM_IMAGE}
+        VITE_DEV_LOGO: ${VITE_DEV_LOGO}
         VITE_APP_TITLE: ${VITE_APP_TITLE:-LabsChat}
     ports:
       - ${PORT:-3080}:${PORT:-3080}

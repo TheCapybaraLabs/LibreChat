@@ -59,7 +59,9 @@ RUN npm run build
 # Client build
 FROM base AS client-build
 ARG VITE_APP_TITLE
-ARG VITE_BRAND_LOGO
+ARG VITE_CLIENT_BANNER
+ARG VITE_PLATFORM_IMAGE
+ARG VITE_DEV_LOGO
 
 # Theme environment variables - Light mode
 ARG VITE_THEME_LIGHT_TEXT_PRIMARY

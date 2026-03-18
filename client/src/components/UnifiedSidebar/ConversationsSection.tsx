@@ -19,6 +19,7 @@ import {
 } from '~/data-provider';
 import { Conversations } from '~/components/Conversations';
 import SearchBar from '~/components/Nav/SearchBar';
+import { CLIENT_BANNER } from '~/utils/logoPath';
 import store from '~/store';
 
 const BookmarkNav = lazy(() => import('~/components/Nav/Bookmarks/BookmarkNav'));
@@ -29,7 +30,7 @@ const ConversationsSection = memo(() => {
   const setSidebarExpanded = useSetRecoilState(store.sidebarExpanded);
   const { isAuthenticated } = useAuthContext();
   const { data: startupConfig } = useGetStartupConfig();
-  const brandLogoSrc = import.meta.env.VITE_BRAND_LOGO;
+  const brandLogoSrc = CLIENT_BANNER;
   useTitleGeneration(isAuthenticated);
 
   const [isChatsExpanded, setIsChatsExpanded] = useLocalStorage('chatsExpanded', true);
