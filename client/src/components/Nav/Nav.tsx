@@ -24,6 +24,7 @@ import {
 import { useAuthContext, useLocalize, useLocalStorage, useNavScrolling } from '~/hooks';
 import store from '~/store';
 import { cn } from '~/utils';
+import { CLIENT_BANNER, DEV_LOGO } from '~/utils/logoPath';
 import NewChat from './NewChat';
 import SearchBar from './SearchBar';
 
@@ -81,7 +82,7 @@ const Nav = memo(
     const [showLoading, setShowLoading] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
 
-    const brandLogoSrc = import.meta.env.VITE_BRAND_LOGO;
+    const brandLogoSrc = CLIENT_BANNER;
 
     const search = useRecoilValue(store.search);
 
@@ -181,7 +182,7 @@ const Nav = memo(
       () => (
         <div className="mr-1 mt-1 h-8 w-8 items-center">
           <img
-            src="/assets/developers-logo.svg"
+            src={DEV_LOGO}
             className="w-full items-center"
             alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
           />
@@ -241,13 +242,13 @@ const Nav = memo(
               />
             </div>
           </div>
-          {brandLogoSrc ? (
+          {brandLogoSrc && (
             <img
               src={brandLogoSrc}
               className="mb-2 flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active-alt dark:hover:bg-surface-hover-alt"
               alt={startupConfig?.appTitle ?? 'LabsChat'}
             />
-          ) : null}
+          )}
           <Suspense fallback={<Skeleton className="mt-1 h-12 w-full rounded-xl" />}>
             <AccountSettings />
           </Suspense>

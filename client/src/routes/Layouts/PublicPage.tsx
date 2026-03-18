@@ -3,8 +3,8 @@ import type { TStartupConfig } from 'librechat-data-provider';
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useGetStartupConfig } from '~/data-provider';
-import { LOGO_PATH } from '~/utils/logoPath';
 import { useLocalize } from '~/hooks';
+import { CLIENT_BANNER, DEV_LOGO } from '~/utils/logoPath';
 
 export default function PublicPageLayout() {
   const localize = useLocalize();
@@ -25,7 +25,7 @@ export default function PublicPageLayout() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8 md:px-10">
           <div className="flex items-center gap-3">
             <img
-              src={LOGO_PATH}
+              src={CLIENT_BANNER ?? '/assets/customization/logo.svg'}
               className="h-9 w-auto object-contain"
               alt={localize('com_ui_logo', {
                 0: startupConfig?.appTitle ?? 'LabsChat',
@@ -57,7 +57,7 @@ export default function PublicPageLayout() {
       <div className="absolute bottom-0 right-0 md:m-4">
         <div className="flex flex-col items-center justify-center p-4 md:p-2">
           <img
-            src="/assets/developers-logo.svg"
+            src={DEV_LOGO}
             className="h-8 w-8 object-contain"
             alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
           />

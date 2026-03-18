@@ -2,12 +2,10 @@ import { ThemeSelector } from '@librechat/client';
 import type { TStartupConfig } from 'librechat-data-provider';
 import { ErrorMessage } from '~/components/Auth/ErrorMessage';
 import { type TranslationKeys, useLocalize } from '~/hooks';
-import { LOGO_PATH } from '~/utils/logoPath';
+import { CLIENT_BANNER, DEV_LOGO, PLATFORM_IMAGE } from '~/utils/logoPath';
 import { Banner } from '../Banners';
-import { BlinkAnimation } from './BlinkAnimation';
 import Footer from './Footer';
 import SocialLoginRender from './SocialLoginRender';
-
 
 function AuthLayout({
   children,
@@ -66,10 +64,10 @@ function AuthLayout({
         <ThemeSelector />
       </div>
 
-      <div className="absolute right-0 bottom-0 z-20 md:m-4">
+      <div className="absolute bottom-0 right-0 z-20 md:m-4">
         <div className="flex flex-col items-center justify-center p-4 md:p-2">
           <img
-            src="/assets/developers-logo.svg"
+            src={DEV_LOGO}
             className="h-8 w-8 object-contain"
             alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
           />
@@ -82,30 +80,29 @@ function AuthLayout({
         <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-border-light bg-surface-dialog shadow-2xl backdrop-blur-md md:grid-cols-2">
           <section className="hidden min-h-[560px] overflow-hidden md:flex">
             <img
-              src={LOGO_PATH}
+              src={PLATFORM_IMAGE}
               className="h-full w-full object-cover"
-              alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LabsChat' })}
+              alt=""
+              aria-hidden="true"
             />
           </section>
 
           <section className="flex min-h-[560px] flex-col justify-center px-6 py-8 sm:px-10">
-            <BlinkAnimation active={isFetching}>
-              <div className="mb-8 flex items-center justify-center md:hidden">
-                <div className="size-40 overflow-hidden rounded-2xl">
-                  <img
-                    src={LOGO_PATH}
-                    className="h-full w-full object-cover"
-                    alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LabsChat' })}
-                  />
-                </div>
+            {CLIENT_BANNER && (
+              <div className="mb-6 flex items-center justify-center">
+                <img
+                  src={CLIENT_BANNER}
+                  className="max-h-20 w-full object-contain"
+                  alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LabsChat' })}
+                />
               </div>
-            </BlinkAnimation>
+            )}
 
             <DisplayError />
 
             {!hasStartupConfigError && !isFetching && header && (
               <h1
-                className="mb-4 text-center font-semibold text-2xl text-text-primary"
+                className="mb-4 text-center text-2xl font-semibold text-text-primary"
                 style={{ userSelect: 'none' }}
               >
                 {header}
