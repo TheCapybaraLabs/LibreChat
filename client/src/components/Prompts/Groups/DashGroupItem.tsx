@@ -86,13 +86,13 @@ function DashGroupItemComponent({ group, instanceProjectId }: DashGroupItemProps
   return (
     <div
       className={cn(
-        'relative mx-2 my-2 rounded-lg border border-border-light bg-surface-primary shadow-sm transition-all duration-300 ease-in-out hover:bg-surface-secondary',
+        'mx-2 my-2 flex items-center rounded-lg border border-border-light bg-surface-primary shadow-sm transition-all duration-300 ease-in-out hover:bg-surface-secondary',
         params.promptId === group._id && 'bg-surface-hover',
       )}
     >
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center justify-between rounded-lg p-3 text-left"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg p-3 text-left"
         onClick={handleContainerClick}
         onKeyDown={handleKeyDown}
         aria-label={
@@ -106,25 +106,23 @@ function DashGroupItemComponent({ group, instanceProjectId }: DashGroupItemProps
               })
         }
       >
-        <div className="flex items-center gap-2 truncate pr-2">
-          <CategoryIcon category={group.category ?? ''} className="icon-lg" aria-hidden="true" />
-
-          <Label className="text-md cursor-pointer truncate font-semibold text-text-primary">
-            {group.name}
-          </Label>
-        </div>
-
-        <div className="flex h-full items-center gap-2">
-          {isGlobalGroup && (
-            <EarthIcon
-              className="icon-md text-green-500"
-              aria-label={localize('com_ui_global_group')}
-            />
-          )}
-        </div>
+        <CategoryIcon
+          category={group.category ?? ''}
+          className="icon-lg shrink-0"
+          aria-hidden="true"
+        />
+        <Label className="text-md min-w-0 cursor-pointer truncate font-semibold text-text-primary">
+          {group.name}
+        </Label>
+        {isGlobalGroup && (
+          <EarthIcon
+            className="icon-md shrink-0 text-green-500"
+            aria-label={localize('com_ui_global_group')}
+          />
+        )}
       </button>
 
-      <div className="absolute right-0 top-0 mr-1 mt-2.5 flex items-start gap-1 pl-2">
+      <div className="flex shrink-0 items-center gap-1 pr-2">
         {canEdit && (
           <OGDialog>
             <OGDialogTrigger asChild>
