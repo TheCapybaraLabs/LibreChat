@@ -93,7 +93,9 @@ function AuthLayout({
                 <img
                   src={CLIENT_BANNER}
                   className="max-h-20 w-full object-contain"
-                  alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? import.meta.env.VITE_APP_TITLE ?? 'LabsChat' })}
+                  alt={localize('com_ui_logo', {
+                    0: startupConfig?.appTitle ?? import.meta.env.VITE_APP_TITLE ?? 'LabsChat',
+                  })}
                 />
               ) : (
                 <span className="font-sans text-3xl font-semibold tracking-tight text-text-primary">
