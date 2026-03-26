@@ -49,9 +49,9 @@ const App = () => {
       <RecoilRoot>
         <LiveAnnouncer>
           <ThemeProvider
-            // Only pass initialTheme and themeSet if environment theme exists
-            // This allows localStorage values to persist when no env theme is set
-            {...(envThemeSet && { initialTheme: 'system', themeSet: envThemeSet })}
+            // Only pass themeSet if environment theme exists; never override initialTheme
+            // so localStorage preference (dark/light/system) is always respected
+            {...(envThemeSet && { themeSet: envThemeSet })}
           >
             {/* The ThemeProvider will automatically:
                 1. Apply dark/light mode classes
