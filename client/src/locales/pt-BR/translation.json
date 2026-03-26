@@ -202,6 +202,8 @@
   "com_auth_password": "Senha",
   "com_auth_password_confirm": "Confirmar senha",
   "com_auth_password_forgot": "Esqueceu a senha?",
+  "com_auth_show_password": "Mostrar senha",
+  "com_auth_hide_password": "Ocultar senha",
   "com_auth_password_max_length": "A senha deve ter menos de 128 caracteres",
   "com_auth_password_min_length": "A senha deve ter pelo menos 8 caracteres",
   "com_auth_password_not_match": "As senhas não coincidem",
