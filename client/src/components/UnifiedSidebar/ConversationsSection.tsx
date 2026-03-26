@@ -115,15 +115,19 @@ const ConversationsSection = memo(() => {
       role="region"
       aria-label={localize('com_ui_chat_history')}
     >
-      {brandLogoSrc ? (
-        <div className="px-3 pb-2">
+      <div className="px-3 pb-2">
+        {brandLogoSrc ? (
           <img
             src={brandLogoSrc}
             className="flex h-12 w-full items-center gap-2 rounded-xl bg-surface-active-alt object-contain p-2 text-sm transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active-alt dark:hover:bg-surface-hover-alt"
-            alt={startupConfig?.appTitle ?? 'Chat IA'}
+            alt={startupConfig?.appTitle ?? 'LabsChat'}
           />
-        </div>
-      ) : null}
+        ) : (
+          <span className="flex h-12 w-full items-center justify-center rounded-xl bg-surface-active-alt px-2 font-sans text-xl font-semibold tracking-tight text-text-primary transition-all duration-200 ease-in-out hover:bg-surface-hover-alt dark:bg-surface-active-alt dark:hover:bg-surface-hover-alt">
+            {startupConfig?.appTitle ?? import.meta.env.VITE_APP_TITLE ?? 'LabsChat'}
+          </span>
+        )}
+      </div>
       <div className="flex items-center gap-0.5 px-3">
         {hasAccessToBookmarks && (
           <Suspense fallback={null}>
