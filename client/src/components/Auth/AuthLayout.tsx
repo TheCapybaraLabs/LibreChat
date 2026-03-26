@@ -88,15 +88,19 @@ function AuthLayout({
           </section>
 
           <section className="flex min-h-[560px] flex-col justify-center px-6 py-8 sm:px-10">
-            {CLIENT_BANNER && (
-              <div className="mb-6 flex items-center justify-center">
+            <div className="mb-6 flex items-center justify-center">
+              {CLIENT_BANNER ? (
                 <img
                   src={CLIENT_BANNER}
                   className="max-h-20 w-full object-contain"
-                  alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LabsChat' })}
+                  alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? import.meta.env.VITE_APP_TITLE ?? 'LabsChat' })}
                 />
-              </div>
-            )}
+              ) : (
+                <span className="font-sans text-3xl font-semibold tracking-tight text-text-primary">
+                  {startupConfig?.appTitle ?? import.meta.env.VITE_APP_TITLE ?? 'LabsChat'}
+                </span>
+              )}
+            </div>
 
             <DisplayError />
 
