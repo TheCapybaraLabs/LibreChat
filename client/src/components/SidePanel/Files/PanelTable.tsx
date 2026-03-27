@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
-import { ArrowUpLeft } from 'lucide-react';
+import { ArrowUpLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Table,
   Button,
@@ -289,39 +289,40 @@ export default function DataTable<TData, TValue>({ columns, data }: DataTablePro
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <Button
           ref={manageFilesRef}
           variant="outline"
           size="sm"
           onClick={() => setShowFilesModal(true)}
           aria-label={localize('com_sidepanel_manage_files')}
+          className="min-w-0 shrink overflow-hidden"
         >
-          <ArrowUpLeft className="h-4 w-4" aria-hidden="true" />
-          <span className="ml-2">{localize('com_sidepanel_manage_files')}</span>
+          <ArrowUpLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="ml-2 truncate">{localize('com_sidepanel_manage_files')}</span>
         </Button>
 
-        <div className="flex items-center gap-2" role="navigation" aria-label="Pagination">
+        <div className="flex shrink-0 items-center gap-2" role="navigation" aria-label="Pagination">
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             aria-label={localize('com_ui_prev')}
           >
-            {localize('com_ui_prev')}
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </Button>
           <div aria-live="polite" className="text-sm">
             {`${pageIndex + 1} / ${table.getPageCount()}`}
           </div>
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             aria-label={localize('com_ui_next')}
           >
-            {localize('com_ui_next')}
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       </div>

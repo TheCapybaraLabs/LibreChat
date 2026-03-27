@@ -55,7 +55,7 @@ function ChatGroupItem({
 
   return (
     <>
-      <div className="relative my-2 items-stretch justify-between rounded-xl border border-border-light px-1 shadow-sm transition-all duration-300 ease-in-out hover:bg-surface-tertiary hover:shadow-lg">
+      <div className="my-2 items-stretch justify-between rounded-xl border border-border-light px-1 shadow-sm transition-all duration-300 ease-in-out hover:bg-surface-tertiary hover:shadow-lg">
         <ListCard
           name={group.name}
           category={group.category ?? ''}
@@ -65,73 +65,72 @@ function ChatGroupItem({
               ? group.oneliner
               : (group.productionPrompt?.prompt ?? '')
           }
-        ></ListCard>
-        {groupIsGlobal === true && (
-          <div className="absolute right-14 top-[16px]">
-            <EarthIcon
-              className="icon-md text-green-400"
-              aria-label={localize('com_ui_sr_global_prompt')}
-            />
-          </div>
-        )}
-        <div className="absolute right-0 top-0 mr-1 mt-2.5 items-start pl-2">
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <button
-                ref={triggerButtonRef}
-                id={`prompt-actions-${group._id}`}
-                type="button"
-                aria-label={localize('com_ui_sr_actions_menu', { 0: group.name })}
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
+        >
+          <div className="flex shrink-0 items-center gap-1">
+            {groupIsGlobal === true && (
+              <EarthIcon
+                className="icon-md text-green-400"
+                aria-label={localize('com_ui_sr_global_prompt')}
+              />
+            )}
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  ref={triggerButtonRef}
+                  id={`prompt-actions-${group._id}`}
+                  type="button"
+                  aria-label={localize('com_ui_sr_actions_menu', { 0: group.name })}
+                  onClick={(e) => {
                     e.stopPropagation();
-                  }
-                }}
-                className="z-50 mr-2 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border-medium bg-transparent p-0 text-sm font-medium transition-all duration-300 ease-in-out hover:border-border-heavy hover:bg-surface-hover focus:border-border-heavy focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                    }
+                  }}
+                  className="z-50 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border-medium bg-transparent p-0 text-sm font-medium transition-all duration-300 ease-in-out hover:border-border-heavy hover:bg-surface-hover focus:border-border-heavy focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <MenuIcon className="icon-md text-text-secondary" aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                id={`prompt-menu-${group._id}`}
+                aria-label={`Available actions for ${group.name}`}
+                className="z-50 w-fit rounded-xl"
+                collisionPadding={2}
+                align="start"
               >
-                <MenuIcon className="icon-md text-text-secondary" aria-hidden="true" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              id={`prompt-menu-${group._id}`}
-              aria-label={`Available actions for ${group.name}`}
-              className="z-50 w-fit rounded-xl"
-              collisionPadding={2}
-              align="start"
-            >
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPreviewDialogOpen(true);
-                }}
-                onKeyDown={(e) => {
-                  e.stopPropagation();
-                }}
-                className="w-full cursor-pointer rounded-lg text-text-primary hover:bg-surface-hover focus:bg-surface-hover disabled:cursor-not-allowed"
-              >
-                <TextSearch className="mr-2 h-4 w-4 text-text-primary" aria-hidden="true" />
-                <span>{localize('com_ui_preview')}</span>
-              </DropdownMenuItem>
-              {canEdit && (
-                <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    disabled={!canEdit}
-                    className="cursor-pointer rounded-lg text-text-primary hover:bg-surface-hover focus:bg-surface-hover disabled:cursor-not-allowed"
-                    asChild
-                  >
-                    <Link to={`/d/prompts/${group._id}`}>
-                      <EditIcon className="mr-2 h-4 w-4 text-text-primary" aria-hidden="true" />
-                      <span>{localize('com_ui_edit')}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewDialogOpen(true);
+                  }}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="w-full cursor-pointer rounded-lg text-text-primary hover:bg-surface-hover focus:bg-surface-hover disabled:cursor-not-allowed"
+                >
+                  <TextSearch className="mr-2 h-4 w-4 text-text-primary" aria-hidden="true" />
+                  <span>{localize('com_ui_preview')}</span>
+                </DropdownMenuItem>
+                {canEdit && (
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem
+                      disabled={!canEdit}
+                      className="cursor-pointer rounded-lg text-text-primary hover:bg-surface-hover focus:bg-surface-hover disabled:cursor-not-allowed"
+                      asChild
+                    >
+                      <Link to={`/d/prompts/${group._id}`}>
+                        <EditIcon className="mr-2 h-4 w-4 text-text-primary" aria-hidden="true" />
+                        <span>{localize('com_ui_edit')}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </ListCard>
       </div>
       <PreviewPrompt
         group={group}
