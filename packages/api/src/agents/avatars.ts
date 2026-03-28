@@ -64,7 +64,7 @@ export const refreshListAvatars = async ({
     return stats;
   }
 
-  logger.debug('[refreshListAvatars] Refreshing S3 avatars for agents: %d', agents.length);
+  logger.debug(`[refreshListAvatars] Refreshing S3 avatars for agents: ${agents.length}`);
 
   for (let i = 0; i < agents.length; i += AVATAR_REFRESH_BATCH_SIZE) {
     const batch = agents.slice(i, i + AVATAR_REFRESH_BATCH_SIZE);
@@ -116,7 +116,7 @@ export const refreshListAvatars = async ({
   }
 
   const { urlCache: _urlCache, ...loggableStats } = stats;
-  logger.info('[refreshListAvatars] Avatar refresh summary:', {
+  logger.debug('[refreshListAvatars] Avatar refresh summary:', {
     ...loggableStats,
     urlCacheSize: Object.keys(_urlCache).length,
   });
