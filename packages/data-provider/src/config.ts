@@ -1313,8 +1313,10 @@ export const defaultModels = {
     'gemini-3.1-pro-preview',
     'gemini-3.1-pro-preview-customtools',
     'gemini-3.1-flash-lite-preview',
+    'gemini-3.1-flash-image-preview',
     // Gemini 3 Models
     'gemini-3-pro-preview',
+    'gemini-3-pro-image-preview',
     'gemini-3-flash-preview',
     // Gemini 2.5 Models
     'gemini-2.5-pro',
