@@ -1,4 +1,3 @@
-import getStream from 'get-stream';
 import { Providers } from '@librechat/agents';
 import { FileSources, mergeFileConfig, getEndpointFileConfig } from 'librechat-data-provider';
 import type { IMongoFile } from '@librechat/data-schemas';
@@ -56,7 +55,11 @@ export async function getFileStream(
 
   const { getDownloadStream } = encodingMethods[source];
   const stream = await getDownloadStream(req, file.filepath);
-  const buffer = await getStream.buffer(stream);
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  const buffer = Buffer.concat(chunks);
 
   return {
     file,
