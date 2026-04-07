@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { describe, it, expect, jest } from '@jest/globals';
-import { Constants, type Agent } from 'librechat-data-provider';
+import { Constants, type Agent, type AgentModelParameters } from 'librechat-data-provider';
 import type { FieldNamesMarkedBoolean } from 'react-hook-form';
 import type { AgentForm } from '~/common';
 import {
@@ -18,7 +18,7 @@ const createForm = (): AgentForm => ({
   description: null,
   instructions: null,
   model: 'gpt-4',
-  model_parameters: {},
+  model_parameters: {} as AgentModelParameters,
   tools: [],
   provider: 'openai',
   agent_ids: [],
@@ -68,9 +68,9 @@ describe('composeAgentUpdatePayload', () => {
 
 describe('persistAvatarChanges', () => {
   it('returns false for ephemeral agents', async () => {
-    const uploadAvatar = jest.fn();
+    const uploadAvatar = jest.fn<(v: { agent_id: string; formData: FormData }) => Promise<Agent>>();
     const result = await persistAvatarChanges({
-      agentId: Constants.EPHEMERAL_AGENT_ID,
+      agentId: Constants.EPHEMERAL_AGENT_ID as string,
       avatarActionState: 'upload',
       avatarFile: new File(['avatar'], 'avatar.png', { type: 'image/png' }),
       uploadAvatar,
@@ -81,7 +81,7 @@ describe('persistAvatarChanges', () => {
   });
 
   it('returns false when no upload is pending', async () => {
-    const uploadAvatar = jest.fn();
+    const uploadAvatar = jest.fn<(v: { agent_id: string; formData: FormData }) => Promise<Agent>>();
     const result = await persistAvatarChanges({
       agentId: 'agent_123',
       avatarActionState: null,
@@ -94,7 +94,7 @@ describe('persistAvatarChanges', () => {
   });
 
   it('uploads avatar when all prerequisites are met', async () => {
-    const uploadAvatar = jest.fn().mockResolvedValue({} as Agent);
+    const uploadAvatar = jest.fn<(v: { agent_id: string; formData: FormData }) => Promise<Agent>>().mockResolvedValue({} as Agent);
     const file = new File(['avatar'], 'avatar.png', { type: 'image/png' });
 
     const result = await persistAvatarChanges({
