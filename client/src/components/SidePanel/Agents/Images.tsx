@@ -112,7 +112,7 @@ export function AvatarMenu({
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         menuId="agent-avatar-menu"
-        placement="bottom"
+        placement={"bottom" as const}
         gutter={8}
         portal
         mountByState

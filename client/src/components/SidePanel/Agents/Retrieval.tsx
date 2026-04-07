@@ -15,17 +15,19 @@ import { useLocalize } from '~/hooks';
 import { ESide } from '~/common';
 import { cn } from '~/utils/';
 
+const fieldName = Capabilities.retrieval as keyof AgentForm;
+
 export default function Retrieval({ retrievalModels }: { retrievalModels: Set<string> }) {
   const localize = useLocalize();
   const methods = useFormContext<AgentForm>();
   const { control, setValue, getValues } = methods;
   const model = useWatch({ control, name: 'model' });
 
-  const isDisabled = useMemo(() => !retrievalModels.has(model), [model, retrievalModels]);
+  const isDisabled = useMemo(() => !retrievalModels.has(model ?? ''), [model, retrievalModels]);
 
   useEffect(() => {
     if (model && isDisabled) {
-      setValue(Capabilities.retrieval, false);
+      setValue(fieldName, false);
     }
   }, [model, setValue, isDisabled]);
 
@@ -34,16 +36,17 @@ export default function Retrieval({ retrievalModels }: { retrievalModels: Set<st
       <HoverCard openDelay={50}>
         <div className="flex items-center">
           <Controller
-            name={Capabilities.retrieval}
+            name={fieldName}
             control={control}
             render={({ field }) => (
               <Checkbox
-                {...field}
-                checked={field.value}
+                ref={field.ref}
+                checked={field.value as boolean}
                 disabled={isDisabled}
                 onCheckedChange={field.onChange}
                 className="relative float-left mr-2 inline-flex h-4 w-4 cursor-pointer"
-                value={field.value?.toString()}
+                value={String(field.value)}
+                aria-label={localize('com_assistants_file_search')}
               />
             )}
           />
@@ -55,8 +58,8 @@ export default function Retrieval({ retrievalModels }: { retrievalModels: Set<st
               )}
               htmlFor={Capabilities.retrieval}
               onClick={() =>
-                retrievalModels.has(model) &&
-                setValue(Capabilities.retrieval, !getValues(Capabilities.retrieval), {
+                retrievalModels.has(model ?? '') &&
+                setValue(fieldName, !getValues(fieldName), {
                   shouldDirty: true,
                 })
               }

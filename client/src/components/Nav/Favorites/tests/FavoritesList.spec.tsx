@@ -111,7 +111,7 @@ describe('FavoritesList', () => {
 
   describe('rendering', () => {
     it('should render nothing when favorites is empty and marketplace is hidden', () => {
-      const { container } = renderWithProviders(<FavoritesList />);
+      const { container } = renderWithProviders(<FavoritesList tags={[]} setTags={jest.fn()} />);
       expect(container.firstChild).toBeNull();
     });
 
@@ -122,7 +122,7 @@ describe('FavoritesList', () => {
         isLoading: true,
       });
 
-      const { container } = renderWithProviders(<FavoritesList />);
+      const { container } = renderWithProviders(<FavoritesList tags={[]} setTags={jest.fn()} />);
       // Skeletons should be present during loading - container should have children
       expect(container.firstChild).not.toBeNull();
       // When loading, the component renders skeleton placeholders (check for content, not specific CSS)
@@ -154,7 +154,7 @@ describe('FavoritesList', () => {
         },
       );
 
-      const { findAllByTestId } = renderWithProviders(<FavoritesList />);
+      const { findAllByTestId } = renderWithProviders(<FavoritesList tags={[]} setTags={jest.fn()} />);
 
       // Wait for queries to resolve
       const favoriteItems = await findAllByTestId('favorite-item');
@@ -176,7 +176,7 @@ describe('FavoritesList', () => {
       // Mock getAgentById to return 404
       (dataService.getAgentById as jest.Mock).mockRejectedValue({ response: { status: 404 } });
 
-      const { queryAllByTestId } = renderWithProviders(<FavoritesList />);
+      const { queryAllByTestId } = renderWithProviders(<FavoritesList tags={[]} setTags={jest.fn()} />);
 
       // Wait for the loading state to resolve after 404 handling by ensuring the agent request was made
       await waitFor(() => {

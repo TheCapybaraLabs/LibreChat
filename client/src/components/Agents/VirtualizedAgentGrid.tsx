@@ -175,7 +175,7 @@ const VirtualizedAgentGrid: React.FC<VirtualizedAgentGridProps> = ({
               const globalIndex = index * cardsPerRow + cardIndex;
               return (
                 <div key={`${agent.id}-${globalIndex}`} role="gridcell">
-                  <AgentCard agent={agent} onClick={() => onSelectAgent(agent)} />
+                  <AgentCard agent={agent} onSelect={() => onSelectAgent(agent)} />
                 </div>
               );
             })}

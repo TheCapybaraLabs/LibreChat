@@ -165,7 +165,7 @@ describe('Virtual Scrolling Performance', () => {
   const renderComponent = (agentCount: number) => {
     const mockQuery = createMockInfiniteQuery(agentCount);
     const useMarketplaceAgentsInfiniteQuery =
-      jest.requireMock('~/data-provider/Agents').useMarketplaceAgentsInfiniteQuery;
+      (jest.requireMock('~/data-provider/Agents') as Record<string, jest.Mock>).useMarketplaceAgentsInfiniteQuery;
     useMarketplaceAgentsInfiniteQuery.mockReturnValue(mockQuery);
 
     // Clear previous mock calls

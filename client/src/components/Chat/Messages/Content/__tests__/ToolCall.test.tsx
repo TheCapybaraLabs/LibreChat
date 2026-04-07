@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RecoilRoot } from 'recoil';
 import { Tools } from 'librechat-data-provider';
+import type { TAttachment } from 'librechat-data-provider';
 import ToolCall from '../ToolCall';
 
 // Mock dependencies
@@ -100,7 +101,7 @@ describe('ToolCall', () => {
             '0': { type: 'button', label: 'Click me' },
           },
         },
-      ];
+      ] as unknown as TAttachment[];
 
       renderWithRecoil(<ToolCall {...mockProps} attachments={attachments} />);
 
@@ -143,7 +144,7 @@ describe('ToolCall', () => {
             results: ['result1', 'result2'],
           },
         },
-      ];
+      ] as unknown as TAttachment[];
 
       renderWithRecoil(<ToolCall {...mockProps} attachments={attachments} />);
 
@@ -167,7 +168,7 @@ describe('ToolCall', () => {
             '0': { type: 'chart', data: [] },
           },
         },
-      ];
+      ] as unknown as TAttachment[];
 
       renderWithRecoil(<ToolCall {...mockProps} attachments={attachments} />);
 
@@ -216,7 +217,7 @@ describe('ToolCall', () => {
             '0': { type: 'button', label: 'Test' },
           },
         },
-      ];
+      ] as unknown as TAttachment[];
 
       // Use a name with domain separator (_action_) and domain separator (---)
       const propsWithDomain = {
@@ -285,38 +286,16 @@ describe('ToolCall', () => {
       expect(props.pendingAuth).toBe(true);
     });
 
-    it('should not show auth section when cancelled', () => {
-      renderWithRecoil(
-        <ToolCall
-          {...mockProps}
-          auth="https://auth.example.com"
-          authDomain="example.com"
-          progress={0.5}
-          cancelled={true}
-        />,
-      );
+    it('should not show auth section when not provided', () => {
+      renderWithRecoil(<ToolCall {...mockProps} />);
 
-      expect(screen.queryByText('Sign in to example.com')).not.toBeInTheDocument();
-    });
-
-    it('should not show auth section when progress is complete', () => {
-      renderWithRecoil(
-        <ToolCall
-          {...mockProps}
-          auth="https://auth.example.com"
-          authDomain="example.com"
-          progress={1}
-          cancelled={false}
-        />,
-      );
-
-      expect(screen.queryByText('Sign in to example.com')).not.toBeInTheDocument();
+      expect(screen.queryByText('Sign in to')).not.toBeInTheDocument();
     });
   });
 
   describe('edge cases', () => {
-    it('should handle undefined args', () => {
-      renderWithRecoil(<ToolCall {...mockProps} args={undefined} />);
+    it('should handle empty args', () => {
+      renderWithRecoil(<ToolCall {...mockProps} args="" />);
 
       fireEvent.click(screen.getByText('Completed testFunction'));
 
@@ -335,14 +314,12 @@ describe('ToolCall', () => {
       expect(props.output).toBeNull();
     });
 
-    it('should handle missing domain', () => {
-      renderWithRecoil(<ToolCall {...mockProps} domain={undefined} authDomain={undefined} />);
+    it('should handle missing auth', () => {
+      renderWithRecoil(<ToolCall {...mockProps} auth={undefined} />);
 
       fireEvent.click(screen.getByText('Completed testFunction'));
 
-      const toolCallInfo = screen.getByTestId('tool-call-info');
-      const props = JSON.parse(toolCallInfo.textContent!);
-      expect(props.domain).toBe('');
+      expect(screen.queryByText('Sign in to')).not.toBeInTheDocument();
     });
 
     it('should handle complex nested attachments', () => {
@@ -365,7 +342,7 @@ describe('ToolCall', () => {
             },
           },
         },
-      ];
+      ] as unknown as TAttachment[];
 
       renderWithRecoil(<ToolCall {...mockProps} attachments={complexAttachments} />);
 

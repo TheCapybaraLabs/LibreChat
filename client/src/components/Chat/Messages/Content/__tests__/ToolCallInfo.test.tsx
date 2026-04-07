@@ -55,7 +55,7 @@ describe('ToolCallInfo', () => {
         data: 'Test resource',
       };
 
-      const attachments: TAttachment[] = [
+      const attachments = [
         {
           type: Tools.ui_resources,
           messageId: 'msg123',
@@ -63,7 +63,7 @@ describe('ToolCallInfo', () => {
           conversationId: 'conv789',
           [Tools.ui_resources]: [uiResource],
         },
-      ];
+      ] as unknown as TAttachment[];
 
       // Need output for ui_resources to render
       render(<ToolCallInfo {...mockProps} output="Some output" attachments={attachments} />);
@@ -86,7 +86,7 @@ describe('ToolCallInfo', () => {
 
     it('should render carousel for multiple ui_resources from attachments', () => {
       // To test multiple resources, we can use a single attachment with multiple resources
-      const attachments: TAttachment[] = [
+      const attachments = [
         {
           type: Tools.ui_resources,
           messageId: 'msg1',
@@ -98,7 +98,7 @@ describe('ToolCallInfo', () => {
             { type: 'text', data: 'Resource 3' },
           ],
         },
-      ];
+      ] as unknown as TAttachment[];
 
       // Need output for ui_resources to render
       render(<ToolCallInfo {...mockProps} output="Some output" attachments={attachments} />);
@@ -120,7 +120,7 @@ describe('ToolCallInfo', () => {
     });
 
     it('should handle attachments with normal output', () => {
-      const attachments: TAttachment[] = [
+      const attachments = [
         {
           type: Tools.ui_resources,
           messageId: 'msg123',
@@ -128,7 +128,7 @@ describe('ToolCallInfo', () => {
           conversationId: 'conv789',
           [Tools.ui_resources]: [{ type: 'text', data: 'UI Resource' }],
         },
-      ];
+      ] as unknown as TAttachment[];
 
       const output = JSON.stringify([
         { type: 'text', text: 'Regular output 1' },
@@ -160,7 +160,7 @@ describe('ToolCallInfo', () => {
     });
 
     it('should handle empty attachments array', () => {
-      const attachments: TAttachment[] = [];
+      const attachments = [] as unknown as TAttachment[];
 
       render(<ToolCallInfo {...mockProps} attachments={attachments} />);
 
@@ -169,7 +169,7 @@ describe('ToolCallInfo', () => {
     });
 
     it('should handle attachments with non-ui_resources type', () => {
-      const attachments: TAttachment[] = [
+      const attachments = [
         {
           type: Tools.web_search as any,
           messageId: 'msg123',
@@ -179,7 +179,7 @@ describe('ToolCallInfo', () => {
             organic: [],
           },
         },
-      ];
+      ] as unknown as TAttachment[];
 
       render(<ToolCallInfo {...mockProps} attachments={attachments} />);
 
@@ -191,7 +191,7 @@ describe('ToolCallInfo', () => {
 
   describe('rendering logic', () => {
     it('should render UI Resources heading when ui_resources exist in attachments', () => {
-      const attachments: TAttachment[] = [
+      const attachments = [
         {
           type: Tools.ui_resources,
           messageId: 'msg123',
@@ -199,7 +199,7 @@ describe('ToolCallInfo', () => {
           conversationId: 'conv789',
           [Tools.ui_resources]: [{ type: 'text', data: 'Test' }],
         },
-      ];
+      ] as unknown as TAttachment[];
 
       // Need output for ui_resources section to render
       render(<ToolCallInfo {...mockProps} output="Some output" attachments={attachments} />);
@@ -219,7 +219,7 @@ describe('ToolCallInfo', () => {
         data: { fields: [{ name: 'test', type: 'text' }] },
       };
 
-      const attachments: TAttachment[] = [
+      const attachments = [
         {
           type: Tools.ui_resources,
           messageId: 'msg123',
@@ -227,7 +227,7 @@ describe('ToolCallInfo', () => {
           conversationId: 'conv789',
           [Tools.ui_resources]: [uiResource],
         },
-      ];
+      ] as unknown as TAttachment[];
 
       // Need output for ui_resources to render
       render(<ToolCallInfo {...mockProps} output="Some output" attachments={attachments} />);
@@ -247,7 +247,7 @@ describe('ToolCallInfo', () => {
     it('should console.log when UIAction is triggered', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
-      const attachments: TAttachment[] = [
+      const attachments = [
         {
           type: Tools.ui_resources,
           messageId: 'msg123',
@@ -255,7 +255,7 @@ describe('ToolCallInfo', () => {
           conversationId: 'conv789',
           [Tools.ui_resources]: [{ type: 'text', data: 'Test' }],
         },
-      ];
+      ] as unknown as TAttachment[];
 
       // Need output for ui_resources to render
       render(<ToolCallInfo {...mockProps} output="Some output" attachments={attachments} />);
@@ -296,7 +296,7 @@ describe('ToolCallInfo', () => {
     });
 
     it('should prioritize attachments over output ui_resources', () => {
-      const attachments: TAttachment[] = [
+      const attachments = [
         {
           type: Tools.ui_resources,
           messageId: 'msg123',
@@ -304,7 +304,7 @@ describe('ToolCallInfo', () => {
           conversationId: 'conv789',
           [Tools.ui_resources]: [{ type: 'attachment', data: 'From attachments' }],
         },
-      ];
+      ] as unknown as TAttachment[];
 
       const output = JSON.stringify([
         {

@@ -9,7 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import { SaveIcon, CrossIcon, TextareaAutosize } from '@librechat/client';
 import { Controller, useFormContext, useFormState } from 'react-hook-form';
-import type { PluggableList } from 'unified';
+import type { PluggableList, Plugin } from 'unified';
 import { codeNoExecution } from '~/components/Chat/Messages/Content/MarkdownComponents';
 import AlwaysMakeProd from '~/components/Prompts/Groups/AlwaysMakeProd';
 import VariablesDropdown from './VariablesDropdown';
@@ -42,9 +42,9 @@ const PromptEditor: React.FC<Props> = ({ name, isEditing, setIsEditing }) => {
   }, [isEditing, prompt]);
 
   const rehypePlugins: PluggableList = [
-    [rehypeKatex],
+    [rehypeKatex as unknown as Plugin],
     [
-      rehypeHighlight,
+      rehypeHighlight as Plugin,
       {
         detect: true,
         ignoreMissing: true,
