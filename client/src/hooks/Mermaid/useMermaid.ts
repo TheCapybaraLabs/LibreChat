@@ -131,6 +131,11 @@ export const useMermaid = ({
       // Render to SVG
       const { svg } = await mermaidInstance.render(diagramId, content);
 
+      // Mermaid may return an error SVG (with error-icon/error-text) without throwing
+      if (svg.includes('class="error-icon"') || svg.includes('class="error-text"')) {
+        throw new Error('Diagram contains syntax errors');
+      }
+
       // Sanitize SVG output with DOMPurify for additional security
       const purify = DOMPurify();
       const sanitizedSvg = purify.sanitize(svg, {
@@ -152,6 +157,14 @@ export const useMermaid = ({
       return sanitizedSvg;
     } catch (error) {
       console.error('Mermaid rendering error:', error);
+
+      // Mermaid creates a temporary container div (id="d" + diagramId) in document.body
+      // during render. On error, it leaves this element with a large error SVG that
+      // causes the page to scroll with huge unstyled error text. Clean it up.
+      const orphanedElement = document.getElementById(`d${diagramId}`);
+      if (orphanedElement) {
+        orphanedElement.remove();
+      }
 
       // Return last valid content if available (graceful degradation)
       if (validContent) {
