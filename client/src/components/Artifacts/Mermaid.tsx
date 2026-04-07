@@ -43,6 +43,10 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ content, isDarkMode = t
         setIsRendered(true);
       } catch (error) {
         console.error('Mermaid rendering error:', error);
+        const orphanedElement = document.getElementById('dmermaid-diagram');
+        if (orphanedElement) {
+          orphanedElement.remove();
+        }
         if (mermaidRef.current) {
           mermaidRef.current.innerHTML = 'Error rendering diagram';
         }
