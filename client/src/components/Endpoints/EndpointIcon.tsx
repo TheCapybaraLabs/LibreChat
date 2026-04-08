@@ -39,7 +39,7 @@ export default function EndpointIcon({
 
   const iconURL = assistantAvatar || convoIconURL;
 
-  if (iconURL && (iconURL.includes('http') || iconURL.startsWith('/images/'))) {
+  if (iconURL && (iconURL.includes('http') || iconURL.startsWith('/images/') || iconURL.startsWith('assets/'))) {
     return (
       <ConvoIconURL
         iconURL={iconURL}

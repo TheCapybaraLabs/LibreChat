@@ -74,8 +74,9 @@ async function buildEndpointOption(req, res, next) {
         conversation: currentModelSpec.preset,
         defaultParamsEndpoint,
       });
-      if (currentModelSpec.iconURL != null && currentModelSpec.iconURL !== '') {
-        parsedBody.iconURL = currentModelSpec.iconURL;
+      const specIconURL = currentModelSpec.iconURL ?? currentModelSpec.preset?.iconURL;
+      if (specIconURL != null && specIconURL !== '') {
+        parsedBody.iconURL = specIconURL;
       }
     } catch (error) {
       logger.error(`Error parsing model spec for endpoint ${endpoint}`, error);
@@ -84,8 +85,9 @@ async function buildEndpointOption(req, res, next) {
   } else if (parsedBody.spec && appConfig.modelSpecs?.list) {
     // Non-enforced mode: if spec is selected, derive iconURL from model spec
     const modelSpec = appConfig.modelSpecs.list.find((s) => s.name === parsedBody.spec);
-    if (modelSpec?.iconURL) {
-      parsedBody.iconURL = modelSpec.iconURL;
+    const specIconURL = modelSpec?.iconURL ?? modelSpec?.preset?.iconURL;
+    if (specIconURL) {
+      parsedBody.iconURL = specIconURL;
     }
   }
 

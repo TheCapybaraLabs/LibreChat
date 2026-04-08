@@ -49,7 +49,7 @@ export default function MessageIcon(
     agentName,
     agentAvatar,
   });
-  if (message?.isCreatedByUser !== true && iconURL && iconURL.includes('http')) {
+  if (message?.isCreatedByUser !== true && iconURL && (iconURL.includes('http') || iconURL.startsWith('assets/'))) {
     return (
       <ConvoIconURL
         iconURL={iconURL}

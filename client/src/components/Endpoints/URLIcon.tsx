@@ -18,6 +18,7 @@ export const URLIcon = memo(
     imageStyle?: React.CSSProperties;
     endpoint?: string;
   }) => {
+    const resolvedURL = iconURL.startsWith('assets/') ? `/${iconURL}` : iconURL;
     const [imageError, setImageError] = useState(false);
 
     const handleImageError = () => {
@@ -48,7 +49,7 @@ export const URLIcon = memo(
     return (
       <div className={className} style={containerStyle}>
         <img
-          src={iconURL}
+          src={resolvedURL}
           alt={altName ?? 'Icon'}
           style={imageStyle}
           className="object-cover"
