@@ -192,6 +192,7 @@ export default function useChatFunctions({
         endpointType,
         overrideConvoId,
         overrideUserMessageId,
+        iconURL,
       },
       convo,
     ) as TEndpointOption;
