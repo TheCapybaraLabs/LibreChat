@@ -386,6 +386,8 @@ const initializeClient = async ({ req, res, signal, endpointOption }) => {
       modelLabel: endpointOption.model_parameters.modelLabel,
     });
 
+  const endpointTokenConfig = endpointConfig?.tokenConfig;
+
   const client = new AgentClient({
     req,
     res,
@@ -396,6 +398,7 @@ const initializeClient = async ({ req, res, signal, endpointOption }) => {
     collectedUsage,
     aggregateContent,
     artifactPromises,
+    endpointTokenConfig,
     agent: primaryConfig,
     spec: endpointOption.spec,
     iconURL: endpointOption.iconURL,
