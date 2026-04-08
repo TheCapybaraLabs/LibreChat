@@ -1,12 +1,12 @@
-import { z } from 'zod';
 import type { ZodError } from 'zod';
-import type { TEndpointsConfig, TModelsConfig, TConfig } from './types';
-import { EModelEndpoint, eModelEndpointSchema, isAgentsEndpoint } from './schemas';
-import { specsConfigSchema, TSpecsConfig } from './models';
-import { fileConfigSchema } from './file-config';
+import { z } from 'zod';
 import { apiBaseUrl } from './api-endpoints';
-import { FileSources } from './types/files';
+import { fileConfigSchema } from './file-config';
 import { MCPServersSchema } from './mcp';
+import { specsConfigSchema, TSpecsConfig } from './models';
+import { EModelEndpoint, eModelEndpointSchema, isAgentsEndpoint } from './schemas';
+import type { TConfig, TEndpointsConfig, TModelsConfig } from './types';
+import { FileSources } from './types/files';
 
 export const defaultSocialLogins = ['google', 'facebook', 'openid', 'github', 'discord', 'saml'];
 
@@ -330,6 +330,15 @@ export const endpointSchema = baseEndpointSchema.merge(
         paramDefinitions: z.array(z.record(z.any())).optional(),
       })
       .strict()
+      .optional(),
+    tokenConfig: z
+      .record(
+        z.object({
+          prompt: z.number(),
+          completion: z.number(),
+          context: z.number().optional(),
+        }),
+      )
       .optional(),
     customOrder: z.number().optional(),
     directEndpoint: z.boolean().optional(),
@@ -1066,6 +1075,7 @@ export enum KnownEndpoints {
   unify = 'unify',
   vercel = 'vercel',
   xai = 'xai',
+  digitalocean = 'digitalocean',
 }
 
 export enum FetchTokenConfig {

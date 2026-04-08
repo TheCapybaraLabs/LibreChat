@@ -260,6 +260,12 @@ const tokenValues = Object.assign(
     'glm-4.5-air': { prompt: 0.14, completion: 0.86 },
     'glm-4.5v': { prompt: 0.6, completion: 1.8 },
     'glm-4.6': { prompt: 0.5, completion: 1.75 },
+    'glm-5': { prompt: 1.0, completion: 3.2 },
+    // MiniMax models
+    'minimax-m2.5': { prompt: 0.3, completion: 1.2 },
+    // DigitalOcean Gradient serverless models
+    'llama3.3-70b-instruct': { prompt: 0.65, completion: 0.65 },
+    'nvidia-nemotron-3-super-120b': { prompt: 0.3, completion: 0.65 },
     // Qwen models
     qwen: { prompt: 0.08, completion: 0.33 }, // Qwen base pattern (using qwen2.5-72b pricing)
     'qwen2.5': { prompt: 0.08, completion: 0.33 }, // Qwen 2.5 base pattern

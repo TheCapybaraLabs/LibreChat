@@ -1,18 +1,18 @@
+import type { AppConfig } from '@librechat/data-schemas';
+import type { TEndpoint } from 'librechat-data-provider';
 import {
   CacheKeys,
   ErrorTypes,
   envVarRegex,
-  FetchTokenConfig,
   extractEnvVariable,
+  FetchTokenConfig,
 } from 'librechat-data-provider';
-import type { TEndpoint } from 'librechat-data-provider';
-import type { AppConfig } from '@librechat/data-schemas';
-import type { BaseInitializeParams, InitializeResultBase, EndpointTokenConfig } from '~/types';
-import { getOpenAIConfig } from '~/endpoints/openai/config';
 import { getCustomEndpointConfig } from '~/app/config';
-import { fetchModels } from '~/endpoints/models';
-import { isUserProvided, checkUserKeyExpiry } from '~/utils';
 import { standardCache } from '~/cache';
+import { fetchModels } from '~/endpoints/models';
+import { getOpenAIConfig } from '~/endpoints/openai/config';
+import type { BaseInitializeParams, EndpointTokenConfig, InitializeResultBase } from '~/types';
+import { checkUserKeyExpiry, isUserProvided } from '~/utils';
 
 const { PROXY } = process.env;
 
@@ -138,7 +138,11 @@ export async function initializeCustom({
     FetchTokenConfig[endpoint.toLowerCase() as keyof typeof FetchTokenConfig] &&
     (await cache.get(tokenKey));
 
-  endpointTokenConfig = (cachedConfig as EndpointTokenConfig) || undefined;
+  if (hasTokenConfig) {
+    endpointTokenConfig = (endpointConfig as Record<string, unknown>).tokenConfig as EndpointTokenConfig;
+  } else {
+    endpointTokenConfig = (cachedConfig as EndpointTokenConfig) || undefined;
+  }
 
   if (
     FetchTokenConfig[endpoint.toLowerCase() as keyof typeof FetchTokenConfig] &&

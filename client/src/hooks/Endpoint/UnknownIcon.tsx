@@ -1,6 +1,6 @@
-import { memo } from 'react';
+import { CustomMinimalIcon, MoonshotIcon, XAIcon } from '@librechat/client';
 import { EModelEndpoint, KnownEndpoints } from 'librechat-data-provider';
-import { CustomMinimalIcon, XAIcon, MoonshotIcon } from '@librechat/client';
+import { memo } from 'react';
 import { IconContext } from '~/common';
 import { cn } from '~/utils';
 
@@ -24,6 +24,7 @@ const knownEndpointAssets = {
   [KnownEndpoints.shuttleai]: 'assets/shuttleai.png',
   [KnownEndpoints['together.ai']]: 'assets/together.png',
   [KnownEndpoints.unify]: 'assets/unify.webp',
+  [KnownEndpoints.digitalocean]: 'assets/digitalocean.svg',
 };
 
 const knownEndpointClasses = {
