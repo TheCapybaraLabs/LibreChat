@@ -1,11 +1,11 @@
+import type { AppConfig } from '@librechat/data-schemas';
+import type { TEndpoint } from 'librechat-data-provider';
 import {
   ErrorTypes,
   envVarRegex,
-  FetchTokenConfig,
   extractEnvVariable,
+  FetchTokenConfig,
 } from 'librechat-data-provider';
-import type { TEndpoint } from 'librechat-data-provider';
-import type { AppConfig } from '@librechat/data-schemas';
 import type { BaseInitializeParams, InitializeResultBase, EndpointTokenConfig } from '~/types';
 import { getOpenAIConfig } from '~/endpoints/openai/config';
 import { isUserProvided, checkUserKeyExpiry } from '~/utils';
@@ -146,7 +146,11 @@ export async function initializeCustom({
     FetchTokenConfig[endpoint.toLowerCase() as keyof typeof FetchTokenConfig] &&
     (await cache.get(tokenKey));
 
-  endpointTokenConfig = (cachedConfig as EndpointTokenConfig) || undefined;
+  if (hasTokenConfig) {
+    endpointTokenConfig = (endpointConfig as Record<string, unknown>).tokenConfig as EndpointTokenConfig;
+  } else {
+    endpointTokenConfig = (cachedConfig as EndpointTokenConfig) || undefined;
+  }
 
   if (
     FetchTokenConfig[endpoint.toLowerCase() as keyof typeof FetchTokenConfig] &&
