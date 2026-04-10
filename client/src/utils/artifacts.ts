@@ -99,7 +99,7 @@ const standardDependencies = {
 };
 
 const mermaidDependencies = {
-  mermaid: '^11.4.1',
+  mermaid: '^11.13.0',
   'react-zoom-pan-pinch': '^3.6.1',
   'class-variance-authority': '^0.6.0',
   clsx: '^1.2.1',
