@@ -4,7 +4,7 @@ import { Button } from '@librechat/client';
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
-import { artifactFlowchartConfig } from '~/utils/mermaid';
+import { artifactFlowchartConfig, initializeMermaid } from '~/utils/mermaid';
 
 interface MermaidDiagramProps {
   content: string;
@@ -15,24 +15,37 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ content, isDarkMode = t
   const mermaidRef = useRef<HTMLDivElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const [isRendered, setIsRendered] = useState(false);
+  const [renderError, setRenderError] = useState<string | null>(null);
   const theme = isDarkMode ? 'dark' : 'neutral';
   const bgColor = isDarkMode ? '#212121' : '#FFFFFF';
 
+  // Stable unique ID per component instance — avoids collisions when multiple
+  // artifact tabs are open simultaneously (static 'mermaid-diagram' would collide)
+  const diagramId = useRef(
+    `mermaid-artifact-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+  );
+
   useEffect(() => {
-    mermaid.initialize({
+    const config = {
       startOnLoad: false,
       theme,
-      securityLevel: 'sandbox',
+      securityLevel: 'sandbox' as const,
       flowchart: artifactFlowchartConfig,
-    });
+    };
+
+    // initializeMermaid skips the call when config hasn't changed, preventing
+    // theme/config state leaks between concurrent inline and artifact renderers
+    initializeMermaid(mermaid, config);
 
     const renderDiagram = async () => {
       if (!mermaidRef.current) {
         return;
       }
 
+      setRenderError(null);
+
       try {
-        const { svg } = await mermaid.render('mermaid-diagram', content);
+        const { svg } = await mermaid.render(diagramId.current, content);
         mermaidRef.current.innerHTML = svg;
 
         const svgElement = mermaidRef.current.querySelector('svg');
@@ -43,13 +56,12 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ content, isDarkMode = t
         setIsRendered(true);
       } catch (error) {
         console.error('Mermaid rendering error:', error);
-        const orphanedElement = document.getElementById('dmermaid-diagram');
+        const orphanedElement = document.getElementById(`d${diagramId.current}`);
         if (orphanedElement) {
           orphanedElement.remove();
         }
-        if (mermaidRef.current) {
-          mermaidRef.current.innerHTML = 'Error rendering diagram';
-        }
+        const message = error instanceof Error ? error.message : 'Error rendering diagram';
+        setRenderError(message);
       }
     };
 
@@ -111,6 +123,20 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ content, isDarkMode = t
       instance.setTransformState(scale, newX, newY);
     }
   }, []);
+
+  if (renderError) {
+    return (
+      <div
+        className="flex h-screen w-screen flex-col items-center justify-center gap-3 p-8"
+        style={{ backgroundColor: bgColor }}
+      >
+        <p className="text-sm font-semibold text-red-500">{renderError}</p>
+        <pre className="max-w-full overflow-auto whitespace-pre-wrap rounded border border-red-500/30 bg-red-500/10 p-4 text-xs text-red-400">
+          {content}
+        </pre>
+      </div>
+    );
+  }
 
   return (
     <div

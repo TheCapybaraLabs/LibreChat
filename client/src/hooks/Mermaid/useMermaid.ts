@@ -4,7 +4,7 @@ import { Md5 } from 'ts-md5';
 import DOMPurify from 'dompurify';
 import { ThemeContext, isDark } from '@librechat/client';
 import type { MermaidConfig } from 'mermaid';
-import { inlineFlowchartConfig } from '~/utils/mermaid';
+import { inlineFlowchartConfig, initializeMermaid } from '~/utils/mermaid';
 
 // Constants
 const MD5_LENGTH_THRESHOLD = 10_000;
@@ -23,6 +23,15 @@ const loadMermaid = () => {
   }
 
   return mermaidPromise;
+};
+
+// Lazy DOMPurify singleton — avoids creating a new instance on every render
+let purifyInstance: ReturnType<typeof DOMPurify> | null = null;
+const getPurify = () => {
+  if (!purifyInstance) {
+    purifyInstance = DOMPurify();
+  }
+  return purifyInstance;
 };
 
 interface UseMermaidOptions {
@@ -110,6 +119,11 @@ export const useMermaid = ({
         throw new Error('Failed to load mermaid library');
       }
 
+      // Initialize before parse — mermaid 11 requires the diagram registry
+      // to be set up via initialize() before parse() can recognize diagram types.
+      // initializeMermaid() skips the call when config hasn't changed.
+      initializeMermaid(mermaidInstance, mermaidConfig);
+
       // Validate syntax first and capture detailed error
       try {
         await mermaidInstance.parse(content);
@@ -125,9 +139,6 @@ export const useMermaid = ({
         throw new Error(errorMessage);
       }
 
-      // Initialize with config
-      mermaidInstance.initialize(mermaidConfig);
-
       // Render to SVG
       const { svg } = await mermaidInstance.render(diagramId, content);
 
@@ -137,8 +148,7 @@ export const useMermaid = ({
       }
 
       // Sanitize SVG output with DOMPurify for additional security
-      const purify = DOMPurify();
-      const sanitizedSvg = purify.sanitize(svg, {
+      const sanitizedSvg = getPurify().sanitize(svg, {
         USE_PROFILES: { svg: true, svgFilters: true },
         // Allow additional elements used by mermaid for text rendering
         ADD_TAGS: ['foreignObject', 'use', 'switch'],

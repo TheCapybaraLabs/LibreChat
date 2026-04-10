@@ -1,4 +1,5 @@
 import dedent from 'dedent';
+import type { MermaidConfig } from 'mermaid';
 
 interface MermaidButtonStyles {
   bg: string;
@@ -56,6 +57,23 @@ const inlineFlowchartConfig = {
 };
 
 export { inlineFlowchartConfig, artifactFlowchartConfig };
+
+// Track last initialized mermaid config to skip redundant initialize() calls.
+// Shared between the inline renderer (useMermaid) and the artifact renderer so
+// they don't clobber each other's config when both are mounted simultaneously.
+let lastInitializedConfigKey: string | null = null;
+
+export const initializeMermaid = (
+  mermaidInstance: { initialize: (config: MermaidConfig) => void },
+  config: MermaidConfig,
+): void => {
+  const configKey = JSON.stringify(config);
+  if (configKey === lastInitializedConfigKey) {
+    return;
+  }
+  mermaidInstance.initialize(config);
+  lastInitializedConfigKey = configKey;
+};
 
 /** Perceived luminance (0 = black, 1 = white) via BT.601 luma coefficients */
 const hexLuminance = (hex: string): number => {
@@ -281,6 +299,7 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ content }) => {
   const mermaidRef = useRef<HTMLDivElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const [isRendered, setIsRendered] = useState(false);
+  const [renderError, setRenderError] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [copied, setCopied] = useState(false);
 
@@ -296,6 +315,7 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ content }) => {
       if (!mermaidRef.current) {
         return;
       }
+      setRenderError(null);
       try {
         const { svg } = await mermaid.render("mermaid-diagram", content);
         mermaidRef.current.innerHTML = svg;
@@ -312,9 +332,8 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ content }) => {
         if (orphanedElement) {
           orphanedElement.remove();
         }
-        if (mermaidRef.current) {
-          mermaidRef.current.innerHTML = "Error rendering diagram";
-        }
+        const message = error instanceof Error ? error.message : "Error rendering diagram";
+        setRenderError(message);
       }
     };
 
@@ -389,6 +408,15 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ content }) => {
       instance.setTransformState(scale, newX, newY);
     }
   }, []);
+
+  if (renderError) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", width: "100vw", padding: "32px", backgroundColor: "${bgColor}", gap: "12px" }}>
+        <p style={{ color: "#ef4444", fontWeight: 600, fontSize: "14px", margin: 0 }}>{renderError}</p>
+        <pre style={{ color: "#fca5a5", fontSize: "12px", whiteSpace: "pre-wrap", wordBreak: "break-word", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "6px", padding: "16px", maxWidth: "100%", overflow: "auto" }}>{content}</pre>
+      </div>
+    );
+  }
 
   return (
     <div style={{ position: "relative", height: "100vh", width: "100vw", cursor: "move", padding: "20px", backgroundColor: "${bgColor}" }}>
@@ -472,6 +500,20 @@ body {
 `;
 
   return {
+    'package.json': JSON.stringify(
+      {
+        name: 'mermaid-diagram',
+        version: '1.0.0',
+        dependencies: {
+          mermaid: '^11.13.0',
+          react: '^18.0.0',
+          'react-dom': '^18.0.0',
+          'react-zoom-pan-pinch': '^3.6.1',
+        },
+      },
+      null,
+      2,
+    ),
     'diagram.mmd': content || '# No mermaid diagram content provided',
     'App.tsx': wrapMermaidDiagram(content),
     'index.tsx': dedent(`import React, { StrictMode } from "react";
