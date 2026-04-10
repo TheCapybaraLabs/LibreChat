@@ -748,14 +748,16 @@ const Mermaid: React.FC<MermaidProps> = memo(({ children, id, theme }) => {
           <pre className="overflow-auto text-xs text-red-600 dark:text-red-300">
             {error.message}
           </pre>
-          <div className="mt-4 border-t border-border-medium pt-4">
-            <div className="mb-2 text-xs text-text-secondary">
-              {localize('com_ui_mermaid_source')}
+          {showCode && (
+            <div className="mt-4 border-t border-border-medium pt-4">
+              <div className="mb-2 text-xs text-text-secondary">
+                {localize('com_ui_mermaid_source')}
+              </div>
+              <pre className="overflow-auto whitespace-pre-wrap text-xs text-text-secondary">
+                {children}
+              </pre>
             </div>
-            <pre className="overflow-auto whitespace-pre-wrap text-xs text-text-secondary">
-              {children}
-            </pre>
-          </div>
+          )}
         </div>
       </div>
     );
