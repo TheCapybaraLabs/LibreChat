@@ -337,6 +337,8 @@ export const endpointSchema = baseEndpointSchema.merge(
           prompt: z.number(),
           completion: z.number(),
           context: z.number().optional(),
+          write: z.number().optional(),
+          read: z.number().optional(),
         }),
       )
       .optional(),
