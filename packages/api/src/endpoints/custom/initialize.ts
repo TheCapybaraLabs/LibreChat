@@ -147,7 +147,8 @@ export async function initializeCustom({
     (await cache.get(tokenKey));
 
   if (hasTokenConfig) {
-    endpointTokenConfig = (endpointConfig as Record<string, unknown>).tokenConfig as EndpointTokenConfig;
+    endpointTokenConfig = (endpointConfig as Record<string, unknown>)
+      .tokenConfig as EndpointTokenConfig;
   } else {
     endpointTokenConfig = (cachedConfig as EndpointTokenConfig) || undefined;
   }

@@ -19,19 +19,23 @@ jest.mock('axios', () => ({
   post: jest.fn().mockResolvedValue({ data: {} }),
   put: jest.fn().mockResolvedValue({ data: {} }),
   delete: jest.fn().mockResolvedValue({ data: {} }),
-  reset: jest.fn().mockImplementation(function (this: {
-    get: jest.Mock;
-    post: jest.Mock;
-    put: jest.Mock;
-    delete: jest.Mock;
-    create: jest.Mock;
-  }) {
-    this.get.mockClear();
-    this.post.mockClear();
-    this.put.mockClear();
-    this.delete.mockClear();
-    this.create.mockClear();
-  }),
+  reset: jest
+    .fn()
+    .mockImplementation(
+      function (this: {
+        get: jest.Mock;
+        post: jest.Mock;
+        put: jest.Mock;
+        delete: jest.Mock;
+        create: jest.Mock;
+      }) {
+        this.get.mockClear();
+        this.post.mockClear();
+        this.put.mockClear();
+        this.delete.mockClear();
+        this.create.mockClear();
+      },
+    ),
 }));
 
 describe('createAxiosInstance', () => {

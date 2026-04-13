@@ -94,7 +94,9 @@ describe('persistAvatarChanges', () => {
   });
 
   it('uploads avatar when all prerequisites are met', async () => {
-    const uploadAvatar = jest.fn<(v: { agent_id: string; formData: FormData }) => Promise<Agent>>().mockResolvedValue({} as Agent);
+    const uploadAvatar = jest
+      .fn<(v: { agent_id: string; formData: FormData }) => Promise<Agent>>()
+      .mockResolvedValue({} as Agent);
     const file = new File(['avatar'], 'avatar.png', { type: 'image/png' });
 
     const result = await persistAvatarChanges({

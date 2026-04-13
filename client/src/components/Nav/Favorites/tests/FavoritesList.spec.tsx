@@ -178,7 +178,9 @@ describe('FavoritesList', () => {
         },
       );
 
-      const { findAllByTestId } = renderWithProviders(<FavoritesList tags={[]} setTags={jest.fn()} />);
+      const { findAllByTestId } = renderWithProviders(
+        <FavoritesList tags={[]} setTags={jest.fn()} />,
+      );
 
       // Wait for queries to resolve
       const favoriteItems = await findAllByTestId('favorite-item');
@@ -200,7 +202,9 @@ describe('FavoritesList', () => {
       // Mock getAgentById to return 404
       (dataService.getAgentById as jest.Mock).mockRejectedValue({ response: { status: 404 } });
 
-      const { queryAllByTestId } = renderWithProviders(<FavoritesList tags={[]} setTags={jest.fn()} />);
+      const { queryAllByTestId } = renderWithProviders(
+        <FavoritesList tags={[]} setTags={jest.fn()} />,
+      );
 
       // Wait for the loading state to resolve after 404 handling by ensuring the agent request was made
       await waitFor(() => {
