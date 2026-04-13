@@ -182,6 +182,7 @@ const DeleteButton = memo(
     isSmallScreen: boolean;
     ariaLabel: string;
   }) => {
+    const localize = useLocalize();
     if (!onDelete) {
       return null;
     }
@@ -198,7 +199,7 @@ const DeleteButton = memo(
         ) : (
           <>
             <TrashIcon className="size-3.5 text-red-400 sm:size-4" />
-            {!isSmallScreen && <span className="ml-2">Delete</span>}
+            {!isSmallScreen && <span className="ml-2">{localize('com_ui_delete')}</span>}
           </>
         )}
       </Button>
@@ -487,7 +488,7 @@ export default function DataTable<TData, TValue>({
             {!virtualRows.length && (
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={columns.length} className="p-4 text-center">
-                  No data available
+                  {localize('com_ui_no_data_available')}
                 </TableCell>
               </TableRow>
             )}

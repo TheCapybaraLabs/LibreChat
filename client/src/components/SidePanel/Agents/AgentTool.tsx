@@ -118,8 +118,8 @@ export default function AgentTool({
           <>
             <div className="flex w-full flex-col items-start gap-2 text-sm text-text-secondary">
               <p>
-                {localize('com_ui_delete_tool_confirm')}{' '}
-                <strong>&quot;{currentTool.name}&quot;</strong>?
+                {localize('com_ui_delete_tool_confirm')} <strong>{`"${currentTool.name}"`}</strong>
+                {'?'}
               </p>
               {currentTool.description && (
                 <div className="flex items-start gap-2">

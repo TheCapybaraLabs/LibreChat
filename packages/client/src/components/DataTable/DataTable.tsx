@@ -140,7 +140,7 @@ function DataTable<TData extends Record<string, unknown>, TValue>({
       }
     });
     return newVisibility;
-  }, [isSmallScreen, columns]);
+  }, [columns]);
 
   useEffect(() => {
     setColumnVisibility((prev) => ({ ...prev, ...calculatedVisibility }));

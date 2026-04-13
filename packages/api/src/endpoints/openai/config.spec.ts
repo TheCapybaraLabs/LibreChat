@@ -378,7 +378,7 @@ describe('getOpenAIConfig', () => {
     const result = getOpenAIConfig(mockApiKey, { proxy });
 
     expect(result.configOptions?.fetchOptions).toBeDefined();
-    expect((result.configOptions?.fetchOptions as RequestInit).dispatcher).toBeDefined();
+    expect((result.configOptions!.fetchOptions as RequestInit).dispatcher).toBeDefined();
   });
 
   it('should handle headers and defaultQuery', () => {

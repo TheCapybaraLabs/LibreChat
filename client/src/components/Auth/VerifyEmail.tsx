@@ -73,8 +73,10 @@ function RequestPasswordReset() {
       }
       setShowResendLink(true);
       setVerificationStatus(true);
+      // TODO: countdown text renders here but countdownRedirect() is never called in the error branch;
+      // UI shows "Redirecting in 3s..." indefinitely with no actual redirect
     }
-  }, [token, email, verificationStatus, verifyEmailMutation]);
+  }, [token, email, verificationStatus, verifyEmailMutation, localize]);
 
   const VerificationSuccess = () => (
     <div className="flex flex-col items-center justify-center">

@@ -36,7 +36,6 @@ export const columns: ColumnDef<TFile>[] = [
         <TooltipAnchor
           description={localize('com_ui_select_all')}
           side="top"
-          role="checkbox"
           render={
             <Checkbox
               checked={

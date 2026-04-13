@@ -79,7 +79,6 @@ export default function ActionsAuth({ disableOAuth }: { disableOAuth?: boolean }
                 <label htmlFor=":rf8:" className="flex cursor-pointer items-center gap-1">
                   <RadioGroup.Item
                     type="button"
-                    role="radio"
                     value={AuthTypeEnum.None}
                     id=":rf8:"
                     className={cn(
@@ -96,7 +95,6 @@ export default function ActionsAuth({ disableOAuth }: { disableOAuth?: boolean }
                 <label htmlFor=":rfa:" className="flex cursor-pointer items-center gap-1">
                   <RadioGroup.Item
                     type="button"
-                    role="radio"
                     value={AuthTypeEnum.ServiceHttp}
                     id=":rfa:"
                     className={cn(
@@ -119,7 +117,6 @@ export default function ActionsAuth({ disableOAuth }: { disableOAuth?: boolean }
                 >
                   <RadioGroup.Item
                     type="button"
-                    role="radio"
                     disabled={disableOAuth}
                     value={AuthTypeEnum.OAuth}
                     id=":rfc:"
@@ -197,7 +194,6 @@ const ApiKey = () => {
           <label htmlFor=":rfu:" className="flex cursor-pointer items-center gap-1">
             <RadioGroup.Item
               type="button"
-              role="radio"
               value={AuthorizationTypeEnum.Basic}
               id=":rfu:"
               className={cn(
@@ -214,7 +210,6 @@ const ApiKey = () => {
           <label htmlFor=":rg0:" className="flex cursor-pointer items-center gap-1">
             <RadioGroup.Item
               type="button"
-              role="radio"
               value={AuthorizationTypeEnum.Bearer}
               id=":rg0:"
               className={cn(
@@ -231,7 +226,6 @@ const ApiKey = () => {
           <label htmlFor=":rg2:" className="flex cursor-pointer items-center gap-1">
             <RadioGroup.Item
               type="button"
-              role="radio"
               value={AuthorizationTypeEnum.Custom}
               id=":rg2:"
               className={cn(
@@ -340,7 +334,6 @@ const OAuth = () => {
           <label htmlFor=":rj1:" className="flex cursor-pointer items-center gap-1">
             <RadioGroup.Item
               type="button"
-              role="radio"
               value={TokenExchangeMethodEnum.DefaultPost}
               id=":rj1:"
               className={cn(
@@ -357,7 +350,6 @@ const OAuth = () => {
           <label htmlFor=":rj3:" className="flex cursor-pointer items-center gap-1">
             <RadioGroup.Item
               type="button"
-              role="radio"
               value={TokenExchangeMethodEnum.BasicAuthHeader}
               id=":rj3:"
               className={cn(

@@ -41,8 +41,7 @@ export default function FileListItem2({
                   key={index}
                   className="ml-2 mt-1 flex flex-row items-center rounded-full bg-[#f5f5f5] px-2 text-xs"
                 >
-                  <PlusIcon className="h-3 w-3" />
-                  &nbsp;
+                  <PlusIcon className="h-3 w-3" />{' '}
                   {localize('com_ui_more_count', {
                     0: String(attachedVectorStores.length - index),
                   })}

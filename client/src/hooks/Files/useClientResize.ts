@@ -1,5 +1,5 @@
 import { mergeFileConfig } from 'librechat-data-provider';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useGetFileConfig } from '~/data-provider';
 import {
   resizeImage,
@@ -19,13 +19,16 @@ export const useClientResize = () => {
   });
 
   // Safe access to clientImageResize config with fallbacks
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const config = (fileConfig as any)?.clientImageResize ?? {
-    enabled: false,
-    maxWidth: 1900,
-    maxHeight: 1900,
-    quality: 0.92,
-  };
+  const config = useMemo(
+    () =>
+      (fileConfig as any)?.clientImageResize ?? {
+        enabled: false,
+        maxWidth: 1900,
+        maxHeight: 1900,
+        quality: 0.92,
+      },
+    [fileConfig],
+  );
   const isEnabled = config?.enabled ?? false;
 
   /**

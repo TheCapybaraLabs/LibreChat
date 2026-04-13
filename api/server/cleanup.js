@@ -3,7 +3,7 @@ const { logger } = require('@librechat/data-schemas');
 /** WeakMap to hold temporary data associated with requests */
 const requestDataMap = new WeakMap();
 
-const FinalizationRegistry = global.FinalizationRegistry || null;
+const FinalizationRegistryRef = global.FinalizationRegistry || null;
 
 /**
  * FinalizationRegistry to clean up client objects when they are garbage collected.
@@ -14,8 +14,8 @@ const FinalizationRegistry = global.FinalizationRegistry || null;
  * The callback can be used to perform any necessary cleanup operations,
  * such as removing event listeners or freeing up resources.
  */
-const clientRegistry = FinalizationRegistry
-  ? new FinalizationRegistry((heldValue) => {
+const clientRegistry = FinalizationRegistryRef
+  ? new FinalizationRegistryRef((heldValue) => {
       try {
         // This will run when the client is garbage collected
         if (heldValue && heldValue.userId) {

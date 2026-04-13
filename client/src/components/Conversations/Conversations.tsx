@@ -342,6 +342,8 @@ const Conversations: FC<ConversationsProps> = ({
       setIsChatsExpanded,
       shouldShowFavorites,
       activeJobIds,
+      tags,
+      setTags,
     ],
   );
 
