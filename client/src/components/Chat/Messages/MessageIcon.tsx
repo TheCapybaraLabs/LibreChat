@@ -46,7 +46,11 @@ const MessageIcon = memo(
       [endpointsConfig, endpoint],
     );
 
-    if (iconData?.isCreatedByUser !== true && iconURL != null && (iconURL.includes('http') || iconURL.startsWith('assets/'))) {
+    if (
+      iconData?.isCreatedByUser !== true &&
+      iconURL != null &&
+      (iconURL.includes('http') || iconURL.startsWith('assets/'))
+    ) {
       return (
         <ConvoIconURL
           iconURL={iconURL}

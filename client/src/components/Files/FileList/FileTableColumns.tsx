@@ -68,7 +68,9 @@ export const fileTableColumns: ColumnDef<TFile>[] = [
       return 'Vector Stores';
     },
     cell: ({ row }) => {
-      const { vectorsAttached: attachedVectorStores } = row.original as TFile & { vectorsAttached: { name: string }[] };
+      const { vectorsAttached: attachedVectorStores } = row.original as TFile & {
+        vectorsAttached: { name: string }[];
+      };
       return (
         <>
           {attachedVectorStores.map((vectorStore, index) => {
