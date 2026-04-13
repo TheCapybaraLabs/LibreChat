@@ -616,7 +616,7 @@ async function performGoogleVertexOCR({
   model: string;
   documentType?: 'document_url' | 'image_url';
 }): Promise<OCRResult> {
-  const location = process.env.GOOGLE_LOC || 'us-central1';
+  const location = process.env.MISTRAL_OCR_LOC || process.env.GOOGLE_LOC || 'us-central1';
   const modelId = model || 'mistral-ocr-2505';
 
   let baseURL: string;
