@@ -14,7 +14,6 @@ export default function TitleButton({ primaryText = '', secondaryText = '' }) {
         aria-label={localize('com_ui_endpoint_menu')}
         aria-expanded={isExpanded}
         role="combobox"
-        aria-haspopup="listbox"
         aria-controls="llm-endpoint-menu"
         onClick={() => setIsExpanded(!isExpanded)}
       >

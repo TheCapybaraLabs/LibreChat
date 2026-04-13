@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { useMediaQuery } from '~/hooks';
+import { useMediaQuery, useLocalize } from '~/hooks';
 import { Button } from './Button';
 import { X } from 'lucide-react';
 import { cn } from '~/utils';
@@ -49,6 +49,7 @@ const DialogContent = React.forwardRef<
     ref,
   ) => {
     const isSmallScreen = useMediaQuery('(max-width: 768px)');
+    const localize = useLocalize();
     return (
       <DialogPortal>
         <DialogOverlay />
@@ -69,7 +70,7 @@ const DialogContent = React.forwardRef<
           {showCloseButton && (
             <DialogPrimitive.Close className="absolute right-6 top-[1.6rem] rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-gray-100 dark:focus:ring-white dark:focus:ring-offset-gray-700 dark:data-[state=open]:bg-gray-800">
               <X className="h-5 w-5 text-black dark:text-white" aria-hidden="true" />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{localize('com_ui_close')}</span>
             </DialogPrimitive.Close>
           )}
         </DialogPrimitive.Content>

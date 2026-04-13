@@ -1,6 +1,7 @@
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
+import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
 const DialogDepthContext = React.createContext(0);
@@ -93,6 +94,7 @@ const DialogContent = React.forwardRef<
     },
     ref,
   ) => {
+    const localize = useLocalize();
     const depth = React.useContext(DialogDepthContext);
     const contentZIndex = 140 + (depth - 1) * 60;
 
@@ -151,7 +153,7 @@ const DialogContent = React.forwardRef<
           {showCloseButton && (
             <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-ring-primary ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
               <X className="h-6 w-6" aria-hidden="true" />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{localize('com_ui_close')}</span>
             </DialogPrimitive.Close>
           )}
         </DialogPrimitive.Content>

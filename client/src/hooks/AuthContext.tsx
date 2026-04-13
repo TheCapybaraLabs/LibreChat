@@ -237,6 +237,7 @@ const AuthContextProvider = ({
     if (token == null || !token || !isAuthenticated) {
       silentRefresh();
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- doSetError intentionally omitted
   }, [
     token,
     isAuthenticated,

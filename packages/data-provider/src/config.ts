@@ -1782,6 +1782,7 @@ export enum AuthKeys {
  *
  * Number of `512px` Tiles * `170` + `85` (Additional Cost)
  */
+/* oxlint-disable typescript/no-duplicate-enum-values */
 export enum ImageDetailCost {
   /**
    * Low resolution is a fixed value.
@@ -1797,6 +1798,7 @@ export enum ImageDetailCost {
   // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
   ADDITIONAL = 85,
 }
+/* oxlint-enable typescript/no-duplicate-enum-values */
 
 /**
  * Tab values for Settings Dialog

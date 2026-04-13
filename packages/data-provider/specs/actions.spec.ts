@@ -897,8 +897,8 @@ describe('resolveRef', () => {
   it('correctly resolves $ref references in the OpenAPI spec', () => {
     const openapiSpec = whimsicalOpenapiSpec;
     const flowchartRequestRef = (
-      openapiSpec.paths['/ai.chatgpt.render-flowchart']?.post
-        ?.requestBody as OpenAPIV3.RequestBodyObject
+      openapiSpec.paths['/ai.chatgpt.render-flowchart']!.post!
+        .requestBody as OpenAPIV3.RequestBodyObject
     ).content['application/json'].schema;
 
     expect(flowchartRequestRef).toBeDefined();
