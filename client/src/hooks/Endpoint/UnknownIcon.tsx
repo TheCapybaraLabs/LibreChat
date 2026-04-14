@@ -1,5 +1,5 @@
-import { CustomMinimalIcon, MoonshotIcon, XAIcon } from '@librechat/client';
-import { EModelEndpoint, KnownEndpoints } from 'librechat-data-provider';
+import { CustomMinimalIcon, DigitalOceanIcon, MoonshotIcon, XAIcon } from '@librechat/client';
+import { type EModelEndpoint, KnownEndpoints } from 'librechat-data-provider';
 import { memo } from 'react';
 import { IconContext } from '~/common';
 import { cn } from '~/utils';
@@ -78,8 +78,12 @@ function UnknownIcon({
     return <MoonshotIcon className={cn(className, 'text-black dark:text-white')} />;
   }
 
+  if (currentEndpoint === KnownEndpoints.digitalocean) {
+    return <DigitalOceanIcon className={cn(className, 'text-black dark:text-white')} />;
+  }
+
   if (iconURL) {
-    return <img className={className} src={iconURL} alt={`${endpoint} Icon`} />;
+    return <img className={cn(className, 'dark:invert')} src={iconURL} alt={`${endpoint} Icon`} />;
   }
 
   const assetPath: string = knownEndpointAssets[currentEndpoint] ?? '';
