@@ -16,7 +16,7 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ content, isDarkMode = t
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const [isRendered, setIsRendered] = useState(false);
   const [renderError, setRenderError] = useState<string | null>(null);
-  const theme = isDarkMode ? 'dark' : 'neutral';
+  const theme: 'dark' | 'neutral' = isDarkMode ? 'dark' : 'neutral';
   const bgColor = isDarkMode ? '#212121' : '#FFFFFF';
 
   // Stable unique ID per component instance — avoids collisions when multiple
