@@ -4,7 +4,11 @@ import { PermissionTypes, Permissions } from 'librechat-data-provider';
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import type t from 'librechat-data-provider';
 import { useDocumentTitle, useHasAccess, useLocalize, TranslationKeys } from '~/hooks';
-import { useGetEndpointsQuery, useGetAgentCategoriesQuery } from '~/data-provider';
+import {
+  useGetEndpointsQuery,
+  useGetAgentCategoriesQuery,
+  useGetStartupConfig,
+} from '~/data-provider';
 import MarketplaceAdminSettings from './MarketplaceAdminSettings';
 import OpenSidebar from '~/components/Chat/Menus/OpenSidebar';
 import { SidePanelGroup } from '~/components/SidePanel';
@@ -47,7 +51,9 @@ const AgentMarketplace: React.FC<AgentMarketplaceProps> = ({ className = '' }) =
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Set page title
-  useDocumentTitle(`${localize('com_agents_marketplace')} | LibreChat`);
+  const { data: startupConfig } = useGetStartupConfig();
+  const appTitle = startupConfig?.appTitle ?? 'LabsChat';
+  useDocumentTitle(`${localize('com_agents_marketplace')} | ${appTitle}`);
 
   // Ensure endpoints config is loaded first (required for agent queries)
   useGetEndpointsQuery();

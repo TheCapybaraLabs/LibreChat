@@ -43,12 +43,11 @@ export default function useAppStartup({
 
   /** Set the app title */
   useEffect(() => {
-    const appTitle = startupConfig?.appTitle ?? '';
-    if (!appTitle) {
-      return;
-    }
+    const appTitle = startupConfig?.appTitle ?? 'LabsChat';
     document.title = appTitle;
-    localStorage.setItem(LocalStorageKeys.APP_TITLE, appTitle);
+    if (startupConfig?.appTitle) {
+      localStorage.setItem(LocalStorageKeys.APP_TITLE, startupConfig.appTitle);
+    }
   }, [startupConfig]);
 
   /** Set the default spec's preset as default */
