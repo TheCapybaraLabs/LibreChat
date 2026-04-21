@@ -1,5 +1,4 @@
 import { ThemeSelector } from '@librechat/client';
-import type { TStartupConfig } from 'librechat-data-provider';
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useGetStartupConfig } from '~/data-provider';
@@ -14,9 +13,7 @@ export default function PublicPageLayout() {
   });
 
   useEffect(() => {
-    if (startupConfig?.appTitle) {
-      document.title = startupConfig.appTitle as TStartupConfig['appTitle'];
-    }
+    document.title = startupConfig?.appTitle ?? 'LabsChat';
   }, [startupConfig?.appTitle]);
 
   return (

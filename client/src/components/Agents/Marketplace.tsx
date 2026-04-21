@@ -8,7 +8,11 @@ import { PermissionTypes, Permissions, QueryKeys } from 'librechat-data-provider
 import type t from 'librechat-data-provider';
 import type { ContextType } from '~/common';
 import { useDocumentTitle, useHasAccess, useLocalize, TranslationKeys } from '~/hooks';
-import { useGetEndpointsQuery, useGetAgentCategoriesQuery } from '~/data-provider';
+import {
+  useGetEndpointsQuery,
+  useGetAgentCategoriesQuery,
+  useGetStartupConfig,
+} from '~/data-provider';
 import MarketplaceAdminSettings from './MarketplaceAdminSettings';
 import { SidePanelProvider, useChatContext } from '~/Providers';
 import { SidePanelGroup } from '~/components/SidePanel';
@@ -57,7 +61,9 @@ const AgentMarketplace: React.FC<AgentMarketplaceProps> = ({ className = '' }) =
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Set page title
-  useDocumentTitle(`${localize('com_agents_marketplace')} | LibreChat`);
+  const { data: startupConfig } = useGetStartupConfig();
+  const appTitle = startupConfig?.appTitle ?? 'LabsChat';
+  useDocumentTitle(`${localize('com_agents_marketplace')} | ${appTitle}`);
 
   // Ensure right sidebar is always visible in marketplace
   useEffect(() => {
