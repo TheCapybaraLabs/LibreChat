@@ -27,6 +27,7 @@ function parseArgs(argv) {
     ip: null,
     all: false,
     list: false,
+    violations: null,
     dryRun: false,
     skipConfirm: false,
   };
@@ -38,6 +39,10 @@ function parseArgs(argv) {
     }
     if (arg.startsWith('--ip=')) {
       opts.ip = arg.slice('--ip='.length).trim();
+      continue;
+    }
+    if (arg.startsWith('--violations=')) {
+      opts.violations = arg.slice('--violations='.length).trim().toLowerCase();
       continue;
     }
     if (arg === '--all') {
@@ -62,20 +67,20 @@ function parseArgs(argv) {
 
 function printUsage() {
   console.orange(
-    'Usage: node config/clear-ban.js [--list] [--email=<addr>] [--ip=<addr>] [--all] [--dry-run] [--yes]',
+    'Usage: node config/clear-ban.js [--list] [--violations=<addr>] [--email=<addr>] [--ip=<addr>] [--all] [--dry-run] [--yes]',
   );
   console.orange('');
-  console.orange('Clears entries from both ban stores (banLogs + banCache in checkBan.js).');
+  console.orange('Inspect or clear ban state (banLogs + banCache from checkBan.js).');
+  console.orange('');
+  console.orange('  --list             List all currently banned entries (userIds and IPs).');
+  console.orange('  --violations=<addr> Show recent violation history for this user email.');
   console.orange(
-    'Requires exactly one of: --list, --email, --ip, --all (or combine --email + --ip).',
+    '  --email=<addr>     Unban the user with this email (+ any IP bans they caused).',
   );
-  console.orange('');
-  console.orange('  --list          List all currently banned entries (userIds and IPs).');
-  console.orange('  --email=<addr>  Unban the user with this email.');
-  console.orange('  --ip=<addr>     Unban this IP address.');
-  console.orange('  --all           Wipe every ban entry (destructive; prompts unless --yes).');
-  console.orange('  --dry-run       Show what would be cleared without writing.');
-  console.orange('  --yes / -y      Skip the confirmation prompt for --all.');
+  console.orange('  --ip=<addr>        Unban this IP address.');
+  console.orange('  --all              Wipe every ban entry (destructive; prompts unless --yes).');
+  console.orange('  --dry-run          Show what would be cleared without writing.');
+  console.orange('  --yes / -y         Skip the confirmation prompt for --all.');
 }
 
 function banCacheKey(kind, id) {
@@ -205,6 +210,40 @@ function formatExpiry(entry) {
   return { status, docHint };
 }
 
+async function showViolations(email) {
+  const userId = await resolveUserId(email);
+  if (!userId) {
+    console.red(`No user found for email "${email}".`);
+    return;
+  }
+  const generalLogs = getLogStores(ViolationTypes.GENERAL);
+  const entries = (await generalLogs.get(userId)) ?? [];
+  if (entries.length === 0) {
+    console.yellow(`No violations recorded for ${email} (${userId}).`);
+    return;
+  }
+
+  const grouped = new Map();
+  for (const entry of entries) {
+    const type = entry?.type ?? 'unknown';
+    grouped.set(type, (grouped.get(type) ?? 0) + 1);
+  }
+
+  console.purple(`Violations for ${email} (${userId}) — total ${entries.length}:`);
+  for (const [type, count] of grouped.entries()) {
+    console.cyan(`  ${type}: ${count}`);
+  }
+
+  const recent = entries.slice(-10);
+  console.purple(`Most recent ${recent.length}:`);
+  for (const entry of recent) {
+    const date = entry?.date ?? 'unknown date';
+    const vc = entry?.violation_count ?? '?';
+    const extra = entry?.max != null ? ` max=${entry.max}` : '';
+    console.cyan(`  ${date}  type=${entry?.type ?? '?'}  count=${vc}${extra}`);
+  }
+}
+
 async function listBans() {
   const [logEntries, cacheEntries] = await Promise.all([
     fetchKeyvEntries(BAN_LOG_NAMESPACE),
@@ -266,7 +305,7 @@ async function listBans() {
 
   const opts = parseArgs(process.argv);
 
-  const hasAction = opts.list || opts.email || opts.ip || opts.all;
+  const hasAction = opts.list || opts.email || opts.ip || opts.all || opts.violations;
   if (!hasAction) {
     printUsage();
     return gracefulExit(1);
@@ -274,6 +313,10 @@ async function listBans() {
 
   if (opts.email && !opts.email.includes('@')) {
     console.red('Error: Invalid email address.');
+    return gracefulExit(1);
+  }
+  if (opts.violations && !opts.violations.includes('@')) {
+    console.red('Error: --violations requires a valid email address.');
     return gracefulExit(1);
   }
 
@@ -288,6 +331,11 @@ async function listBans() {
 
   if (opts.list) {
     await listBans();
+    return gracefulExit(0);
+  }
+
+  if (opts.violations) {
+    await showViolations(opts.violations);
     return gracefulExit(0);
   }
 
