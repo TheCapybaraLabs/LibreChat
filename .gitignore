@@ -176,3 +176,6 @@ claude-flow
 # Removed Windows wrapper files per user request
 hive-mind-prompt-*.txt
 .tool-versions
+
+# Local ops-script state (contains user emails)
+config/.sent-welcome-emails.json
