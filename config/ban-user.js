@@ -18,11 +18,10 @@ const connect = require('./connect');
   let duration = '';
 
   if (process.argv.length >= 4) {
-    // Check if there are enough command-line arguments.
     email = process.argv[2];
-    duration = parseInt(process.argv[3]); // Parse the duration as an integer.
+    duration = parseInt(process.argv[3]) * 60000;
   } else {
-    console.orange('Usage: npm run ban-user <email> <duration>');
+    console.orange('Usage: npm run ban-user <email> <duration-in-minutes>');
     console.orange('Note: if you do not pass in the arguments, you will be prompted for them.');
     console.purple('--------------------------');
   }
