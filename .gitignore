@@ -181,3 +181,6 @@ hive-mind-prompt-*.txt
 CLAUDE.md
 .gsd
 .tool-versions
+
+# Local ops-script state (contains user emails)
+config/.sent-welcome-emails.json
