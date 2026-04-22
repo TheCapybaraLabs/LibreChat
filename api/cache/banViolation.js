@@ -4,8 +4,17 @@ const { isEnabled, math, removePorts } = require('@librechat/api');
 const { deleteAllUserSessions } = require('~/models');
 const getLogStores = require('./getLogStores');
 
-const { BAN_VIOLATIONS, BAN_INTERVAL } = process.env ?? {};
+const { BAN_VIOLATIONS, BAN_INTERVAL, BAN_IP_VIOLATION_TYPES } = process.env ?? {};
 const interval = math(BAN_INTERVAL, 20);
+
+const defaultIpScopedTypes = new Set(['logins', 'registrations']);
+const ipScopedTypes = BAN_IP_VIOLATION_TYPES
+  ? new Set(
+      BAN_IP_VIOLATION_TYPES.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    )
+  : defaultIpScopedTypes;
 
 /**
  * Bans a user based on violation criteria.
@@ -65,15 +74,16 @@ const banViolation = async (req, res, errorMessage) => {
   }
 
   req.ip = removePorts(req);
+  const banIp = Boolean(req.ip) && ipScopedTypes.has(type);
   logger.info(
-    `[BAN] Banning user ${user_id} ${req.ip ? `@ ${req.ip} ` : ''}for ${
+    `[BAN] Banning user ${user_id} ${banIp ? `@ ${req.ip} ` : ''}for ${
       duration / 1000 / 60
-    } minutes`,
+    } minutes (type: ${type})`,
   );
 
   const expiresAt = Date.now() + duration;
   await banLogs.set(user_id, { type, violation_count, duration, expiresAt });
-  if (req.ip) {
+  if (banIp) {
     await banLogs.set(req.ip, { type, user_id, violation_count, duration, expiresAt });
   }
 
