@@ -26,6 +26,12 @@ const denyRequest = async (req, res, errorMessage) => {
     responseText = JSON.stringify(errorMessage);
   }
 
+  if (!res.headersSent) {
+    const type =
+      typeof errorMessage === 'object' && errorMessage?.type ? errorMessage.type : 'denied';
+    return res.status(403).json({ error: true, type, text: responseText });
+  }
+
   const { messageId, conversationId: _convoId, parentMessageId, text } = req.body;
   const conversationId = _convoId ?? crypto.randomUUID();
 

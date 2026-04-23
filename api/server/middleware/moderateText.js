@@ -28,6 +28,13 @@ async function moderateText(req, res, next) {
     const flagged = results.some((result) => result.flagged);
 
     if (flagged) {
+      const categories = results
+        .flatMap((r) => Object.entries(r.categories ?? {}))
+        .filter(([, v]) => v === true)
+        .map(([k]) => k);
+      logger.info(
+        `[moderateText] flagged content for user ${req.user?.id ?? 'unknown'} (categories: ${categories.join(', ') || 'none'})`,
+      );
       const type = ErrorTypes.MODERATION;
       const errorMessage = { type };
       return await denyRequest(req, res, errorMessage);
