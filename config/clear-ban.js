@@ -158,11 +158,16 @@ function looksLikeIp(key) {
   return key.includes(':') && /^[0-9a-f:]+$/i.test(key);
 }
 
+function namespacePrefixRegex(namespace) {
+  const prefix = `${namespace}:`;
+  return new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+}
+
 async function fetchKeyvEntries(namespace) {
   const collection = mongoose.connection.db.collection(KEYV_COLLECTION);
   const prefix = `${namespace}:`;
   const docs = await collection
-    .find({ key: { $regex: `^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}` } })
+    .find({ key: { $regex: namespacePrefixRegex(namespace) } })
     .toArray();
 
   return docs.map((doc) => ({
@@ -171,6 +176,12 @@ async function fetchKeyvEntries(namespace) {
     value: parseKeyvValue(doc.value),
     expiresAt: doc.expiresAt instanceof Date ? doc.expiresAt.getTime() : null,
   }));
+}
+
+async function wipeNamespace(namespace) {
+  const collection = mongoose.connection.db.collection(KEYV_COLLECTION);
+  const result = await collection.deleteMany({ key: { $regex: namespacePrefixRegex(namespace) } });
+  return result.deletedCount ?? 0;
 }
 
 async function resolveEmails(userIds) {
@@ -365,9 +376,13 @@ async function listBans() {
         return gracefulExit(0);
       }
     }
-    await banLogs.clear();
-    await banCache.clear();
-    console.green(`Cleared ${total} ban entries.`);
+    const [logCleared, cacheCleared] = await Promise.all([
+      wipeNamespace(BAN_LOG_NAMESPACE),
+      wipeNamespace(BAN_CACHE_NAMESPACE),
+    ]);
+    console.green(
+      `Cleared ${logCleared} banLogs entries and ${cacheCleared} banCache entries (${logCleared + cacheCleared} total).`,
+    );
     return gracefulExit(0);
   }
 
