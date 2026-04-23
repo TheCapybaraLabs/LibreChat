@@ -96,7 +96,7 @@ const sendEmail = async ({ email, subject, payload, template, throwError = true 
     const compiledTemplate = handlebars.compile(source);
     const enrichedPayload = {
       ...payload,
-      supportEmail: payload.supportEmail ?? process.env.SUPPORT_EMAIL ?? '',
+      supportEmail: payload.supportEmail ?? process.env.EMAIL_SUPPORT ?? '',
     };
     const html = compiledTemplate(enrichedPayload);
 

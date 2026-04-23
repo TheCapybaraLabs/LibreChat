@@ -16,7 +16,7 @@ const TEMPLATES_DIR = path.join(
 const OUT_DIR = path.join(__dirname, ".email-previews");
 
 const appName = process.env.APP_TITLE || "LabsChat";
-const supportEmail = process.env.SUPPORT_EMAIL || "support@example.com";
+const supportEmail = process.env.EMAIL_SUPPORT || "support@example.com";
 const year = new Date().getFullYear();
 
 const fixtures = [

@@ -151,7 +151,7 @@ function printUsage() {
   console.orange('Ctrl-C disconnects Mongo cleanly; press twice to force.');
   console.orange('Required env: EMAIL_FROM (plus SMTP or Mailgun config).');
   console.orange(
-    'Optional env: SUPPORT_EMAIL (shown in the email footer), APP_TITLE, DOMAIN_CLIENT.',
+    'Optional env: EMAIL_SUPPORT (shown in the email footer), APP_TITLE, DOMAIN_CLIENT.',
   );
 }
 
