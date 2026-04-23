@@ -1,6 +1,7 @@
 import { useQuery, UseQueryOptions, QueryObserverResult } from '@tanstack/react-query';
-import { QueryKeys, dataService } from 'librechat-data-provider';
+import { QueryKeys, dataService, PermissionTypes, Permissions } from 'librechat-data-provider';
 import type * as t from 'librechat-data-provider';
+import useHasAccess from '~/hooks/Roles/useHasAccess';
 
 /**
  * Hook for fetching all accessible MCP servers with permission metadata
@@ -8,6 +9,10 @@ import type * as t from 'librechat-data-provider';
 export const useMCPServersQuery = <TData = t.MCPServersListResponse>(
   config?: UseQueryOptions<t.MCPServersListResponse, unknown, TData>,
 ): QueryObserverResult<TData> => {
+  const hasMCPAccess = useHasAccess({
+    permissionType: PermissionTypes.MCP_SERVERS,
+    permission: Permissions.USE,
+  });
   return useQuery<t.MCPServersListResponse, unknown, TData>(
     [QueryKeys.mcpServers],
     () => dataService.getMCPServers(),
@@ -18,6 +23,7 @@ export const useMCPServersQuery = <TData = t.MCPServersListResponse>(
       refetchOnMount: true,
       retry: false,
       ...config,
+      enabled: hasMCPAccess && (config?.enabled ?? true),
     },
   );
 };
