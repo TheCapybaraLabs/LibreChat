@@ -196,6 +196,24 @@ export function createAgentCategoryMethods(mongoose: typeof import('mongoose')) 
         description: 'com_agents_category_aftersales_description',
         order: 6,
       },
+      {
+        value: 'legal',
+        label: 'com_agents_category_legal',
+        description: 'com_agents_category_legal_description',
+        order: 7,
+      },
+      {
+        value: 'creative',
+        label: 'com_agents_category_creative',
+        description: 'com_agents_category_creative_description',
+        order: 8,
+      },
+      {
+        value: 'education',
+        label: 'com_agents_category_education',
+        description: 'com_agents_category_education_description',
+        order: 9,
+      },
     ];
 
     const existingCategories = await getAllCategories();
@@ -210,12 +228,14 @@ export function createAgentCategoryMethods(mongoose: typeof import('mongoose')) 
       if (existingCategory) {
         const isNotCustom = !existingCategory.custom;
         const needsLocalization = !existingCategory.label.startsWith('com_');
+        const needsReorder = existingCategory.order !== defaultCategory.order;
 
-        if (isNotCustom && needsLocalization) {
+        if (isNotCustom && (needsLocalization || needsReorder)) {
           updates.push({
             value: defaultCategory.value,
             label: defaultCategory.label,
             description: defaultCategory.description,
+            order: defaultCategory.order,
           });
         }
       } else {
@@ -236,6 +256,7 @@ export function createAgentCategoryMethods(mongoose: typeof import('mongoose')) 
             $set: {
               label: update.label,
               description: update.description,
+              order: update.order,
             },
           },
         },
