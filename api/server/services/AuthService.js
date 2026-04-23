@@ -98,7 +98,7 @@ const sendVerificationEmail = async (user) => {
   }/verify?token=${verifyToken}&email=${encodeURIComponent(user.email)}`;
   await sendEmail({
     email: user.email,
-    subject: 'Verify your email',
+    subject: 'Verifique seu e-mail',
     payload: {
       appName: process.env.APP_TITLE || 'LabsChat',
       name: user.name || user.username || user.email,
