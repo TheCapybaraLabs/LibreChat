@@ -3,6 +3,7 @@
 // @ts-nocheck
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const { User } = require('@librechat/data-schemas').createModels(mongoose);
 require('module-alias')({ base: path.resolve(__dirname, '..', 'api') });
@@ -62,6 +63,7 @@ function parseArgs(argv) {
     help: false,
     createdAfter: null,
     createdBefore: null,
+    password: null,
     appUrl: process.env.DOMAIN_CLIENT || process.env.APP_URL || '',
   };
 
@@ -81,6 +83,8 @@ function parseArgs(argv) {
       opts.createdAfter = arg.slice('--created-after='.length);
     } else if (arg.startsWith('--created-before=')) {
       opts.createdBefore = arg.slice('--created-before='.length);
+    } else if (arg.startsWith('--password=')) {
+      opts.password = arg.slice('--password='.length);
     } else if (arg === '--only-verified') {
       opts.onlyVerified = true;
     } else if (arg === '--only-unverified') {
@@ -114,6 +118,12 @@ function printUsage() {
   console.orange('  --only-unverified  Only send to users whose emailVerified flag is false.');
   console.orange('  --created-after=<d>  Only users whose createdAt >= d (YYYY-MM-DD or ISO).');
   console.orange('  --created-before=<d> Only users whose createdAt <= d (YYYY-MM-DD or ISO).');
+  console.orange(
+    '  --password=<pwd>   Shared provisional password. Verified against each user\'s current',
+  );
+  console.orange(
+    '                     DB hash — users whose current password differs are skipped.',
+  );
   console.orange('  --ignore-sent      Resend even to users logged in .sent-welcome-emails.json.');
   console.orange('  --dry-run          Preview matched users without sending anything.');
   console.orange('  --yes / -y         Skip the top-level confirmation prompt.');
@@ -263,14 +273,17 @@ async function loadEmailAllowlist(filePath) {
     }
   }
 
-  const allUsers = await User.find(query).select('_id email name username emailVerified').lean();
+  const selectFields = opts.password
+    ? '_id email name username emailVerified +password'
+    : '_id email name username emailVerified';
+  const allUsers = await User.find(query).select(selectFields).lean();
   if (allUsers.length === 0) {
     console.yellow('No users matched the given filters.');
     return gracefulExit(0);
   }
 
   const sentLog = loadSentLog();
-  const users = opts.ignoreSent
+  let users = opts.ignoreSent
     ? allUsers
     : allUsers.filter((u) => !Object.prototype.hasOwnProperty.call(sentLog, u.email));
   const skippedCount = allUsers.length - users.length;
@@ -280,8 +293,25 @@ async function loadEmailAllowlist(filePath) {
       `Skipping ${skippedCount} user(s) previously sent (${path.basename(SENT_LOG_PATH)}). Use --ignore-sent to resend.`,
     );
   }
+
+  if (opts.password && users.length > 0) {
+    const checks = await Promise.all(
+      users.map(async (u) => {
+        const matches = u.password ? await bcrypt.compare(opts.password, u.password) : false;
+        return { user: u, matches };
+      }),
+    );
+    const mismatched = checks.filter((c) => !c.matches).length;
+    if (mismatched > 0) {
+      console.orange(
+        `Skipping ${mismatched} user(s) whose current DB password does not match --password.`,
+      );
+    }
+    users = checks.filter((c) => c.matches).map((c) => c.user);
+  }
+
   if (users.length === 0) {
-    console.yellow('Nothing to send — every matched user has already received the email.');
+    console.yellow('Nothing to send — no users remain after filters.');
     return gracefulExit(0);
   }
 
@@ -289,6 +319,9 @@ async function loadEmailAllowlist(filePath) {
   console.cyan(
     `Matched ${users.length} user(s) (~${estimatedSec}s paced at ${SEND_INTERVAL_MS}ms).`,
   );
+  if (opts.password) {
+    console.orange(`Each email will include provisional password: ${opts.password}`);
+  }
   if (opts.dryRun) {
     console.orange('Dry run — no emails will be sent.');
   } else if (!opts.skipConfirm) {
@@ -329,6 +362,7 @@ async function loadEmailAllowlist(filePath) {
           appName,
           name,
           appUrl: opts.appUrl || '',
+          password: opts.password || '',
           year: new Date().getFullYear(),
         },
         template: TEMPLATE,
