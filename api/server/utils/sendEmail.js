@@ -94,7 +94,11 @@ const sendEmail = async ({ email, subject, payload, template, throwError = true 
   try {
     const { content: source } = await readFileAsString(path.join(__dirname, 'emails', template));
     const compiledTemplate = handlebars.compile(source);
-    const html = compiledTemplate(payload);
+    const enrichedPayload = {
+      ...payload,
+      supportEmail: payload.supportEmail ?? process.env.SUPPORT_EMAIL ?? '',
+    };
+    const html = compiledTemplate(enrichedPayload);
 
     // Prepare common email data
     const fromName = process.env.EMAIL_FROM_NAME || process.env.APP_TITLE;
