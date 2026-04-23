@@ -8,8 +8,10 @@ const mongoose = require('mongoose');
 const { User } = require('@librechat/data-schemas').createModels(mongoose);
 require('module-alias')({ base: path.resolve(__dirname, '..', 'api') });
 const { sendEmail } = require('~/server/utils');
-const { askQuestion, silentExit } = require('./helpers');
+const { askQuestion, askSecret, silentExit } = require('./helpers');
 const connect = require('./connect');
+
+const INVALID_NAME_CHARS = /[\r\n"]/;
 
 async function gracefulExit(code = 0) {
   if (mongoose.connection?.readyState) {
@@ -61,6 +63,7 @@ function parseArgs(argv) {
     ignoreSent: false,
     help: false,
     password: null,
+    promptPassword: false,
     appUrl: process.env.DOMAIN_CLIENT || process.env.APP_URL || '',
   };
 
@@ -74,6 +77,8 @@ function parseArgs(argv) {
       opts.filePath = arg.slice('--file='.length);
     } else if (arg.startsWith('--app-url=')) {
       opts.appUrl = arg.slice('--app-url='.length);
+    } else if (arg === '--password') {
+      opts.promptPassword = true;
     } else if (arg.startsWith('--password=')) {
       opts.password = arg.slice('--password='.length);
     } else if (arg === '--dry-run') {
@@ -89,7 +94,7 @@ function parseArgs(argv) {
 
 function printUsage() {
   console.orange(
-    'Usage: node config/send-welcome-emails-list.js --file=<recipients.json> [--subject="..."] [--app-url=<url>] [--ignore-sent] [--dry-run] [--yes] [--help]',
+    'Usage: node config/send-welcome-emails-list.js --file=<recipients.json> [--subject="..."] [--app-url=<url>] [--password[=<pwd>]] [--ignore-sent] [--dry-run] [--yes] [--help]',
   );
   console.orange('');
   console.orange('Flags:');
@@ -100,10 +105,14 @@ function printUsage() {
     '  --app-url=<url>    URL for the CTA button. Defaults to DOMAIN_CLIENT or APP_URL env.',
   );
   console.orange(
-    '  --password=<pwd>   Shared provisional password. Verified against each recipient\'s',
+    "  --password=<pwd>   Shared provisional password. Verified against each recipient's",
+  );
+  console.orange('                     current DB hash — unknown users or mismatches are skipped.');
+  console.orange(
+    '                     Visible in `ps`/shell history; prefer bare --password in prod.',
   );
   console.orange(
-    '                     current DB hash — unknown users or mismatches are skipped.',
+    '  --password         Prompt for the password interactively (not echoed, hidden from ps).',
   );
   console.orange('  --ignore-sent      Resend even to addresses in .sent-welcome-emails.json.');
   console.orange('  --dry-run          Preview recipients without sending anything.');
@@ -111,6 +120,7 @@ function printUsage() {
   console.orange('  --help / -h        Show this help and exit.');
   console.orange('');
   console.orange('JSON file shape: array of objects with BOTH "name" and "email" fields.');
+  console.orange('"name" must not contain CR, LF, or double-quote (rejected at load time).');
   console.orange('  [');
   console.orange('    { "name": "Alice", "email": "alice@example.com" },');
   console.orange('    { "name": "Bob",   "email": "bob@example.com"   }');
@@ -122,7 +132,12 @@ function printUsage() {
   console.orange(
     `Retries: transient failures (429, timeouts, DNS) retried up to ${MAX_ATTEMPTS} times with backoff.`,
   );
+  console.orange('Mongo is only connected when --password is set (for hash verification).');
+  console.orange('Ctrl-C disconnects Mongo cleanly; press twice to force.');
   console.orange('Required env: EMAIL_FROM (plus SMTP or Mailgun config).');
+  console.orange(
+    'Optional env: SUPPORT_EMAIL (shown in the email footer), APP_TITLE, DOMAIN_CLIENT.',
+  );
 }
 
 function sleep(ms) {
@@ -177,6 +192,12 @@ function loadRecipients(filePath) {
       console.red(`Error at index ${i}: missing or empty "name" field.`);
       return null;
     }
+    if (INVALID_NAME_CHARS.test(rawName)) {
+      console.red(
+        `Error at index ${i}: "name" contains invalid characters (CR, LF, or double-quote).`,
+      );
+      return null;
+    }
     if (!rawEmail || !rawEmail.includes('@')) {
       console.red(`Error at index ${i}: missing or invalid "email" field.`);
       return null;
@@ -189,6 +210,16 @@ function loadRecipients(filePath) {
   }
   return recipients;
 }
+
+let interrupted = false;
+process.on('SIGINT', () => {
+  if (interrupted) {
+    process.exit(130);
+  }
+  interrupted = true;
+  console.yellow('\nInterrupted. Cleaning up (Ctrl-C again to force).');
+  gracefulExit(130).catch(() => process.exit(130));
+});
 
 (async () => {
   console.purple('---------------------------------');
@@ -210,6 +241,17 @@ function loadRecipients(filePath) {
     console.red('Error: EMAIL_FROM is not set. Configure SMTP or Mailgun env vars first.');
     printUsage();
     return gracefulExit(1);
+  }
+  if (opts.promptPassword && opts.password) {
+    console.red('Error: pass either --password=<pwd> or bare --password (prompt), not both.');
+    return gracefulExit(1);
+  }
+  if (opts.promptPassword) {
+    opts.password = await askSecret('Enter provisional password (not echoed):');
+    if (!opts.password) {
+      console.red('Error: empty password.');
+      return gracefulExit(1);
+    }
   }
 
   const appName = process.env.APP_TITLE || 'LabsChat';
@@ -273,7 +315,7 @@ function loadRecipients(filePath) {
     `Matched ${recipients.length} recipient(s) (~${estimatedSec}s paced at ${SEND_INTERVAL_MS}ms).`,
   );
   if (opts.password) {
-    console.orange(`Each email will include provisional password: ${opts.password}`);
+    console.orange('Each email will include a provisional password (value redacted).');
   }
   if (opts.dryRun) {
     console.orange('Dry run — no emails will be sent.');

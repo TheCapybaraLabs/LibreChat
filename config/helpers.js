@@ -21,6 +21,22 @@ const askQuestion = (query) => {
   );
 };
 
+const askSecret = (query) => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  return new Promise((resolve) => {
+    process.stdout.write('\x1b[36m' + query + '\n> ' + '\x1b[0m');
+    rl._writeToOutput = () => {};
+    rl.question('', (ans) => {
+      rl.close();
+      process.stdout.write('\n');
+      resolve(ans);
+    });
+  });
+};
+
 const askMultiLineQuestion = (query) => {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -77,6 +93,7 @@ console.gray = (msg) => console.log('\x1b[90m%s\x1b[0m', msg);
 
 module.exports = {
   askQuestion,
+  askSecret,
   askMultiLineQuestion,
   silentExit,
   isDockerRunning,

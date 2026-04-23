@@ -8,13 +8,14 @@ const mongoose = require('mongoose');
 const { User } = require('@librechat/data-schemas').createModels(mongoose);
 require('module-alias')({ base: path.resolve(__dirname, '..', 'api') });
 const { sendEmail } = require('~/server/utils');
-const { askQuestion, silentExit } = require('./helpers');
+const { askQuestion, askSecret, silentExit } = require('./helpers');
 const connect = require('./connect');
 
 const TEMPLATE = 'welcomeEmail.handlebars';
 const SENT_LOG_PATH = path.join(__dirname, '.sent-welcome-emails.json');
 const SEND_INTERVAL_MS = 600;
 const MAX_ATTEMPTS = 3;
+const INVALID_NAME_CHARS = /[\r\n"]/;
 
 function loadSentLog() {
   if (!fs.existsSync(SENT_LOG_PATH)) {
@@ -64,6 +65,7 @@ function parseArgs(argv) {
     createdAfter: null,
     createdBefore: null,
     password: null,
+    promptPassword: false,
     appUrl: process.env.DOMAIN_CLIENT || process.env.APP_URL || '',
   };
 
@@ -83,6 +85,8 @@ function parseArgs(argv) {
       opts.createdAfter = arg.slice('--created-after='.length);
     } else if (arg.startsWith('--created-before=')) {
       opts.createdBefore = arg.slice('--created-before='.length);
+    } else if (arg === '--password') {
+      opts.promptPassword = true;
     } else if (arg.startsWith('--password=')) {
       opts.password = arg.slice('--password='.length);
     } else if (arg === '--only-verified') {
@@ -102,7 +106,7 @@ function parseArgs(argv) {
 
 function printUsage() {
   console.orange(
-    'Usage: node config/send-welcome-emails.js [--email=<addr> | --file=<emails.json>] [--subject="..."] [--app-url=<url>] [--only-verified|--only-unverified] [--ignore-sent] [--dry-run] [--yes] [--help]',
+    'Usage: node config/send-welcome-emails.js [--email=<addr> | --file=<emails.json>] [--subject="..."] [--app-url=<url>] [--only-verified|--only-unverified] [--password[=<pwd>]] [--ignore-sent] [--dry-run] [--yes] [--help]',
   );
   console.orange('');
   console.orange('Flags:');
@@ -119,16 +123,24 @@ function printUsage() {
   console.orange('  --created-after=<d>  Only users whose createdAt >= d (YYYY-MM-DD or ISO).');
   console.orange('  --created-before=<d> Only users whose createdAt <= d (YYYY-MM-DD or ISO).');
   console.orange(
-    '  --password=<pwd>   Shared provisional password. Verified against each user\'s current',
+    "  --password=<pwd>   Shared provisional password. Verified against each user's current",
   );
   console.orange(
     '                     DB hash — users whose current password differs are skipped.',
   );
+  console.orange(
+    '                     Visible in `ps`/shell history; prefer bare --password in prod.',
+  );
+  console.orange(
+    '  --password         Prompt for the password interactively (not echoed, hidden from ps).',
+  );
   console.orange('  --ignore-sent      Resend even to users logged in .sent-welcome-emails.json.');
   console.orange('  --dry-run          Preview matched users without sending anything.');
+  console.orange('                     (Note: still connects to Mongo to resolve filters.)');
   console.orange('  --yes / -y         Skip the top-level confirmation prompt.');
   console.orange('  --help / -h        Show this help and exit.');
   console.orange('');
+  console.orange('Names containing CR, LF, or double-quote fall back to the email local-part.');
   console.orange('JSON file (--file): flat array of emails, or objects with an "email" field.');
   console.orange(
     `Pacing: ${SEND_INTERVAL_MS}ms between send starts (stays under Resend's 2 req/s cap).`,
@@ -136,7 +148,11 @@ function printUsage() {
   console.orange(
     `Retries: transient failures (429, timeouts, DNS) retried up to ${MAX_ATTEMPTS} times with backoff.`,
   );
+  console.orange('Ctrl-C disconnects Mongo cleanly; press twice to force.');
   console.orange('Required env: EMAIL_FROM (plus SMTP or Mailgun config).');
+  console.orange(
+    'Optional env: SUPPORT_EMAIL (shown in the email footer), APP_TITLE, DOMAIN_CLIENT.',
+  );
 }
 
 function sleep(ms) {
@@ -190,6 +206,16 @@ async function loadEmailAllowlist(filePath) {
   return emails;
 }
 
+let interrupted = false;
+process.on('SIGINT', () => {
+  if (interrupted) {
+    process.exit(130);
+  }
+  interrupted = true;
+  console.yellow('\nInterrupted. Cleaning up (Ctrl-C again to force).');
+  gracefulExit(130).catch(() => process.exit(130));
+});
+
 (async () => {
   await connect();
 
@@ -219,6 +245,17 @@ async function loadEmailAllowlist(filePath) {
     console.red('Error: EMAIL_FROM is not set. Configure SMTP or Mailgun env vars first.');
     printUsage();
     return gracefulExit(1);
+  }
+  if (opts.promptPassword && opts.password) {
+    console.red('Error: pass either --password=<pwd> or bare --password (prompt), not both.');
+    return gracefulExit(1);
+  }
+  if (opts.promptPassword) {
+    opts.password = await askSecret('Enter provisional password (not echoed):');
+    if (!opts.password) {
+      console.red('Error: empty password.');
+      return gracefulExit(1);
+    }
   }
 
   let createdAfter = null;
@@ -320,7 +357,7 @@ async function loadEmailAllowlist(filePath) {
     `Matched ${users.length} user(s) (~${estimatedSec}s paced at ${SEND_INTERVAL_MS}ms).`,
   );
   if (opts.password) {
-    console.orange(`Each email will include provisional password: ${opts.password}`);
+    console.orange('Each email will include a provisional password (value redacted).');
   }
   if (opts.dryRun) {
     console.orange('Dry run — no emails will be sent.');
@@ -340,7 +377,8 @@ async function loadEmailAllowlist(filePath) {
 
   for (const user of users) {
     const email = user.email;
-    const name = user.name || user.username || email.split('@')[0];
+    const candidate = user.name || user.username || '';
+    const name = candidate && !INVALID_NAME_CHARS.test(candidate) ? candidate : email.split('@')[0];
 
     if (opts.dryRun) {
       console.cyan(`  [dry-run] ${email} (name: ${name})`);
