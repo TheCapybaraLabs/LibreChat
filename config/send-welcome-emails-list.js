@@ -3,9 +3,24 @@
 // @ts-nocheck
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
+const { User } = require('@librechat/data-schemas').createModels(mongoose);
 require('module-alias')({ base: path.resolve(__dirname, '..', 'api') });
 const { sendEmail } = require('~/server/utils');
 const { askQuestion, silentExit } = require('./helpers');
+const connect = require('./connect');
+
+async function gracefulExit(code = 0) {
+  if (mongoose.connection?.readyState) {
+    try {
+      await mongoose.disconnect();
+    } catch (err) {
+      console.error('Error disconnecting from MongoDB:', err);
+    }
+  }
+  silentExit(code);
+}
 
 const TEMPLATE = 'welcomeEmail.handlebars';
 const SENT_LOG_PATH = path.join(__dirname, '.sent-welcome-emails.json');
@@ -45,6 +60,7 @@ function parseArgs(argv) {
     skipConfirm: false,
     ignoreSent: false,
     help: false,
+    password: null,
     appUrl: process.env.DOMAIN_CLIENT || process.env.APP_URL || '',
   };
 
@@ -58,6 +74,8 @@ function parseArgs(argv) {
       opts.filePath = arg.slice('--file='.length);
     } else if (arg.startsWith('--app-url=')) {
       opts.appUrl = arg.slice('--app-url='.length);
+    } else if (arg.startsWith('--password=')) {
+      opts.password = arg.slice('--password='.length);
     } else if (arg === '--dry-run') {
       opts.dryRun = true;
     } else if (arg === '--yes' || arg === '-y') {
@@ -80,6 +98,12 @@ function printUsage() {
   console.orange('                     Default: "Bem-vindo(a) ao {{appName}}".');
   console.orange(
     '  --app-url=<url>    URL for the CTA button. Defaults to DOMAIN_CLIENT or APP_URL env.',
+  );
+  console.orange(
+    '  --password=<pwd>   Shared provisional password. Verified against each recipient\'s',
+  );
+  console.orange(
+    '                     current DB hash — unknown users or mismatches are skipped.',
   );
   console.orange('  --ignore-sent      Resend even to addresses in .sent-welcome-emails.json.');
   console.orange('  --dry-run          Preview recipients without sending anything.');
@@ -175,28 +199,28 @@ function loadRecipients(filePath) {
 
   if (opts.help) {
     printUsage();
-    return silentExit(0);
+    return gracefulExit(0);
   }
   if (!opts.filePath) {
     console.red('Error: --file is required.');
     printUsage();
-    return silentExit(1);
+    return gracefulExit(1);
   }
   if (!process.env.EMAIL_FROM) {
     console.red('Error: EMAIL_FROM is not set. Configure SMTP or Mailgun env vars first.');
     printUsage();
-    return silentExit(1);
+    return gracefulExit(1);
   }
 
   const appName = process.env.APP_TITLE || 'LabsChat';
 
   const all = loadRecipients(opts.filePath);
   if (!all) {
-    return silentExit(1);
+    return gracefulExit(1);
   }
 
   const sentLog = loadSentLog();
-  const recipients = opts.ignoreSent
+  let recipients = opts.ignoreSent
     ? all
     : all.filter((r) => !Object.prototype.hasOwnProperty.call(sentLog, r.email));
   const skippedCount = all.length - recipients.length;
@@ -206,15 +230,51 @@ function loadRecipients(filePath) {
       `Skipping ${skippedCount} recipient(s) previously sent (${path.basename(SENT_LOG_PATH)}). Use --ignore-sent to resend.`,
     );
   }
+
+  if (opts.password && recipients.length > 0) {
+    await connect();
+    const emails = recipients.map((r) => r.email);
+    const dbUsers = await User.find({ email: { $in: emails } })
+      .select('+password email')
+      .lean();
+    const byEmail = new Map(dbUsers.map((u) => [u.email.toLowerCase(), u]));
+
+    const checks = await Promise.all(
+      recipients.map(async (r) => {
+        const dbUser = byEmail.get(r.email);
+        if (!dbUser || !dbUser.password) {
+          return { recipient: r, status: 'not_found' };
+        }
+        const matches = await bcrypt.compare(opts.password, dbUser.password);
+        return { recipient: r, status: matches ? 'ok' : 'mismatch' };
+      }),
+    );
+
+    const notFound = checks.filter((c) => c.status === 'not_found').length;
+    const mismatch = checks.filter((c) => c.status === 'mismatch').length;
+    if (notFound > 0) {
+      console.orange(`Skipping ${notFound} recipient(s) not found in DB.`);
+    }
+    if (mismatch > 0) {
+      console.orange(
+        `Skipping ${mismatch} recipient(s) whose current DB password does not match --password.`,
+      );
+    }
+    recipients = checks.filter((c) => c.status === 'ok').map((c) => c.recipient);
+  }
+
   if (recipients.length === 0) {
-    console.yellow('Nothing to send — every recipient has already received the email.');
-    return silentExit(0);
+    console.yellow('Nothing to send — no recipients remain after filters.');
+    return gracefulExit(0);
   }
 
   const estimatedSec = Math.round((recipients.length * SEND_INTERVAL_MS) / 1000);
   console.cyan(
     `Matched ${recipients.length} recipient(s) (~${estimatedSec}s paced at ${SEND_INTERVAL_MS}ms).`,
   );
+  if (opts.password) {
+    console.orange(`Each email will include provisional password: ${opts.password}`);
+  }
   if (opts.dryRun) {
     console.orange('Dry run — no emails will be sent.');
   } else if (!opts.skipConfirm) {
@@ -223,7 +283,7 @@ function loadRecipients(filePath) {
     );
     if (confirm.toLowerCase() !== 'y') {
       console.yellow('Aborted.');
-      return silentExit(0);
+      return gracefulExit(0);
     }
   }
 
@@ -252,6 +312,7 @@ function loadRecipients(filePath) {
           appName,
           name,
           appUrl: opts.appUrl || '',
+          password: opts.password || '',
           year: new Date().getFullYear(),
         },
         template: TEMPLATE,
@@ -277,9 +338,16 @@ function loadRecipients(filePath) {
   }
   console.purple('---------------------------------');
 
-  return silentExit(results.failed.length > 0 ? 1 : 0);
-})().catch((err) => {
+  return gracefulExit(results.failed.length > 0 ? 1 : 0);
+})().catch(async (err) => {
   console.error('There was an uncaught error:');
   console.error(err);
+  if (mongoose.connection?.readyState) {
+    try {
+      await mongoose.disconnect();
+    } catch (_e) {
+      // best-effort cleanup
+    }
+  }
   process.exit(1);
 });
