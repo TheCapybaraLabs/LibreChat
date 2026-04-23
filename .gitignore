@@ -184,3 +184,4 @@ CLAUDE.md
 
 # Local ops-script state (contains user emails)
 config/.sent-welcome-emails.json
+config/.email-previews/
