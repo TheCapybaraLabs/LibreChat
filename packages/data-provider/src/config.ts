@@ -1,13 +1,12 @@
 import { z } from 'zod';
 import type { ZodError } from 'zod';
-import type { TEndpointsConfig, TModelsConfig, TConfig } from './types';
+import type { TConfig, TEndpointsConfig, TModelsConfig } from './types';
 import { ComponentTypes, SettingTypes, OptionTypes } from './generate';
 import { apiBaseUrl } from './api-endpoints';
 import { fileConfigSchema } from './file-config';
 import { MCPServersSchema } from './mcp';
 import { specsConfigSchema, TSpecsConfig } from './models';
 import { EModelEndpoint, eModelEndpointSchema, isAgentsEndpoint } from './schemas';
-import type { TConfig, TEndpointsConfig, TModelsConfig } from './types';
 import { FileSources } from './types/files';
 
 export const defaultSocialLogins = ['google', 'facebook', 'openid', 'github', 'discord', 'saml'];
