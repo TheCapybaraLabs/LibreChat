@@ -36,7 +36,12 @@
     "data-node/**/*",
     "meili_data/**/*",
     "**/node_modules/**/*",
-    ".devcontainer/**/*"
+    ".devcontainer/**/*",
+    "**/*.test.{js,jsx,ts,tsx}",
+    "**/*.spec.{js,jsx,ts,tsx}",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "**/setupTests.{js,ts}"
   ],
   "rules": {
     "constructor-super": "error",
@@ -258,17 +263,6 @@
             "destructuredArrayIgnorePattern": "^_"
           }
         ]
-      }
-    },
-    {
-      "files": ["**/*.test.{js,jsx,ts,tsx}", "**/*.spec.{js,jsx,ts,tsx}", "**/setupTests.js"],
-      "rules": {
-        "no-unused-vars": "off",
-        "i18next/no-literal-string": "off",
-        "jest/no-commented-out-tests": "off",
-        "jest/no-conditional-expect": "off",
-        "jest/no-disabled-tests": "off",
-        "react/no-unescaped-entities": "off"
       }
     }
   ]
