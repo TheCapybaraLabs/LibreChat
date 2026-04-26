@@ -49,7 +49,9 @@ function Header() {
           <div
             className={cn(
               'grid overflow-hidden transition-[grid-template-columns,opacity] duration-200 ease-out',
-              navVisible ? 'opacity-0 [grid-template-columns:0fr]' : 'opacity-100 [grid-template-columns:1fr]',
+              navVisible
+                ? 'opacity-0 [grid-template-columns:0fr]'
+                : 'opacity-100 [grid-template-columns:1fr]',
             )}
             aria-hidden={navVisible}
           >
