@@ -295,13 +295,6 @@ async function performSync(flowManager, flowId, flowType) {
   } finally {
     if (indexingDisabled === true) {
       logger.info('[indexSync] Indexing is disabled, skipping cleanup...');
-    } else if (flowManager && flowId && flowType) {
-      try {
-        await flowManager.deleteFlow(flowId, flowType);
-        logger.debug('[indexSync] Flow state cleaned up');
-      } catch (cleanupErr) {
-        logger.debug('[indexSync] Could not clean up flow state:', cleanupErr.message);
-      }
     }
   }
 }
