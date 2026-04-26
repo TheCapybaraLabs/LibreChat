@@ -106,14 +106,13 @@ function AuthLayout({
 
             <DisplayError />
 
-            {!hasStartupConfigError && !isFetching && header && (
-              <h1
-                className="mb-4 text-center text-2xl font-semibold text-text-primary"
-                style={{ userSelect: 'none' }}
-              >
-                {header}
-              </h1>
-            )}
+            <h1
+              className="mb-4 min-h-8 text-center text-2xl font-semibold text-text-primary"
+              style={{ userSelect: 'none' }}
+              aria-hidden={!header || hasStartupConfigError || isFetching}
+            >
+              {!hasStartupConfigError && !isFetching && header ? header : null}
+            </h1>
 
             {children}
             {!pathname.includes('2fa') &&

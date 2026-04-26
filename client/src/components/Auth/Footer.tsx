@@ -3,11 +3,8 @@ import { TStartupConfig } from 'librechat-data-provider';
 
 function Footer({ startupConfig }: { startupConfig: TStartupConfig | null | undefined }) {
   const localize = useLocalize();
-  if (!startupConfig) {
-    return null;
-  }
-  const privacyPolicy = startupConfig.interface?.privacyPolicy;
-  const termsOfService = startupConfig.interface?.termsOfService;
+  const privacyPolicy = startupConfig?.interface?.privacyPolicy;
+  const termsOfService = startupConfig?.interface?.termsOfService;
 
   const privacyPolicyRender = privacyPolicy?.externalUrl && (
     <a
@@ -32,7 +29,11 @@ function Footer({ startupConfig }: { startupConfig: TStartupConfig | null | unde
   );
 
   return (
-    <div className="align-end m-4 flex justify-center gap-2" role="contentinfo">
+    <div
+      className="align-end m-4 flex min-h-5 justify-center gap-2"
+      role="contentinfo"
+      aria-busy={!startupConfig}
+    >
       {privacyPolicyRender}
       {privacyPolicyRender && termsOfServiceRender && (
         <div className="border-r-[1px] border-gray-300 dark:border-gray-600" />
