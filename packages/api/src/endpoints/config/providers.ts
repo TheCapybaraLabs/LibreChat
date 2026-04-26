@@ -36,6 +36,9 @@ export const providerConfigMap: Record<string, InitializeFn> = {
   [Providers.OPENROUTER]: initializeCustom,
   [EModelEndpoint.openAI]: initializeOpenAI,
   [EModelEndpoint.google]: initializeGoogle,
+  /** Vertex AI shares google's initializer; the google flow flips the SDK
+   * provider to VERTEXAI when service-account creds (project_id) are detected. */
+  [Providers.VERTEXAI]: initializeGoogle,
   [EModelEndpoint.bedrock]: initializeBedrock,
   [EModelEndpoint.azureOpenAI]: initializeOpenAI,
   [EModelEndpoint.anthropic]: initializeAnthropic,
