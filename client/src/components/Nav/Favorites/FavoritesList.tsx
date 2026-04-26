@@ -119,9 +119,11 @@ const DraggableFavoriteItem = ({
 export default function FavoritesList({
   isSmallScreen,
   toggleNav,
+  onHeightChange,
 }: {
   isSmallScreen?: boolean;
   toggleNav?: () => void;
+  onHeightChange?: () => void;
 }) {
   const navigate = useNavigate();
   const localize = useLocalize();
@@ -321,6 +323,13 @@ export default function FavoritesList({
   const isAgentsLoading =
     (allAgentIds.length > 0 && agentsMap === undefined) ||
     (missingAgentIds.length > 0 && missingAgentQueries.some((q) => q.isLoading));
+
+  /** Notify parent (Conversations.tsx) to re-measure the virtualized row when
+   * the rendered content's height changes — e.g. when isAgentsLoading flips
+   * (skeletons → real items) or the New Chat button is conditionally added. */
+  useEffect(() => {
+    onHeightChange?.();
+  }, [isAgentsLoading, onHeightChange]);
 
   const draggedFavoritesRef = useRef(safeFavorites);
 

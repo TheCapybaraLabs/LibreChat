@@ -292,7 +292,11 @@ const Conversations: FC<ConversationsProps> = ({
       if (item.type === 'favorites') {
         return (
           <MeasuredRow key={key} {...rowProps}>
-            <FavoritesList isSmallScreen={isSmallScreen} toggleNav={toggleNav} />
+            <FavoritesList
+              isSmallScreen={isSmallScreen}
+              toggleNav={toggleNav}
+              onHeightChange={clearFavoritesCache}
+            />
           </MeasuredRow>
         );
       }
@@ -346,6 +350,7 @@ const Conversations: FC<ConversationsProps> = ({
       setIsChatsExpanded,
       shouldShowFavorites,
       activeJobIds,
+      clearFavoritesCache,
     ],
   );
 
