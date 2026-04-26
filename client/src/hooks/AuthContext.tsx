@@ -284,6 +284,7 @@ const AuthContextProvider = ({
       isAuthenticated,
     }),
 
+    // oxlint-disable-next-line react/exhaustive-deps -- login/logout intentionally omitted, adding them triggers re-renders on every mutation state change
     [
       user,
       error,
