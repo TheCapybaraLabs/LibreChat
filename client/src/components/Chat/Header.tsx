@@ -5,7 +5,7 @@ import { getConfigDefaults, PermissionTypes, Permissions } from 'librechat-data-
 import ModelSelector from './Menus/Endpoints/ModelSelector';
 import { useGetStartupConfig } from '~/data-provider';
 import ExportAndShareMenu from './ExportAndShareMenu';
-import { OpenSidebar, PresetsMenu } from './Menus';
+import { HeaderNewChat, OpenSidebar, PresetsMenu } from './Menus';
 import BookmarkMenu from './Menus/BookmarkMenu';
 import { TemporaryChat } from './TemporaryChat';
 import AddMultiConvo from './AddMultiConvo';
@@ -46,6 +46,17 @@ function Header() {
       <div className="hide-scrollbar flex w-full items-center justify-between gap-2 overflow-x-auto">
         <div className="mx-1 flex items-center">
           <OpenSidebar className="md:hidden" />
+          <div
+            className={cn(
+              'grid overflow-hidden transition-[grid-template-columns,opacity] duration-200 ease-out',
+              navVisible ? 'opacity-0 [grid-template-columns:0fr]' : 'opacity-100 [grid-template-columns:1fr]',
+            )}
+            aria-hidden={navVisible}
+          >
+            <div className="min-w-0 overflow-hidden">
+              <HeaderNewChat />
+            </div>
+          </div>
           {!(navVisible && isSmallScreen) && (
             <div
               className={cn(
