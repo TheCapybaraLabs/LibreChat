@@ -1,5 +1,5 @@
 import { Navigate, useParams } from 'react-router-dom';
-import { AdminDashboard } from '~/components/Admin';
+import { InvitesDashboard } from '~/components/Invites';
 import DashboardRoute from './Layouts/Dashboard';
 
 function PromptsRedirect() {
@@ -17,8 +17,8 @@ const dashboardRoutes = {
       element: <PromptsRedirect />,
     },
     {
-      path: 'admin',
-      element: <AdminDashboard />,
+      path: 'invites',
+      element: <InvitesDashboard />,
     },
     {
       path: '*',

@@ -226,14 +226,14 @@ export type GraphTokenResponse = {
   scope: string;
 };
 
-export type AdminInvite = {
+export type Invite = {
   _id: string;
   email: string;
   createdAt: string;
   expiresAt: string;
 };
 
-export type CreateAdminInviteResponse = {
+export type CreateInviteResponse = {
   success: boolean;
   email: string;
   expiresAt: string;

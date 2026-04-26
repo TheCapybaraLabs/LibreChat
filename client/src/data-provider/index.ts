@@ -1,5 +1,5 @@
-export * from './Admin';
 export * from './Auth';
+export * from './Invites';
 export * from './Agents';
 export * from './Endpoints';
 export * from './Files';

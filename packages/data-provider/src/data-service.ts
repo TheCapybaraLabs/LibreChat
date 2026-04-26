@@ -1088,14 +1088,14 @@ export const getActiveJobs = (): Promise<ActiveJobsResponse> => {
   return request.get(endpoints.activeJobs());
 };
 
-export function getAdminInvites(): Promise<q.AdminInvite[]> {
-  return request.get(endpoints.adminInvites());
+export function getInvites(): Promise<q.Invite[]> {
+  return request.get(endpoints.invites());
 }
 
-export function createAdminInvite(email: string): Promise<q.CreateAdminInviteResponse> {
-  return request.post(endpoints.adminInvites(), { email });
+export function createInvite(email: string): Promise<q.CreateInviteResponse> {
+  return request.post(endpoints.invites(), { email });
 }
 
-export function revokeAdminInvite(id: string): Promise<void> {
-  return request.delete(endpoints.adminInvite(id));
+export function revokeInvite(id: string): Promise<void> {
+  return request.delete(endpoints.invite(id));
 }

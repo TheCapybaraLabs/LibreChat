@@ -3,9 +3,9 @@ import { useToastContext } from '@librechat/client';
 import { useLocalize } from '~/hooks';
 import { NotificationSeverity } from '~/common';
 import {
-  useGetAdminInvitesQuery,
-  useCreateAdminInviteMutation,
-  useRevokeAdminInviteMutation,
+  useGetInvitesQuery,
+  useCreateInviteMutation,
+  useRevokeInviteMutation,
 } from '~/data-provider';
 
 export default function InvitesPanel() {
@@ -13,9 +13,9 @@ export default function InvitesPanel() {
   const { showToast } = useToastContext();
   const [email, setEmail] = useState('');
 
-  const { data: invites = [], isLoading } = useGetAdminInvitesQuery();
+  const { data: invites = [], isLoading } = useGetInvitesQuery();
 
-  const createInvite = useCreateAdminInviteMutation({
+  const createInvite = useCreateInviteMutation({
     onSuccess: () => {
       setEmail('');
       showToast({
@@ -31,7 +31,7 @@ export default function InvitesPanel() {
     },
   });
 
-  const revokeInvite = useRevokeAdminInviteMutation({
+  const revokeInvite = useRevokeInviteMutation({
     onError: () => {
       showToast({
         message: localize('com_admin_invite_error'),

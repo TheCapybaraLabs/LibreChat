@@ -29,10 +29,7 @@ const createInvite = async (email) => {
 
 router.get('/', async (req, res) => {
   try {
-    const invites = await Token.find(
-      { type: 'invite' },
-      '_id email createdAt expiresAt',
-    ).lean();
+    const invites = await Token.find({ type: 'invite' }, '_id email createdAt expiresAt').lean();
     res.json(invites);
   } catch (error) {
     logger.error('[admin/invites] list failed', error);
