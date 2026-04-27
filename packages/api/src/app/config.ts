@@ -63,8 +63,11 @@ export const getCustomEndpointConfig = ({
   }
 
   const customEndpoints = appConfig.endpoints?.[EModelEndpoint.custom] ?? [];
+  /** Case-insensitive match: yaml endpoint names use user-defined casing
+   * (e.g. "Deepseek", "xAI") while runtime providers come lowercase from
+   * @librechat/agents (Providers.DEEPSEEK = "deepseek"). */
+  const target = normalizeEndpointName(endpoint).toLowerCase();
   return customEndpoints.find(
-    (endpointConfig) =>
-      normalizeEndpointName(endpointConfig.name) === normalizeEndpointName(endpoint),
+    (endpointConfig) => normalizeEndpointName(endpointConfig.name).toLowerCase() === target,
   );
 };

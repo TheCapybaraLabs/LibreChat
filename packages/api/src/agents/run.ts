@@ -374,7 +374,8 @@ function shapeSummarizationConfig(
   const isSameEndpointAsAgent =
     agentEndpoint != null &&
     isNonEmptyString(rawProvider) &&
-    normalizeEndpointName(rawProvider) === normalizeEndpointName(agentEndpoint);
+    normalizeEndpointName(rawProvider).toLowerCase() ===
+      normalizeEndpointName(agentEndpoint).toLowerCase();
 
   const { provider, clientOverrides } = isSameEndpointAsAgent
     ? { provider: fallbackProvider, clientOverrides: undefined }
