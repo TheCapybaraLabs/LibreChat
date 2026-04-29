@@ -59,8 +59,8 @@ router.post('/prepare-pdf', async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     const message =
-      error.code === 'PDF_TEXT_EXTRACTION_EMPTY' || error.code === 'PDF_CHUNKING_EMPTY'
-        ? 'Não foi possível extrair texto selecionável deste PDF. O envio foi bloqueado por segurança.'
+      ['PDF_TEXT_EXTRACTION_EMPTY', 'PDF_CHUNKING_EMPTY', 'PDF_PARSER_NOT_AVAILABLE', 'PDF_READ_FAILED', 'PDF_EXTRACTION_FAILED'].includes(error.code) 
+        ? error.message
         : 'Falha ao anonimizar uma parte do PDF. O envio foi bloqueado por segurança.';
     logger.error('[prepare-pdf] Failed to prepare PDF', {
       fileId,
