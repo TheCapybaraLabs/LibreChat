@@ -40,7 +40,7 @@ export default function CookiesPolicy() {
 
         <div className="space-y-6 rounded-2xl border border-border-light bg-surface-secondary p-6 shadow-sm">
           {content ? (
-            <div className="prose dark:prose-invert max-w-none !text-text-primary">
+            <div className="prose dark:prose-invert max-w-none text-justify !text-text-primary [&_li]:text-justify [&_p]:text-justify">
               <MarkdownLite content={content} />
             </div>
           ) : (
