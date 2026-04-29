@@ -36,6 +36,11 @@ async function extractPdfText({ filePath }) {
 
   const { maxPages, maxChars } = getPdfLimits();
   const data = fs.readFileSync(filePath);
+  logger.info('[extractPdfText] pdf_load_started', {
+    size: data.length,
+    max_pages: maxPages,
+    max_chars: maxChars,
+  });
   const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(data),
     disableWorker: true,
@@ -44,6 +49,10 @@ async function extractPdfText({ filePath }) {
 
   const pdf = await loadingTask.promise;
   const totalPages = Math.min(pdf.numPages, maxPages);
+  logger.info('[extractPdfText] pdf_loaded', {
+    pages: pdf.numPages,
+    pages_processed: totalPages,
+  });
 
   let text = '';
 
@@ -64,6 +73,10 @@ async function extractPdfText({ filePath }) {
   }
 
   const normalized = normalizeText(text);
+  logger.info('[extractPdfText] extract_completed', {
+    chars: normalized.length,
+    pages_processed: totalPages,
+  });
   return {
     text: normalized,
     chars: normalized.length,

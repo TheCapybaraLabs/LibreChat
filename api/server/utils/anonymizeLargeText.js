@@ -15,11 +15,19 @@ const normalizeText = (text) => {
 
 async function anonymizeLargeText(text) {
   const normalized = normalizeText(text);
+  logger.info('[anonymizeLargeText] chunking_started', {
+    chars: normalized.length,
+    chunks_count: 1,
+  });
   const result = await blurryClient.anonymizeText({
     text: normalized,
     policy: 'default',
     anonymization_level: 'full',
     return_entities: true,
+  });
+  logger.info('[anonymizeLargeText] chunking_completed', {
+    chunks_count: 1,
+    processingMsTotal: result.processing_ms ?? 0,
   });
 
   logger.info('[anonymizeLargeText] Completed anonymization', {

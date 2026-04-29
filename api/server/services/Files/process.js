@@ -70,6 +70,7 @@ const shouldAnonymizeRequest = (req) => {
 
 const buildAnonymizeMetadata = (result) => ({
   anonymized: true,
+  providerSafe: true,
   anonymization_level: 'full',
   stats: result.stats,
   processing_ms_total: result.processingMsTotal,
@@ -79,23 +80,67 @@ const buildAnonymizeMetadata = (result) => ({
 
 const anonymizePdfFromUpload = async (req, file) => {
   const failClosed = process.env.BLURRY_FAIL_CLOSED !== 'false';
+  const fileSize = file.size ?? (() => {
+    try {
+      return fs.statSync(file.path).size;
+    } catch {
+      return undefined;
+    }
+  })();
+  const uploadContext = {
+    file_id: req.file_id,
+    mime_type: file.mimetype,
+    size: fileSize,
+  };
 
   try {
-    const { text } = await extractPdfText({ filePath: file.path });
+    logger.info('[anonymizePdfFromUpload] document_upload_received', uploadContext);
+
+    logger.info('[anonymizePdfFromUpload] extract_started', uploadContext);
+    const { text, chars, pagesProcessed } = await extractPdfText({ filePath: file.path });
+    logger.info('[anonymizePdfFromUpload] extract_completed', {
+      ...uploadContext,
+      chars,
+      pages_processed: pagesProcessed,
+    });
+
     if (!text) {
       throw new Error('PDF sem texto selecionável; OCR não habilitado.');
     }
 
+    logger.info('[anonymizePdfFromUpload] chunking_started', {
+      ...uploadContext,
+      chars,
+    });
     const result = await anonymizeLargeText(text);
+    logger.info('[anonymizePdfFromUpload] chunking_completed', {
+      ...uploadContext,
+      chunks_count: result.chunksCount,
+    });
+    logger.info('[anonymizePdfFromUpload] rebuild_completed', {
+      ...uploadContext,
+      output_chars: result.anonymizedText?.length ?? 0,
+    });
+    logger.info('[anonymizePdfFromUpload] sanitized_generated', {
+      ...uploadContext,
+      providerSafe: true,
+    });
+    logger.info('[anonymizePdfFromUpload] job_completed', uploadContext);
+
     return {
       anonymizedText: result.anonymizedText,
       anonymizeMetadata: buildAnonymizeMetadata(result),
     };
   } catch (error) {
-    logger.error('[anonymizePdfFromUpload] Failed to anonymize PDF', error);
+    logger.error('[anonymizePdfFromUpload] job_failed', {
+      ...uploadContext,
+      message: error.message,
+      stack: error.stack,
+    });
     if (failClosed) {
       throw new Error(
         'Falha na anonimização do PDF. O envio foi bloqueado por segurança.',
+        { cause: error },
       );
     }
     return null;

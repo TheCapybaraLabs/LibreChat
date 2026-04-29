@@ -70,6 +70,7 @@ const file: Schema<IMongoFile> = new Schema(
     metadata: {
       fileIdentifier: String,
       anonymized: Boolean,
+      providerSafe: Boolean,
       anonymization_level: String,
       stats: Schema.Types.Mixed,
       processing_ms_total: Number,

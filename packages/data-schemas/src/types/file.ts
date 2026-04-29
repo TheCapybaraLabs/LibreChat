@@ -21,6 +21,7 @@ export interface IMongoFile extends Omit<Document, 'model'> {
   metadata?: {
     fileIdentifier?: string;
     anonymized?: boolean;
+    providerSafe?: boolean;
     anonymization_level?: string;
     stats?: Record<string, unknown>;
     processing_ms_total?: number;
