@@ -41,7 +41,6 @@ const { getOpenAIClient } = require('./helpers');
  * @returns {void}
  */
 const chatV2 = async (req, res) => {
-  logger.debug('[/assistants/chat/] req.body', req.body);
   const appConfig = req.config;
 
   /** @type {{files: MongoFile[]}} */

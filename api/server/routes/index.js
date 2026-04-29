@@ -22,6 +22,7 @@ const files = require('./files');
 const share = require('./share');
 const tags = require('./tags');
 const auth = require('./auth');
+const blurry = require('./blurry');
 const edit = require('./edit');
 const keys = require('./keys');
 const user = require('./user');
@@ -30,6 +31,7 @@ const mcp = require('./mcp');
 module.exports = {
   mcp,
   edit,
+  blurry,
   auth,
   keys,
   user,

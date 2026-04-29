@@ -6,6 +6,8 @@ const {
   concurrentLimiter,
   messageIpLimiter,
   requireJwtAuth,
+  moderateText,
+  anonymizeMessage,
   checkBan,
   uaParser,
 } = require('~/server/middleware');
@@ -36,6 +38,8 @@ if (isEnabled(LIMIT_MESSAGE_USER)) {
 }
 
 router.use(validateConvoAccess);
+router.use(moderateText);
+router.use(anonymizeMessage);
 
 router.use([`/${EModelEndpoint.azureOpenAI}`, `/${EModelEndpoint.openAI}`], openAI);
 router.use(`/${EModelEndpoint.anthropic}`, anthropic);

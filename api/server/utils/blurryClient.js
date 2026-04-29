@@ -25,6 +25,31 @@ const parseRetryAfterMs = (retryAfterHeader) => {
 };
 
 const blurryClient = {
+  checkHealth: async () => {
+    const baseURL = process.env.BLURRY_BASE_URL || 'https://9a39-138-255-244-234.ngrok-free.app';
+    const apiKey = process.env.BLURRY_API_KEY;
+    const timeout = Number(process.env.BLURRY_TIMEOUT_MS) || 10000;
+
+    if (!apiKey) {
+      return { status: 'misconfigured', error: 'BLURRY_API_KEY is missing' };
+    }
+
+    try {
+      const start = Date.now();
+      await axios.get(`${baseURL}/health`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        timeout,
+      });
+      return { status: 'ok', latencyMs: Date.now() - start };
+    } catch (error) {
+      const status = error.response?.status;
+      if (status) {
+        return { status: 'degraded', httpStatus: status, error: error.message };
+      }
+      return { status: 'unreachable', error: error.message };
+    }
+  },
+
   anonymizeText: async ({
     text,
     policy = 'default',

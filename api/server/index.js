@@ -145,6 +145,7 @@ const startServer = async () => {
 
   app.use('/api/tags', routes.tags);
   app.use('/api/mcp', routes.mcp);
+  app.use('/api/blurry', routes.blurry);
 
   app.use(ErrorController);
 

@@ -7,10 +7,15 @@ const {
   validateModel,
   // validateEndpoint,
   buildEndpointOption,
+  moderateText,
+  anonymizeMessage,
 } = require('~/server/middleware');
 const validateConvoAccess = require('~/server/middleware/validate/convoAccess');
 const validateAssistant = require('~/server/middleware/assistants/validate');
 const chatController = require('~/server/controllers/assistants/chatV2');
+
+router.use(moderateText);
+router.use(anonymizeMessage);
 
 router.post('/abort', handleAbort());
 
