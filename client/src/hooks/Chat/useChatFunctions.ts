@@ -68,6 +68,7 @@ export default function useChatFunctions({
   const setFilesToDelete = useSetFilesToDelete();
   const getEphemeralAgent = useGetEphemeralAgent();
   const isTemporary = useRecoilValue(store.isTemporary);
+  const anonymizeEnabled = useRecoilValue(store.anonymizeEnabled);
   const { getExpiry } = useUserKey(immutableConversation?.endpoint ?? '');
   const setShowStopButton = useSetRecoilState(store.showStopButtonByIndex(index));
   const resetLatestMultiMessage = useResetRecoilState(store.latestMessageFamily(index + 1));
@@ -340,7 +341,7 @@ export default function useChatFunctions({
     const parentMessage = messages?.find((element) => element.messageId == parentMessageId);
 
     if (parentMessage && parentMessage.isCreatedByUser) {
-      ask({ ...parentMessage }, { isRegenerate: true });
+      ask({ ...parentMessage, anonymize: anonymizeEnabled }, { isRegenerate: true });
     } else {
       console.error(
         'Failed to regenerate the message: parentMessage not found or not created by user.',

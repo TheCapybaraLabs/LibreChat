@@ -36,6 +36,7 @@ const EditMessage = ({
 
   const chatDirection = useRecoilValue(store.chatDirection).toLowerCase();
   const isRTL = chatDirection === 'rtl';
+  const anonymizeEnabled = useRecoilValue(store.anonymizeEnabled);
 
   const { register, handleSubmit, setValue } = useForm({
     defaultValues: {
@@ -59,6 +60,7 @@ const EditMessage = ({
           text: data.text,
           parentMessageId,
           conversationId,
+          anonymize: anonymizeEnabled,
         },
         {
           overrideFiles: message.files,
@@ -74,7 +76,7 @@ const EditMessage = ({
         return;
       }
       ask(
-        { ...parentMessage },
+        { ...parentMessage, anonymize: anonymizeEnabled },
         {
           editedText: data.text,
           editedMessageId: messageId,

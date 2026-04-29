@@ -39,6 +39,7 @@ const EditTextPart = ({
   );
 
   const chatDirection = useRecoilValue(store.chatDirection);
+  const anonymizeEnabled = useRecoilValue(store.anonymizeEnabled);
 
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const updateMessageContentMutation = useUpdateMessageContentMutation(conversationId ?? '');
@@ -81,7 +82,7 @@ const EditTextPart = ({
       return;
     }
     ask(
-      { ...parentMessage },
+      { ...parentMessage, anonymize: anonymizeEnabled },
       {
         editedContent,
         editedMessageId: messageId,

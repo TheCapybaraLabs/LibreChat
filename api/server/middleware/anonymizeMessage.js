@@ -5,7 +5,7 @@ const blurryClient = require('../utils/blurryClient');
 async function anonymizeMessage(req, res, next) {
   const { text, anonymize } = req.body;
 
-  if (anonymize !== true) {
+  if (anonymize !== true && anonymize !== 'true') {
     return next();
   }
 

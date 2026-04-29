@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { QueryKeys } from 'librechat-data-provider';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRecoilState, useResetRecoilState, useSetRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue, useResetRecoilState, useSetRecoilState } from 'recoil';
 import type { TMessage } from 'librechat-data-provider';
 import useChatFunctions from '~/hooks/Chat/useChatFunctions';
 import { useGetMessagesByConvoId } from '~/data-provider';
@@ -14,6 +14,7 @@ export default function useChatHelpers(index = 0, paramId?: string) {
   const clearAllSubmissions = store.useClearSubmissionState();
   const [files, setFiles] = useRecoilState(store.filesByIndex(index));
   const [filesLoading, setFilesLoading] = useState(false);
+  const anonymizeEnabled = useRecoilValue(store.anonymizeEnabled);
 
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuthContext();
@@ -99,7 +100,7 @@ export default function useChatHelpers(index = 0, paramId?: string) {
     );
 
     if (parentMessage && parentMessage.isCreatedByUser) {
-      ask({ ...parentMessage }, { isContinued: true, isRegenerate: true, isEdited: true });
+      ask({ ...parentMessage, anonymize: anonymizeEnabled }, { isContinued: true, isRegenerate: true, isEdited: true });
     } else {
       console.error(
         'Failed to regenerate the message: parentMessage not found, or not created by user.',
