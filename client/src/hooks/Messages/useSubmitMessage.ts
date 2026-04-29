@@ -23,6 +23,7 @@ export default function useSubmitMessage() {
   const anonymizeEnabled = useRecoilValue(store.anonymizeEnabled);
   const activeConvos = useRecoilValue(store.allConversationsSelector);
   const setActivePrompt = useSetRecoilState(store.activePromptByIndex(index));
+  const setProtectionPhase = useSetRecoilState(store.protectionPhase);
 
   const submitMessage = useCallback(
     (data?: { text: string }) => {
@@ -46,6 +47,12 @@ export default function useSubmitMessage() {
       const overrideUserMessageId = hasAdded ? v4() : undefined;
       const rootIndex = addedIndex - 1;
       const clientTimestamp = new Date().toISOString();
+
+      if (anonymizeEnabled) {
+        setProtectionPhase('anonymizing');
+      } else {
+        setProtectionPhase('idle');
+      }
 
       ask({
         text: data.text,
@@ -72,6 +79,7 @@ export default function useSubmitMessage() {
     [
       ask,
       anonymizeEnabled,
+      setProtectionPhase,
       methods,
       addedIndex,
       addedConvo,

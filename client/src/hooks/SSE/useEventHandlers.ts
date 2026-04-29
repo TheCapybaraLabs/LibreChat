@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { v4 } from 'uuid';
-import { useSetRecoilState } from 'recoil';
+import { useSetRecoilState, useRecoilValue } from 'recoil';
+import type { ProtectionPhase } from '~/store/misc';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -182,6 +183,10 @@ export default function useEventHandlers({
   const { announcePolite } = useLiveAnnouncer();
   const applyAgentTemplate = useApplyAgentTemplate();
   const setAbortScroll = useSetRecoilState(store.abortScroll);
+  const setProtectionPhase = useSetRecoilState(store.protectionPhase);
+  const currentPhase = useRecoilValue(store.protectionPhase);
+  const protectionPhaseRef = useRef<ProtectionPhase>('idle');
+  protectionPhaseRef.current = currentPhase;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -434,6 +439,10 @@ export default function useEventHandlers({
         resetLatestMessage();
       }
       scrollToEnd(() => setAbortScroll(false));
+
+      if (protectionPhaseRef.current === 'anonymizing') {
+        setProtectionPhase('protected');
+      }
     },
     [
       setMessages,
@@ -442,6 +451,7 @@ export default function useEventHandlers({
       isAddedRequest,
       announcePolite,
       setConversation,
+      setProtectionPhase,
       resetLatestMessage,
       applyAgentTemplate,
     ],
@@ -595,6 +605,9 @@ export default function useEventHandlers({
       } finally {
         setShowStopButton(false);
         setIsSubmitting(false);
+        if (protectionPhaseRef.current !== 'idle') {
+          setProtectionPhase('idle');
+        }
       }
     },
     [
@@ -609,6 +622,7 @@ export default function useEventHandlers({
       setConversation,
       setIsSubmitting,
       setShowStopButton,
+      setProtectionPhase,
       location.pathname,
       applyAgentTemplate,
       attachmentHandler,
@@ -645,6 +659,14 @@ export default function useEventHandlers({
         return tMessageSchema.parse(errorMessage) as TMessage;
       };
 
+      const resolveProtectionError = () => {
+        if (protectionPhaseRef.current === 'anonymizing') {
+          setProtectionPhase('blocked');
+        } else if (protectionPhaseRef.current !== 'idle') {
+          setProtectionPhase('failed');
+        }
+      };
+
       if (!data) {
         const convoId = conversationId || `_${v4()}`;
         const errorMetadata = parseErrorResponse({
@@ -664,6 +686,7 @@ export default function useEventHandlers({
             preset: tPresetSchema.parse(submission.conversation),
           });
         }
+        resolveProtectionError();
         setIsSubmitting(false);
         return;
       }
@@ -679,11 +702,13 @@ export default function useEventHandlers({
             preset: tPresetSchema.parse(submission.conversation),
           });
         }
+        resolveProtectionError();
         setIsSubmitting(false);
         return;
       } else if (!receivedConvoId) {
         const errorResponse = parseErrorResponse(data);
         setErrorMessages(conversationId, errorResponse);
+        resolveProtectionError();
         setIsSubmitting(false);
         return;
       }
@@ -702,6 +727,7 @@ export default function useEventHandlers({
         });
       }
 
+      resolveProtectionError();
       setIsSubmitting(false);
       return;
     },
@@ -711,6 +737,7 @@ export default function useEventHandlers({
       paramId,
       newConversation,
       setIsSubmitting,
+      setProtectionPhase,
       getMessages,
       queryClient,
     ],

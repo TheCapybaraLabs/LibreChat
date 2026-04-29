@@ -3,6 +3,21 @@ import { TAttachment } from 'librechat-data-provider';
 import { atomWithLocalStorage } from './utils';
 import { BadgeItem } from '~/common';
 
+export type ProtectionPhase =
+  | 'idle'
+  | 'anonymizing'
+  | 'protected'
+  | 'streaming'
+  | 'blocked'
+  | 'degraded'
+  | 'failed';
+
+export type SessionProtectionEntry = {
+  entityCount: number;
+  entityTypes: string[];
+  processingMs?: number;
+};
+
 const hideBannerHint = atomWithLocalStorage('hideBannerHint', [] as string[]);
 
 const messageAttachmentsMap = atom<Record<string, TAttachment[] | undefined>>({
@@ -29,6 +44,16 @@ const chatBadges = atomWithLocalStorage<Pick<BadgeItem, 'id'>[]>('chatBadges', [
 
 const anonymizeEnabled = atomWithLocalStorage('librechat_anonymize_enabled', false);
 
+const protectionPhase = atom<ProtectionPhase>({
+  key: 'protectionPhase',
+  default: 'idle',
+});
+
+const sessionProtectionMap = atom<Record<string, SessionProtectionEntry>>({
+  key: 'sessionProtectionMap',
+  default: {},
+});
+
 export default {
   hideBannerHint,
   messageAttachmentsMap,
@@ -36,4 +61,6 @@ export default {
   isEditingBadges,
   chatBadges,
   anonymizeEnabled,
+  protectionPhase,
+  sessionProtectionMap,
 };

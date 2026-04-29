@@ -5,6 +5,7 @@ import { type TMessage } from 'librechat-data-provider';
 import type { TMessageProps, TMessageIcon } from '~/common';
 import MessageContent from '~/components/Chat/Messages/Content/MessageContent';
 import PlaceholderRow from '~/components/Chat/Messages/ui/PlaceholderRow';
+import { ProtectionBadge } from '~/components/Chat/Messages/ui/ProtectionInspector';
 import SiblingSwitch from '~/components/Chat/Messages/SiblingSwitch';
 import HoverButtons from '~/components/Chat/Messages/HoverButtons';
 import MessageIcon from '~/components/Chat/Messages/MessageIcon';
@@ -168,11 +169,7 @@ const MessageRender = memo(
         >
           <div className="flex items-center gap-2">
             <h2 className={cn('select-none font-semibold', fontSize)}>{messageLabel}</h2>
-            {msg.anonymized && (
-              <span className="rounded bg-surface-hover px-1.5 py-0.5 text-[10px] font-medium text-text-secondary">
-                {localize('Anonymized')}
-              </span>
-            )}
+            {msg.anonymized && <ProtectionBadge messageId={msg.messageId} />}
           </div>
 
           <div className="flex flex-col gap-1">
