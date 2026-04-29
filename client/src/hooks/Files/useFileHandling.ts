@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   QueryKeys,
   Constants,
+  dataService,
   EToolResources,
   mergeFileConfig,
   isAssistantsEndpoint,
@@ -25,11 +26,21 @@ import { logger, validateFiles } from '~/utils';
 import useClientResize from './useClientResize';
 import useUpdateFiles from './useUpdateFiles';
 import store from '~/store';
+import type { PdfPreparationState } from '~/components/Chat/Input/Files/PdfPreparationModal';
 
 type UseFileHandling = {
   fileSetter?: FileSetter;
   fileFilter?: (file: File) => boolean;
   additionalMetadata?: Record<string, string | undefined>;
+  onPreparedPdfConfirm?: (payload: { filename: string; anonymizedText: string }) => void;
+};
+
+type PreparedPdfResponse = {
+  providerSafe: boolean;
+  anonymizedText: string;
+  filename: string;
+  pages?: number;
+  chunks?: { total: number; succeeded: number; failed: number };
 };
 
 const useFileHandling = (params?: UseFileHandling) => {
@@ -49,6 +60,15 @@ const useFileHandling = (params?: UseFileHandling) => {
   );
   const { resizeImageIfNeeded } = useClientResize();
   const anonymizeEnabled = useRecoilValue(store.anonymizeEnabled);
+  const [pdfPreparation, setPdfPreparation] = useState<PdfPreparationState>({
+    open: false,
+    status: 'idle',
+    fileName: '',
+    fileSize: 0,
+  });
+  const preparedPdfRef = useRef<{ filename: string; anonymizedText: string } | null>(null);
+  const preparationCancelledRef = useRef(false);
+  const preparationTimersRef = useRef<number[]>([]);
 
   const agent_id = params?.additionalMetadata?.agent_id ?? '';
   const assistant_id = params?.additionalMetadata?.assistant_id ?? '';
@@ -156,6 +176,111 @@ const useFileHandling = (params?: UseFileHandling) => {
     },
     abortControllerRef.current?.signal,
   );
+
+  const clearPreparationTimers = () => {
+    preparationTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    preparationTimersRef.current = [];
+  };
+
+  const preparePdfForChat = async (file: File, fileId: string) => {
+    clearPreparationTimers();
+    preparedPdfRef.current = null;
+    preparationCancelledRef.current = false;
+    setFilesLoading(true);
+    setPdfPreparation({
+      open: true,
+      status: 'extracting',
+      fileName: file.name,
+      fileSize: file.size,
+    });
+
+    preparationTimersRef.current = [
+      window.setTimeout(() => {
+        setPdfPreparation((prev) =>
+          prev.open && prev.status === 'extracting' ? { ...prev, status: 'chunking' } : prev,
+        );
+      }, 700),
+      window.setTimeout(() => {
+        setPdfPreparation((prev) =>
+          prev.open && (prev.status === 'extracting' || prev.status === 'chunking')
+            ? { ...prev, status: 'anonymizing' }
+            : prev,
+        );
+      }, 1400),
+    ];
+
+    const formData = new FormData();
+    formData.append('endpoint', endpoint);
+    formData.append('endpointType', endpointType ?? '');
+    formData.append('file', file, encodeURIComponent(file.name));
+    formData.append('file_id', fileId);
+
+    try {
+      const result = await dataService.preparePdf<PreparedPdfResponse>(
+        formData,
+        abortControllerRef.current?.signal,
+      );
+      if (!result.providerSafe || !result.anonymizedText) {
+        throw new Error('Prepared PDF was not marked provider-safe');
+      }
+      clearPreparationTimers();
+      preparedPdfRef.current = {
+        filename: result.filename || file.name,
+        anonymizedText: result.anonymizedText,
+      };
+      setPdfPreparation({
+        open: true,
+        status: 'review',
+        fileName: result.filename || file.name,
+        fileSize: file.size,
+        pages: result.pages,
+        chunkCount: result.chunks?.total,
+        anonymizedText: result.anonymizedText,
+      });
+    } catch (error) {
+      clearPreparationTimers();
+      if (preparationCancelledRef.current) {
+        return;
+      }
+      const err = error as TError | undefined;
+      setPdfPreparation((prev) => ({
+        ...prev,
+        open: true,
+        status: 'failed',
+        error:
+          err?.response?.data?.message ||
+          'Falha ao anonimizar uma parte do PDF. O envio foi bloqueado por segurança.',
+      }));
+    } finally {
+      setFilesLoading(false);
+    }
+  };
+
+  const cancelPdfPreparation = () => {
+    clearPreparationTimers();
+    preparationCancelledRef.current = true;
+    if (
+      pdfPreparation.status === 'extracting' ||
+      pdfPreparation.status === 'chunking' ||
+      pdfPreparation.status === 'anonymizing'
+    ) {
+      abortControllerRef.current?.abort('User cancelled PDF preparation');
+      abortControllerRef.current = null;
+    }
+    preparedPdfRef.current = null;
+    setFilesLoading(false);
+    setPdfPreparation((prev) => ({ ...prev, open: false }));
+  };
+
+  const confirmPdfPreparation = () => {
+    const prepared = preparedPdfRef.current;
+    if (!prepared) {
+      return;
+    }
+    params?.onPreparedPdfConfirm?.(prepared);
+    preparedPdfRef.current = null;
+    setPdfPreparation((prev) => ({ ...prev, open: false, status: 'ready' }));
+  };
 
   const startUpload = async (extendedFile: ExtendedFile) => {
     const filename = extendedFile.file?.name ?? 'File';
@@ -282,6 +407,16 @@ const useFileHandling = (params?: UseFileHandling) => {
     for (const originalFile of fileList) {
       const file_id = v4();
       try {
+        if (
+          anonymizeEnabled &&
+          originalFile.type === 'application/pdf' &&
+          !_toolResource &&
+          params?.onPreparedPdfConfirm
+        ) {
+          await preparePdfForChat(originalFile, file_id);
+          continue;
+        }
+
         // Create initial preview with original file
         const initialPreview = URL.createObjectURL(originalFile);
 
@@ -432,6 +567,9 @@ const useFileHandling = (params?: UseFileHandling) => {
     handleFileChange,
     handleFiles,
     abortUpload,
+    pdfPreparation,
+    cancelPdfPreparation,
+    confirmPdfPreparation,
     setFiles,
     files,
   };

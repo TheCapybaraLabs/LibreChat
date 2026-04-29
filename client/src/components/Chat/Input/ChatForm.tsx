@@ -134,6 +134,14 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   });
 
   const { submitMessage, submitPrompt } = useSubmitMessage();
+  const handlePreparedPdfConfirm = useCallback(
+    ({ filename, anonymizedText }: { filename: string; anonymizedText: string }) => {
+      submitMessage({
+        text: `[Documento anonimizado: ${filename}]\n\n${anonymizedText}`,
+      });
+    },
+    [submitMessage],
+  );
 
   const handleKeyUp = useHandleKeyUp({
     index,
@@ -321,7 +329,11 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
               )}
             >
               <div className={`${isRTL ? 'mr-2' : 'ml-2'} flex gap-1`}>
-                <AttachFileChat conversation={conversation} disableInputs={disableInputs} />
+                <AttachFileChat
+                  conversation={conversation}
+                  disableInputs={disableInputs}
+                  onPreparedPdfConfirm={handlePreparedPdfConfirm}
+                />
                 <AnonymizeToggle disabled={disableInputs} />
                 <AnonymizeStatus />
               </div>

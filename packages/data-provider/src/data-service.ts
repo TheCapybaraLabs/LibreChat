@@ -367,6 +367,14 @@ export const uploadFile = (data: FormData, signal?: AbortSignal | null): Promise
   return request.postMultiPart(endpoints.files(), data, requestConfig);
 };
 
+export const preparePdf = <T = unknown>(
+  data: FormData,
+  signal?: AbortSignal | null,
+): Promise<T> => {
+  const requestConfig = signal ? { signal } : undefined;
+  return request.postMultiPart(endpoints.preparePdf(), data, requestConfig);
+};
+
 /* actions */
 
 export const updateAction = (data: m.UpdateActionVariables): Promise<m.UpdateActionResponse> => {

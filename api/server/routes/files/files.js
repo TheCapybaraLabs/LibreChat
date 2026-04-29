@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const express = require('express');
+const { v4 } = require('uuid');
 const { EnvVar } = require('@librechat/agents');
 const { logger } = require('@librechat/data-schemas');
 const {
@@ -28,12 +29,55 @@ const { refreshS3FileUrls } = require('~/server/services/Files/S3/crud');
 const { hasAccessToFilesViaAgent } = require('~/server/services/Files');
 const { getFiles, batchUpdateFiles } = require('~/models/File');
 const { cleanFileName } = require('~/server/utils/files');
+const { preparePdfWithChunkedAnonymization } = require('~/server/utils/pdfChunkAnonymizer');
 const { getAssistant } = require('~/models/Assistant');
 const { getAgent } = require('~/models/Agent');
 const { getLogStores } = require('~/cache');
 const { Readable } = require('stream');
 
 const router = express.Router();
+
+router.post('/prepare-pdf', async (req, res) => {
+  const fileId = req.file_id ?? req.body?.file_id ?? v4();
+  const file = req.file;
+
+  try {
+    if (!file) {
+      return res.status(400).json({ message: 'No PDF file provided' });
+    }
+    if (file.mimetype !== 'application/pdf') {
+      return res.status(400).json({ message: 'Only PDF files can be prepared' });
+    }
+
+    const result = await preparePdfWithChunkedAnonymization({
+      filePath: file.path,
+      fileId,
+      filename: file.originalname,
+      maxChars: Number(process.env.BLURRY_PDF_CHUNK_MAX_CHARS) || undefined,
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    const message =
+      error.code === 'PDF_TEXT_EXTRACTION_EMPTY' || error.code === 'PDF_CHUNKING_EMPTY'
+        ? 'Não foi possível extrair texto selecionável deste PDF. O envio foi bloqueado por segurança.'
+        : 'Falha ao anonimizar uma parte do PDF. O envio foi bloqueado por segurança.';
+    logger.error('[prepare-pdf] Failed to prepare PDF', {
+      fileId,
+      errorCode: error.code,
+      message: error.message,
+    });
+    res.status(500).json({ message, errorCode: error.code });
+  } finally {
+    if (file?.path) {
+      try {
+        await fs.unlink(file.path);
+      } catch (error) {
+        logger.error('[prepare-pdf] Error deleting temp PDF:', error);
+      }
+    }
+  }
+});
 
 router.get('/', async (req, res) => {
   try {

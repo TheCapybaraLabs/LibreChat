@@ -1,14 +1,22 @@
 import React, { useRef } from 'react';
 import { FileUpload, TooltipAnchor, AttachmentIcon } from '@librechat/client';
 import { useLocalize, useFileHandling } from '~/hooks';
+import PdfPreparationModal from './PdfPreparationModal';
 import { cn } from '~/utils';
 
-const AttachFile = ({ disabled }: { disabled?: boolean | null }) => {
+const AttachFile = ({
+  disabled,
+  onPreparedPdfConfirm,
+}: {
+  disabled?: boolean | null;
+  onPreparedPdfConfirm?: (payload: { filename: string; anonymizedText: string }) => void;
+}) => {
   const localize = useLocalize();
   const inputRef = useRef<HTMLInputElement>(null);
   const isUploadDisabled = disabled ?? false;
 
-  const { handleFileChange } = useFileHandling();
+  const { handleFileChange, pdfPreparation, cancelPdfPreparation, confirmPdfPreparation } =
+    useFileHandling({ onPreparedPdfConfirm });
 
   return (
     <FileUpload ref={inputRef} handleFileChange={handleFileChange}>
@@ -46,6 +54,11 @@ const AttachFile = ({ disabled }: { disabled?: boolean | null }) => {
             </div>
           </button>
         }
+      />
+      <PdfPreparationModal
+        state={pdfPreparation}
+        onCancel={cancelPdfPreparation}
+        onConfirm={confirmPdfPreparation}
       />
     </FileUpload>
   );

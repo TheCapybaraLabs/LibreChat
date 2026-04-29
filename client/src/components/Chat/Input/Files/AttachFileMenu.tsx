@@ -31,6 +31,7 @@ import {
 } from '~/hooks';
 import useSharePointFileHandling from '~/hooks/Files/useSharePointFileHandling';
 import { SharePointPickerDialog } from '~/components/SharePoint';
+import PdfPreparationModal from './PdfPreparationModal';
 import { useGetStartupConfig } from '~/data-provider';
 import { ephemeralAgentByConvoId } from '~/store';
 import { MenuItemProps } from '~/common';
@@ -43,6 +44,7 @@ interface AttachFileMenuProps {
   conversationId: string;
   endpointType?: EModelEndpoint;
   endpointFileConfig?: EndpointFileConfig;
+  onPreparedPdfConfirm?: (payload: { filename: string; anonymizedText: string }) => void;
 }
 
 const AttachFileMenu = ({
@@ -52,6 +54,7 @@ const AttachFileMenu = ({
   endpointType,
   conversationId,
   endpointFileConfig,
+  onPreparedPdfConfirm,
 }: AttachFileMenuProps) => {
   const localize = useLocalize();
   const isUploadDisabled = disabled ?? false;
@@ -61,7 +64,8 @@ const AttachFileMenu = ({
     ephemeralAgentByConvoId(conversationId),
   );
   const [toolResource, setToolResource] = useState<EToolResources | undefined>();
-  const { handleFileChange } = useFileHandling();
+  const { handleFileChange, pdfPreparation, cancelPdfPreparation, confirmPdfPreparation } =
+    useFileHandling({ onPreparedPdfConfirm });
   const { handleSharePointFiles, isProcessing, downloadProgress } = useSharePointFileHandling({
     toolResource,
   });
@@ -269,6 +273,11 @@ const AttachFileMenu = ({
         isDownloading={isProcessing}
         downloadProgress={downloadProgress}
         maxSelectionCount={endpointFileConfig?.fileLimit}
+      />
+      <PdfPreparationModal
+        state={pdfPreparation}
+        onCancel={cancelPdfPreparation}
+        onConfirm={confirmPdfPreparation}
       />
     </>
   );

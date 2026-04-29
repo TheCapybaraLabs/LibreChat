@@ -17,9 +17,11 @@ import AttachFile from './AttachFile';
 function AttachFileChat({
   disableInputs,
   conversation,
+  onPreparedPdfConfirm,
 }: {
   disableInputs: boolean;
   conversation: TConversation | null;
+  onPreparedPdfConfirm?: (payload: { filename: string; anonymizedText: string }) => void;
 }) {
   const conversationId = conversation?.conversationId ?? Constants.NEW_CONVO;
   const { endpoint } = conversation ?? { endpoint: null };
@@ -58,7 +60,7 @@ function AttachFileChat({
   );
 
   if (isAssistants && endpointSupportsFiles && !isUploadDisabled) {
-    return <AttachFile disabled={disableInputs} />;
+    return <AttachFile disabled={disableInputs} onPreparedPdfConfirm={onPreparedPdfConfirm} />;
   } else if (isAgents || (endpointSupportsFiles && !isUploadDisabled)) {
     return (
       <AttachFileMenu
@@ -68,6 +70,7 @@ function AttachFileChat({
         conversationId={conversationId}
         agentId={conversation?.agent_id}
         endpointFileConfig={endpointFileConfig}
+        onPreparedPdfConfirm={onPreparedPdfConfirm}
       />
     );
   }
