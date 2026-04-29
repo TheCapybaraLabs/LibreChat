@@ -149,6 +149,8 @@ const deepseekModels = {
   'deepseek.r1': 128000,
   'deepseek-r1': 128000,
   'deepseek-reasoner': 128000,
+  'deepseek-v4-flash': 1000000,
+  'deepseek-v4-pro': 1000000,
 };
 
 const moonshotModels = {
@@ -331,6 +333,13 @@ const aggregateModels = {
   'glm-4.5-air': 131000,
   'glm-4.5v': 66000,
   'glm-4.6': 200000,
+  'glm-5': 200000,
+  // MiniMax (M2.5+)
+  minimax: 200000,
+  'minimax-m2.5': 200000,
+  // DigitalOcean Gradient hosted models (also reachable via OpenRouter etc)
+  'llama3.3-70b-instruct': 128000,
+  'nvidia-nemotron-3-super-120b': 128000,
   // GPT-OSS
   'gpt-oss': 131000,
   'gpt-oss:20b': 131000,
@@ -399,6 +408,8 @@ const deepseekMaxOutputs = {
   'deepseek-r1': 64000,
   'deepseek-v3': 8000,
   'deepseek.r1': 64000,
+  'deepseek-v4-flash': 384000, // V4 series: max 384K output
+  'deepseek-v4-pro': 384000,
 };
 
 export const maxOutputTokensMap = {
