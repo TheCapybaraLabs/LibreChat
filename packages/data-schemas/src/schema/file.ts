@@ -71,6 +71,8 @@ const file: Schema<IMongoFile> = new Schema(
       fileIdentifier: String,
       anonymized: Boolean,
       providerSafe: Boolean,
+      sanitized: Boolean,
+      blurry_job_id: String,
       anonymization_level: String,
       stats: Schema.Types.Mixed,
       processing_ms_total: Number,

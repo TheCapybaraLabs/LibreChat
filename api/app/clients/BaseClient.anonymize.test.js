@@ -19,7 +19,7 @@ describe('BaseClient anonymize PDF handling', () => {
     process.env.BLURRY_FAIL_CLOSED = 'true';
   });
 
-  it('skips document upload for anonymized PDFs', async () => {
+  it('allows provider-safe anonymized PDFs to be uploaded as documents', async () => {
     const client = new TestClient('key', { req: { body: { anonymize: true } } });
     client.options = { req: { body: { anonymize: true } } };
     client.addDocuments = jest.fn().mockResolvedValue([]);
@@ -32,15 +32,14 @@ describe('BaseClient anonymize PDF handling', () => {
       {
         file_id: 'file-1',
         type: 'application/pdf',
-        metadata: { anonymized: true },
-        text: 'anon text',
+        metadata: { anonymized: true, providerSafe: true, sanitized: true },
         source: FileSources.local,
       },
     ];
 
     await client.processAttachments(message, attachments);
 
-    expect(client.addDocuments).not.toHaveBeenCalled();
+    expect(client.addDocuments).toHaveBeenCalledWith(message, attachments);
   });
 
   it('fails closed when anonymize is true and PDF is not anonymized', async () => {
@@ -57,6 +56,24 @@ describe('BaseClient anonymize PDF handling', () => {
 
     await expect(client.processAttachments(message, attachments)).rejects.toThrow(
       'PDF anexado requer anonimização',
+    );
+  });
+
+  it('fails closed when an anonymized PDF is not provider-safe', async () => {
+    const client = new TestClient('key', { req: { body: { anonymize: true } } });
+    client.options = { req: { body: { anonymize: true } } };
+    const message = {};
+    const attachments = [
+      {
+        file_id: 'file-3',
+        type: 'application/pdf',
+        metadata: { anonymized: true },
+        source: FileSources.local,
+      },
+    ];
+
+    await expect(client.processAttachments(message, attachments)).rejects.toThrow(
+      'não foi marcado como seguro',
     );
   });
 });

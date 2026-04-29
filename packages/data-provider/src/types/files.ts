@@ -118,6 +118,8 @@ export type TFile = {
     fileIdentifier?: string;
     anonymized?: boolean;
     providerSafe?: boolean;
+    sanitized?: boolean;
+    blurry_job_id?: string;
     anonymization_level?: string;
     stats?: Record<string, unknown>;
     processing_ms_total?: number;

@@ -1,5 +1,8 @@
 const axios = require('axios');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const FormData = require('form-data');
 const { logger } = require('@librechat/data-schemas');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -24,11 +27,46 @@ const parseRetryAfterMs = (retryAfterHeader) => {
   return null;
 };
 
+const getConfig = () => ({
+  baseURL: process.env.BLURRY_BASE_URL || 'https://9a39-138-255-244-234.ngrok-free.app',
+  apiKey: process.env.BLURRY_API_KEY,
+  timeout: Number(process.env.BLURRY_TIMEOUT_MS) || 10000,
+});
+
+const getDocumentPollConfig = () => ({
+  timeoutMs: Number(process.env.BLURRY_DOCUMENT_POLL_TIMEOUT_MS) || 120000,
+  intervalMs: Number(process.env.BLURRY_DOCUMENT_POLL_INTERVAL_MS) || 2000,
+});
+
+const getJobId = (data) => data?.jobId ?? data?.job_id ?? data?.id;
+
+const getJobStatus = (data) => {
+  const status = data?.status ?? data?.state;
+  return typeof status === 'string' ? status.toLowerCase() : status;
+};
+
+const getDownloadUrl = (data) =>
+  data?.download_url ??
+  data?.downloadUrl ??
+  data?.sanitized_url ??
+  data?.sanitizedUrl ??
+  data?.result?.download_url ??
+  data?.result?.downloadUrl;
+
+const buildDocumentUrl = ({ baseURL, jobId, suffix = '' }) => {
+  const template = process.env.BLURRY_DOCUMENTS_PATH;
+  if (template) {
+    const pathTemplate = template.includes(':jobId')
+      ? template.replace(':jobId', jobId ?? '')
+      : `${template}${jobId ? `/${jobId}` : ''}`;
+    return `${baseURL}${pathTemplate}${suffix}`;
+  }
+  return `${baseURL}/v1/documents${jobId ? `/${jobId}` : ''}${suffix}`;
+};
+
 const blurryClient = {
   checkHealth: async () => {
-    const baseURL = process.env.BLURRY_BASE_URL || 'https://9a39-138-255-244-234.ngrok-free.app';
-    const apiKey = process.env.BLURRY_API_KEY;
-    const timeout = Number(process.env.BLURRY_TIMEOUT_MS) || 10000;
+    const { baseURL, apiKey, timeout } = getConfig();
 
     if (!apiKey) {
       return { status: 'misconfigured', error: 'BLURRY_API_KEY is missing' };
@@ -56,9 +94,7 @@ const blurryClient = {
     anonymization_level = 'full',
     return_entities = true,
   }) => {
-    const baseURL = process.env.BLURRY_BASE_URL || 'https://9a39-138-255-244-234.ngrok-free.app';
-    const apiKey = process.env.BLURRY_API_KEY;
-    const timeout = Number(process.env.BLURRY_TIMEOUT_MS) || 10000;
+    const { baseURL, apiKey, timeout } = getConfig();
 
     if (!apiKey) {
       throw new Error('BLURRY_API_KEY is missing');
@@ -137,6 +173,170 @@ const blurryClient = {
       processing_ms,
       idempotency_key: idempotencyKey,
       idempotent_replay: response.headers?.['idempotent-replay'] ?? false,
+    };
+  },
+
+  uploadDocument: async (
+    file,
+    {
+      policy = 'default',
+      anonymization_level = 'full',
+      ocr = true,
+      requestId = crypto.randomUUID(),
+    } = {},
+  ) => {
+    const { baseURL, apiKey, timeout } = getConfig();
+    if (!apiKey) {
+      throw new Error('BLURRY_API_KEY is missing');
+    }
+
+    const form = new FormData();
+    form.append('file', fs.createReadStream(file.path), {
+      filename: path.basename(file.originalname || file.path),
+      contentType: file.mimetype || 'application/pdf',
+      knownLength: file.size,
+    });
+    form.append('policy', policy);
+    form.append('anonymization_level', anonymization_level);
+    form.append('ocr', String(ocr));
+    form.append('request_id', requestId);
+
+    logger.info('[blurryClient] document_upload_started', {
+      requestId,
+      mime_type: file.mimetype,
+      size: file.size,
+      ocr,
+    });
+
+    const response = await axios.post(buildDocumentUrl({ baseURL }), form, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        ...form.getHeaders(),
+        'X-Request-Id': requestId,
+      },
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      timeout: Number(process.env.BLURRY_DOCUMENT_UPLOAD_TIMEOUT_MS) || timeout,
+    });
+
+    const jobId = getJobId(response.data);
+    if (!jobId) {
+      throw new Error('Blurry document upload did not return a jobId');
+    }
+
+    logger.info('[blurryClient] document_job_created', {
+      requestId,
+      job_id: jobId,
+      status: getJobStatus(response.data),
+    });
+
+    return {
+      jobId,
+      status: getJobStatus(response.data),
+      requestId,
+      raw: response.data,
+    };
+  },
+
+  getDocumentJob: async (jobId, { requestId } = {}) => {
+    const { baseURL, apiKey, timeout } = getConfig();
+    if (!apiKey) {
+      throw new Error('BLURRY_API_KEY is missing');
+    }
+
+    const response = await axios.get(buildDocumentUrl({ baseURL, jobId }), {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        ...(requestId ? { 'X-Request-Id': requestId } : {}),
+      },
+      timeout,
+    });
+
+    return {
+      jobId: getJobId(response.data) ?? jobId,
+      status: getJobStatus(response.data),
+      error: response.data?.error ?? response.data?.message,
+      downloadUrl: getDownloadUrl(response.data),
+      raw: response.data,
+    };
+  },
+
+  pollDocumentJob: async (jobId, { requestId } = {}) => {
+    const { timeoutMs, intervalMs } = getDocumentPollConfig();
+    const deadline = Date.now() + timeoutMs;
+
+    logger.info('[blurryClient] document_polling_started', {
+      requestId,
+      job_id: jobId,
+      timeout_ms: timeoutMs,
+      interval_ms: intervalMs,
+    });
+
+    while (Date.now() <= deadline) {
+      const job = await blurryClient.getDocumentJob(jobId, { requestId });
+      if (job.status === 'completed' || job.status === 'complete' || job.status === 'succeeded') {
+        logger.info('[blurryClient] document_completed', {
+          requestId,
+          job_id: job.jobId,
+          status: job.status,
+        });
+        return { ...job, status: 'completed' };
+      }
+      if (job.status === 'failed' || job.status === 'error' || job.status === 'cancelled') {
+        logger.error('[blurryClient] document_failed', {
+          requestId,
+          job_id: job.jobId,
+          status: job.status,
+          message: job.error,
+        });
+        throw new Error(`Blurry document job failed: ${job.error || job.status}`);
+      }
+      await sleep(intervalMs);
+    }
+
+    throw new Error(`Blurry document job timed out after ${timeoutMs}ms`);
+  },
+
+  downloadSanitizedDocument: async (jobId, { requestId, downloadUrl } = {}) => {
+    const { baseURL, apiKey, timeout } = getConfig();
+    if (!apiKey) {
+      throw new Error('BLURRY_API_KEY is missing');
+    }
+
+    logger.info('[blurryClient] sanitized_download_started', {
+      requestId,
+      job_id: jobId,
+    });
+
+    const url =
+      downloadUrl ??
+      process.env.BLURRY_DOCUMENT_DOWNLOAD_PATH?.replace(':jobId', jobId) ??
+      buildDocumentUrl({ baseURL, jobId, suffix: '/download' });
+    const response = await axios.get(url.startsWith('http') ? url : `${baseURL}${url}`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        ...(requestId ? { 'X-Request-Id': requestId } : {}),
+      },
+      responseType: 'arraybuffer',
+      timeout: Number(process.env.BLURRY_DOCUMENT_DOWNLOAD_TIMEOUT_MS) || timeout,
+    });
+
+    const buffer = Buffer.from(response.data);
+    if (!buffer.length) {
+      throw new Error('Blurry sanitized document download was empty');
+    }
+
+    logger.info('[blurryClient] sanitized_download_completed', {
+      requestId,
+      job_id: jobId,
+      size: buffer.length,
+      content_type: response.headers?.['content-type'],
+    });
+
+    return {
+      buffer,
+      contentType: response.headers?.['content-type'] || 'application/pdf',
+      bytes: buffer.length,
     };
   },
 };

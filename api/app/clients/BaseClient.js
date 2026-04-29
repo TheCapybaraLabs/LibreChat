@@ -1316,6 +1316,14 @@ class BaseClient {
             `PDF anexado requer anonimização; faça upload com "Anonimizar" ativo.`,
           );
         }
+        if (!file.metadata?.providerSafe && failClosed) {
+          throw new Error(
+            `PDF anexado não foi marcado como seguro pelo provedor de anonimização.`,
+          );
+        }
+        if (file.metadata?.providerSafe) {
+          categorizedAttachments.documents.push(file);
+        }
         allFiles.push(file);
         continue;
       }
