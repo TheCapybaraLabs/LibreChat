@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { useAuthContext } from '~/hooks';
 import { cn } from '~/utils';
 
 export type PdfPreparationStatus =
@@ -192,6 +193,7 @@ export default function PdfPreparationModal({
   onConfirm: () => void;
   onRetry?: () => void;
 }) {
+  const { token } = useAuthContext();
   const [isCopied, setIsCopied] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -281,8 +283,26 @@ export default function PdfPreparationModal({
 
     setIsDownloading(true);
     setDownloadError(null);
+
+    console.info('[file-preparation-download]', {
+      stage: 'download_started',
+      jobId: state.jobId,
+      downloadUrl: state.sanitizedDownloadUrl,
+      hasToken: !!token,
+      hasProviderSafe: state.providerSafe,
+      artifactType: 'pdf',
+    });
+
     try {
-      const response = await fetch(state.sanitizedDownloadUrl, { credentials: 'include' });
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(state.sanitizedDownloadUrl, {
+        credentials: 'include',
+        headers,
+      });
 
       if (!response.ok) {
         let code = 'BLURRY_DOWNLOAD_FAILED';
@@ -290,7 +310,18 @@ export default function PdfPreparationModal({
           code = 'ARTIFACT_NOT_FOUND';
         } else if (response.status === 410) {
           code = 'ARTIFACT_EXPIRED';
+        } else if (response.status === 401 || response.status === 403) {
+          code = 'BLURRY_DOWNLOAD_UNAUTHORIZED';
+        } else if (response.status === 409) {
+          code = 'BLURRY_JOB_NOT_READY';
         }
+        console.error('[file-preparation-download]', {
+          stage: 'download_failed',
+          jobId: state.jobId,
+          status: response.status,
+          contentType: response.headers.get('content-type'),
+          code,
+        });
         const err = new Error(`Download falhou: ${response.status}`) as Error & { code?: string };
         err.code = code;
         throw err;
@@ -298,6 +329,14 @@ export default function PdfPreparationModal({
 
       const contentType = response.headers.get('content-type') || 'application/pdf';
       const disposition = response.headers.get('content-disposition') || '';
+
+      console.info('[file-preparation-download]', {
+        stage: 'download_completed',
+        jobId: state.jobId,
+        status: response.status,
+        contentType,
+        contentLength: response.headers.get('content-length'),
+      });
 
       let filename = 'documento.anonimizado.pdf';
       const filenameMatch = disposition.match(/filename[^;=\n]*=(['"]?)([^;\n'"]+)\1/);
@@ -635,7 +674,11 @@ export default function PdfPreparationModal({
                       ? 'Arquivo anonimizado não encontrado.'
                       : downloadError === 'ARTIFACT_EXPIRED'
                         ? 'O arquivo anonimizado expirou. Reprocesse o documento.'
-                        : 'Falha ao baixar o arquivo anonimizado.'}
+                        : downloadError === 'BLURRY_DOWNLOAD_UNAUTHORIZED'
+                          ? 'Sem autorização para baixar. Faça login novamente.'
+                          : downloadError === 'BLURRY_JOB_NOT_READY'
+                            ? 'O documento ainda não está pronto para download.'
+                            : 'Falha ao baixar o arquivo anonimizado.'}
                   </span>
                 )}
                 {!canSend && (
