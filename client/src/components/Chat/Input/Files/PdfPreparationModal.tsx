@@ -61,7 +61,13 @@ export type PdfPreparationState = {
   chunksProcessed?: number;
   anonymizedText?: string;
   sanitizedDownloadUrl?: string;
+  sanitizedDocxDownloadUrl?: string;
   sanitizedFileName?: string;
+  availableArtifacts?: {
+    sanitizedPdf: boolean;
+    sanitizedDocx: boolean;
+    sanitizedText: boolean;
+  };
   error?: string;
 };
 
@@ -276,8 +282,17 @@ export default function PdfPreparationModal({
     onConfirm();
   };
 
-  const handleDownload = async () => {
-    if (!state.sanitizedDownloadUrl || isDownloading) {
+  const handleDownload = async (artifactType: 'pdf' | 'docx' | 'text') => {
+    const downloadUrl =
+      artifactType === 'docx'
+        ? state.sanitizedDocxDownloadUrl
+        : artifactType === 'text'
+          ? state.jobId
+            ? `/api/files/prepare-file/jobs/${encodeURIComponent(state.jobId)}/download?type=text`
+            : undefined
+          : state.sanitizedDownloadUrl;
+
+    if (!downloadUrl || isDownloading) {
       return;
     }
 
@@ -287,10 +302,10 @@ export default function PdfPreparationModal({
     console.info('[file-preparation-download]', {
       stage: 'download_started',
       jobId: state.jobId,
-      downloadUrl: state.sanitizedDownloadUrl,
+      downloadUrl,
       hasToken: !!token,
       hasProviderSafe: state.providerSafe,
-      artifactType: 'pdf',
+      artifactType,
     });
 
     try {
@@ -299,10 +314,7 @@ export default function PdfPreparationModal({
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(state.sanitizedDownloadUrl, {
-        credentials: 'include',
-        headers,
-      });
+      const response = await fetch(downloadUrl, { credentials: 'include', headers });
 
       if (!response.ok) {
         let code = 'BLURRY_DOWNLOAD_FAILED';
@@ -338,7 +350,13 @@ export default function PdfPreparationModal({
         contentLength: response.headers.get('content-length'),
       });
 
-      let filename = 'documento.anonimizado.pdf';
+      const defaultFilename =
+        artifactType === 'docx'
+          ? 'documento.anonimizado.docx'
+          : artifactType === 'text'
+            ? 'documento.anonimizado.txt'
+            : 'documento.anonimizado.pdf';
+      let filename = defaultFilename;
       const filenameMatch = disposition.match(/filename[^;=\n]*=(['"]?)([^;\n'"]+)\1/);
       if (filenameMatch?.[2]) {
         filename = filenameMatch[2].trim();
@@ -639,8 +657,8 @@ export default function PdfPreparationModal({
                       variant="outline"
                       className="h-10 rounded-md"
                       disabled={isDownloading}
-                      aria-label="Baixar arquivo anonimizado"
-                      onClick={handleDownload}
+                      aria-label="Baixar PDF anonimizado"
+                      onClick={() => handleDownload('pdf')}
                     >
                       {isDownloading ? (
                         <Loader2 size={16} className="animate-spin" aria-hidden="true" />
@@ -650,6 +668,43 @@ export default function PdfPreparationModal({
                       {isDownloading ? 'Baixando...' : 'Baixar PDF anonimizado'}
                     </Button>
                   )}
+                  {state.sanitizedDocxDownloadUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 rounded-md"
+                      disabled={isDownloading}
+                      aria-label="Baixar DOCX anonimizado"
+                      onClick={() => handleDownload('docx')}
+                    >
+                      {isDownloading ? (
+                        <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Download size={16} aria-hidden="true" />
+                      )}
+                      {isDownloading ? 'Baixando...' : 'Baixar DOCX anonimizado'}
+                    </Button>
+                  )}
+                  {!state.sanitizedDownloadUrl &&
+                    !state.sanitizedDocxDownloadUrl &&
+                    state.availableArtifacts?.sanitizedText &&
+                    isReady && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-md"
+                        disabled={isDownloading}
+                        aria-label="Baixar TXT anonimizado"
+                        onClick={() => handleDownload('text')}
+                      >
+                        {isDownloading ? (
+                          <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Download size={16} aria-hidden="true" />
+                        )}
+                        {isDownloading ? 'Baixando...' : 'Baixar TXT anonimizado'}
+                      </Button>
+                    )}
                   <Button
                     type="button"
                     variant="submit"

@@ -88,8 +88,11 @@ type PreparedPdfJobResponse = {
   chunksProcessed?: number;
   outputs?: {
     sanitizedPdfUrl?: string;
+    sanitizedDocxUrl?: string;
     sanitizedFileName?: string;
     sanitizedTextAvailable?: boolean;
+    sanitizedPdf?: boolean;
+    sanitizedDocx?: boolean;
   };
   errorCode?: string;
 };
@@ -433,6 +436,9 @@ const useFileHandling = (params?: UseFileHandling) => {
         stage: job.processingStage,
       });
 
+      // outputs is absent during in-progress polls; treat as pdf-available for backward compat
+      const hasPdf = job.outputs?.sanitizedPdf !== false;
+      const hasDocx = job.outputs?.sanitizedDocx === true;
       setPdfPreparation((prev) => ({
         ...prev,
         open: true,
@@ -452,10 +458,20 @@ const useFileHandling = (params?: UseFileHandling) => {
         pagesProcessed: job.pagesProcessed,
         chunkCount: job.chunksTotal,
         chunksProcessed: job.chunksProcessed,
-        sanitizedDownloadUrl:
-          job.outputs?.sanitizedPdfUrl ||
-          `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download?type=pdf`,
+        sanitizedDownloadUrl: hasPdf
+          ? job.outputs?.sanitizedPdfUrl ||
+            `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download?type=pdf`
+          : undefined,
+        sanitizedDocxDownloadUrl: hasDocx
+          ? job.outputs?.sanitizedDocxUrl ||
+            `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download?type=docx`
+          : undefined,
         sanitizedFileName: job.outputs?.sanitizedFileName,
+        availableArtifacts: {
+          sanitizedPdf: hasPdf,
+          sanitizedDocx: hasDocx,
+          sanitizedText: job.outputs?.sanitizedTextAvailable !== false,
+        },
       }));
 
       const isCompleted = responseStatus === 'completed';
@@ -485,6 +501,8 @@ const useFileHandling = (params?: UseFileHandling) => {
           anonymizedText,
         };
 
+        const hasPdfFinal = job.outputs?.sanitizedPdf !== false;
+        const hasDocxFinal = job.outputs?.sanitizedDocx === true;
         setPdfPreparation((prev) => ({
           ...prev,
           open: true,
@@ -500,10 +518,20 @@ const useFileHandling = (params?: UseFileHandling) => {
           pagesProcessed: job.pagesProcessed ?? prev.pagesProcessed,
           chunkCount: job.chunksTotal ?? prev.chunkCount,
           chunksProcessed: job.chunksProcessed ?? prev.chunksProcessed,
-          sanitizedDownloadUrl:
-            job.outputs?.sanitizedPdfUrl ||
-            `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download?type=pdf`,
+          sanitizedDownloadUrl: hasPdfFinal
+            ? job.outputs?.sanitizedPdfUrl ||
+              `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download?type=pdf`
+            : undefined,
+          sanitizedDocxDownloadUrl: hasDocxFinal
+            ? job.outputs?.sanitizedDocxUrl ||
+              `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download?type=docx`
+            : undefined,
           sanitizedFileName: job.outputs?.sanitizedFileName,
+          availableArtifacts: {
+            sanitizedPdf: hasPdfFinal,
+            sanitizedDocx: hasDocxFinal,
+            sanitizedText: job.outputs?.sanitizedTextAvailable !== false,
+          },
         }));
         return;
       }

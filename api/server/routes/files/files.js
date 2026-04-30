@@ -247,11 +247,26 @@ const toJobResponse = ({ prepared, jobId, job, includeSafeOutputs = false }) => 
   const hasArtifactAvailable = status === 'completed' || (status === 'review_required' && response.providerSafe);
 
   if (includeSafeOutputs && hasArtifactAvailable) {
-    response.outputs = {
-      sanitizedTextAvailable: true,
-      sanitizedPdfUrl: `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download?type=pdf`,
-      sanitizedFileName: buildSanitizedFileName(prepared?.filename || 'documento.pdf'),
-    };
+    const rawOutputs = raw?.outputs ?? {};
+    // Honour explicit boolean flags from Blurry; fall back to true for PDF (backward compat)
+    const hasPdf = rawOutputs?.sanitizedPdf !== false;
+    const hasDocx = rawOutputs?.sanitizedDocx === true;
+    const jobBase = `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download`;
+
+    const outputs = { sanitizedTextAvailable: true, sanitizedPdf: hasPdf, sanitizedDocx: hasDocx };
+
+    if (hasPdf) {
+      outputs.sanitizedPdfUrl = `${jobBase}?type=pdf`;
+      outputs.sanitizedFileName = buildSanitizedFileName(prepared?.filename || 'documento.pdf');
+    }
+    if (hasDocx) {
+      outputs.sanitizedDocxUrl = `${jobBase}?type=docx`;
+      if (!outputs.sanitizedFileName) {
+        outputs.sanitizedFileName = buildSanitizedFileName(prepared?.filename || 'documento.docx');
+      }
+    }
+
+    response.outputs = outputs;
   }
 
   return response;
@@ -382,19 +397,24 @@ router.get('/prepare-file/jobs/:jobId', async (req, res) => {
     const hasArtifact = status === 'completed' || (status === 'review_required' && providerSafe);
 
     if (hasArtifact) {
+      // Register legacy prepared-download only when Blurry provides a direct PDF URL
       const sanitizedPdfUrl = job.outputs?.sanitizedPdfUrl;
-      const downloadOutput = registerPreparedDownload({
-        requestId: prepared.requestId,
-        userId: req.user?.id,
-        filename: prepared.filename,
-        sanitizedPdfUrl,
-      });
+      const downloadOutput = sanitizedPdfUrl
+        ? registerPreparedDownload({
+            requestId: prepared.requestId,
+            userId: req.user?.id,
+            filename: prepared.filename,
+            sanitizedPdfUrl,
+          })
+        : null;
 
       if (downloadOutput) {
+        const baseResponse = toJobResponse({ prepared, jobId, job, includeSafeOutputs: true });
+        // Merge legacy URL into the already-computed outputs (keeps sanitizedPdf/sanitizedDocx flags)
         return res.status(200).json({
-          ...toJobResponse({ prepared, jobId, job, includeSafeOutputs: true }),
+          ...baseResponse,
           outputs: {
-            sanitizedTextAvailable: true,
+            ...baseResponse.outputs,
             sanitizedPdfUrl: downloadOutput.sanitizedPdfUrl,
             sanitizedFileName: downloadOutput.sanitizedFileName,
           },
@@ -429,7 +449,7 @@ router.get('/prepare-file/jobs/:jobId/download', async (req, res) => {
       .status(404)
       .json({ ok: false, jobId, errorCode: 'ARTIFACT_NOT_FOUND', message: 'Job não encontrado.' });
   }
-  if (type !== 'text' && type !== 'pdf') {
+  if (type !== 'text' && type !== 'pdf' && type !== 'docx') {
     return res.status(400).json({ message: 'Tipo de download inválido.' });
   }
 
@@ -449,17 +469,23 @@ router.get('/prepare-file/jobs/:jobId/download', async (req, res) => {
       });
     }
 
-    const pdfOutput = await blurryClient.downloadDocumentOutput(jobId, {
+    const binaryOutput = await blurryClient.downloadDocumentOutput(jobId, {
       requestId: prepared.requestId,
-      type: 'pdf',
+      type,
     });
-    res.setHeader('Content-Type', pdfOutput.contentType || 'application/pdf');
+    const defaultMime =
+      type === 'docx'
+        ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        : 'application/pdf';
+    const defaultExt = type === 'docx' ? '.docx' : '.pdf';
+    const baseFilename = prepared.filename || `documento${defaultExt}`;
+    res.setHeader('Content-Type', binaryOutput.contentType || defaultMime);
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="${buildSanitizedFileName(prepared.filename || 'documento.pdf')}"`,
+      `attachment; filename="${buildSanitizedFileName(baseFilename)}"`,
     );
     res.setHeader('Cache-Control', 'private, no-store');
-    return res.status(200).send(pdfOutput.buffer);
+    return res.status(200).send(binaryOutput.buffer);
   } catch (error) {
     logger.error('[prepare-file-download] Failed to download output', {
       jobId,
