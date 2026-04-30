@@ -1,5 +1,5 @@
 import React, { useRef, useState, useMemo } from 'react';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import * as Ariakit from '@ariakit/react';
 import {
   FileSearch,
@@ -33,7 +33,7 @@ import useSharePointFileHandling from '~/hooks/Files/useSharePointFileHandling';
 import { SharePointPickerDialog } from '~/components/SharePoint';
 import PdfPreparationModal from './PdfPreparationModal';
 import { useGetStartupConfig } from '~/data-provider';
-import { ephemeralAgentByConvoId } from '~/store';
+import store, { ephemeralAgentByConvoId } from '~/store';
 import { MenuItemProps } from '~/common';
 import { cn } from '~/utils';
 
@@ -59,6 +59,7 @@ const AttachFileMenu = ({
   const localize = useLocalize();
   const isUploadDisabled = disabled ?? false;
   const inputRef = useRef<HTMLInputElement>(null);
+  const anonymizeEnabled = useRecoilValue(store.anonymizeEnabled);
   const [isPopoverActive, setIsPopoverActive] = useState(false);
   const [ephemeralAgent, setEphemeralAgent] = useRecoilState(
     ephemeralAgentByConvoId(conversationId),
@@ -113,6 +114,11 @@ const AttachFileMenu = ({
     }
     inputRef.current.click();
     inputRef.current.accept = '';
+  };
+
+  const handleSecureUploadClick = () => {
+    setToolResource(undefined);
+    handleUploadClick();
   };
 
   const dropdownItems = useMemo(() => {
@@ -222,6 +228,30 @@ const AttachFileMenu = ({
     setIsSharePointDialogOpen,
   ]);
 
+  const secureUploadTrigger = (
+    <TooltipAnchor
+      render={
+        <button
+          type="button"
+          disabled={isUploadDisabled}
+          id="attach-file-menu-button"
+          aria-label="Preparar arquivo com segurança"
+          className={cn(
+            'flex size-9 items-center justify-center rounded-full p-1 transition-colors hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:opacity-50',
+          )}
+          onClick={handleSecureUploadClick}
+        >
+          <div className="flex w-full items-center justify-center gap-2">
+            <AttachmentIcon />
+          </div>
+        </button>
+      }
+      id="attach-file-menu-button"
+      description="Preparar arquivo com segurança"
+      disabled={isUploadDisabled}
+    />
+  );
+
   const menuTrigger = (
     <TooltipAnchor
       render={
@@ -257,29 +287,35 @@ const AttachFileMenu = ({
       <FileUpload
         ref={inputRef}
         handleFileChange={(e) => {
-          handleFileChange(e, toolResource);
+          handleFileChange(e, anonymizeEnabled ? undefined : toolResource);
         }}
       >
-        <DropdownPopup
-          menuId="attach-file-menu"
-          className="overflow-visible"
-          isOpen={isPopoverActive}
-          setIsOpen={setIsPopoverActive}
-          modal={true}
-          unmountOnHide={true}
-          trigger={menuTrigger}
-          items={dropdownItems}
-          iconClassName="mr-0"
-        />
+        {anonymizeEnabled ? (
+          secureUploadTrigger
+        ) : (
+          <DropdownPopup
+            menuId="attach-file-menu"
+            className="overflow-visible"
+            isOpen={isPopoverActive}
+            setIsOpen={setIsPopoverActive}
+            modal={true}
+            unmountOnHide={true}
+            trigger={menuTrigger}
+            items={dropdownItems}
+            iconClassName="mr-0"
+          />
+        )}
       </FileUpload>
-      <SharePointPickerDialog
-        isOpen={isSharePointDialogOpen}
-        onOpenChange={setIsSharePointDialogOpen}
-        onFilesSelected={handleSharePointFilesSelected}
-        isDownloading={isProcessing}
-        downloadProgress={downloadProgress}
-        maxSelectionCount={endpointFileConfig?.fileLimit}
-      />
+      {!anonymizeEnabled && (
+        <SharePointPickerDialog
+          isOpen={isSharePointDialogOpen}
+          onOpenChange={setIsSharePointDialogOpen}
+          onFilesSelected={handleSharePointFilesSelected}
+          isDownloading={isProcessing}
+          downloadProgress={downloadProgress}
+          maxSelectionCount={endpointFileConfig?.fileLimit}
+        />
+      )}
       <PdfPreparationModal
         state={pdfPreparation}
         onCancel={cancelPdfPreparation}
