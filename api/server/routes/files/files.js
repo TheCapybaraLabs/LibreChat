@@ -53,6 +53,7 @@ const hashFilename = (filename = '') =>
 const safePrepareErrorCodes = new Set([
   'FILE_TYPE_UNSUPPORTED',
   'BLURRY_TIMEOUT',
+  'BLURRY_JOB_TIMEOUT',
   'PDF_TEXT_EXTRACTION_FAILED',
   'PDF_NO_SELECTABLE_TEXT',
   'PDF_PARSER_NOT_AVAILABLE',
@@ -66,7 +67,13 @@ const safePrepareErrorCodes = new Set([
   'TEXT_EXTRACTION_EMPTY',
   'TEXT_CHUNKING_EMPTY',
   'SANITIZED_TEXT_MISSING',
+  'BLURRY_TEXT_OUTPUT_MISSING',
   'PROVIDER_SAFE_MISSING',
+  'BLURRY_PROVIDER_UNSAFE',
+  'BLURRY_DOCUMENT_UPLOAD_FAILED',
+  'BLURRY_JOB_FAILED',
+  'BLURRY_DOWNLOAD_FAILED',
+  'BLURRY_CAPABILITIES_UNAVAILABLE',
 ]);
 
 const buildSanitizedFileName = (filename = 'documento.pdf') => {
@@ -223,14 +230,23 @@ const toJobResponse = ({ prepared, jobId, job, includeSafeOutputs = false }) => 
     fileSize: prepared?.fileSize,
   };
 
-  if (status === 'failed' || status === 'review_required') {
-    response.errorCode =
-      status === 'review_required' ? 'REVIEW_REQUIRED' : getSafeJobErrorCode(job);
+  if (status === 'failed') {
+    response.errorCode = getSafeJobErrorCode(job);
     response.message =
       raw?.errorMessage ?? raw?.error ?? job?.error ?? 'Document processing failed';
   }
 
-  if (includeSafeOutputs && status === 'completed') {
+  if (status === 'review_required') {
+    response.reviewRequired = true;
+    if (!response.providerSafe) {
+      response.errorCode = 'BLURRY_PROVIDER_UNSAFE';
+      response.message = raw?.message ?? 'Documento não validado como seguro pelo provedor.';
+    }
+  }
+
+  const hasArtifactAvailable = status === 'completed' || (status === 'review_required' && response.providerSafe);
+
+  if (includeSafeOutputs && hasArtifactAvailable) {
     response.outputs = {
       sanitizedTextAvailable: true,
       sanitizedPdfUrl: `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download?type=pdf`,
@@ -280,7 +296,9 @@ const prepareFile = async (req, res) => {
       processingStage: initialStatus === 'queued' ? 'upload' : 'processing',
     });
   } catch (error) {
-    const message = safePrepareErrorCodes.has(error.code)
+    const rawCode = error.code;
+    const errorCode = safePrepareErrorCodes.has(rawCode) ? rawCode : 'BLURRY_DOCUMENT_UPLOAD_FAILED';
+    const message = safePrepareErrorCodes.has(rawCode)
       ? error.message
       : 'Falha ao iniciar a preparação segura do arquivo.';
     logger.error('[prepare-file] Failed to prepare file', {
@@ -292,12 +310,12 @@ const prepareFile = async (req, res) => {
       pages: error.pages,
       chunksTotal: error.chunksTotal,
       chunkIndex: error.chunkIndex,
-      errorCode: error.code,
+      errorCode,
       status: 'failed',
     });
     res.status(500).json({
       message,
-      errorCode: error.code,
+      errorCode,
       stage: error.stage || 'failed',
       requestId: error.requestId || fileId,
       fileType: error.fileType || file?.mimetype || extension,
@@ -360,15 +378,16 @@ router.get('/prepare-file/jobs/:jobId', async (req, res) => {
     refreshPreparedJobTTL(jobId);
 
     const status = normalizeJobStatus(job.status);
-    if (status === 'completed') {
-      const outputs = {
-        sanitizedPdfUrl: job.outputs?.sanitizedPdfUrl,
-      };
+    const providerSafe = status === 'completed' ? (job.raw?.providerSafe ?? job?.providerSafe ?? true) : false;
+    const hasArtifact = status === 'completed' || (status === 'review_required' && providerSafe);
+
+    if (hasArtifact) {
+      const sanitizedPdfUrl = job.outputs?.sanitizedPdfUrl;
       const downloadOutput = registerPreparedDownload({
         requestId: prepared.requestId,
         userId: req.user?.id,
         filename: prepared.filename,
-        sanitizedPdfUrl: outputs.sanitizedPdfUrl,
+        sanitizedPdfUrl,
       });
 
       if (downloadOutput) {
@@ -395,7 +414,7 @@ router.get('/prepare-file/jobs/:jobId', async (req, res) => {
       jobId,
       status: 'failed',
       providerSafe: false,
-      errorCode: 'BLURRY_STATUS_UNAVAILABLE',
+      errorCode: 'BLURRY_JOB_FAILED',
       message: 'Não foi possível consultar o status do documento.',
     });
   }
@@ -446,12 +465,15 @@ router.get('/prepare-file/jobs/:jobId/download', async (req, res) => {
       type,
       errorCode: error.code,
     });
-    return res.status(502).json({
+    const isExpired = error?.response?.status === 410;
+    return res.status(isExpired ? 410 : 502).json({
       ok: false,
       jobId,
       status: 'failed',
-      errorCode: type === 'text' ? 'TEXT_DOWNLOAD_FAILED' : 'PDF_DOWNLOAD_FAILED',
-      message: 'Não foi possível baixar o output anonimizado.',
+      errorCode: isExpired ? 'ARTIFACT_EXPIRED' : 'BLURRY_DOWNLOAD_FAILED',
+      message: isExpired
+        ? 'O arquivo anonimizado expirou e não está mais disponível.'
+        : 'Não foi possível baixar o output anonimizado.',
     });
   }
 });

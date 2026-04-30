@@ -28,6 +28,7 @@ export type PdfPreparationStatus =
   | 'rebuilding'
   | 'completed'
   | 'review'
+  | 'review_required'
   | 'sending'
   | 'cancelled'
   | 'failed';
@@ -43,6 +44,7 @@ export type PdfPreparationState = {
   chunkCount?: number;
   entityCount?: number;
   providerSafe?: boolean;
+  reviewRequired?: boolean;
   requestId?: string;
   jobId?: string;
   processingStatus?: string;
@@ -81,9 +83,10 @@ const statusText: Record<PdfPreparationStatus, string> = {
   ocr: 'Executando OCR...',
   chunking: 'Dividindo texto em partes seguras...',
   anonymization: 'Anonimizando documento...',
-  rebuilding: 'Reconstruindo resultado anonimizado...',
+  rebuilding: 'Gerando arquivo anonimizado...',
   completed: 'Documento processado com sucesso.',
   review: 'Pronto para revisão',
+  review_required: 'Revisão recomendada — conteúdo anonimizado disponível com aviso',
   sending: 'Enviando texto anonimizado...',
   cancelled: 'Preparação cancelada.',
   failed: 'Falha ao preparar documento.',
@@ -100,6 +103,7 @@ const progressByStatus: Record<PdfPreparationStatus, number> = {
   rebuilding: 90,
   completed: 100,
   review: 100,
+  review_required: 100,
   sending: 100,
   cancelled: 0,
   failed: 100,
@@ -116,14 +120,31 @@ const statusTone: Record<PdfPreparationStatus, string> = {
   rebuilding: 'border-border-medium bg-surface-tertiary',
   completed: 'border-border-medium bg-surface-secondary',
   review: 'border-border-medium bg-surface-secondary',
+  review_required: 'border-yellow-400/60 bg-yellow-50/10',
   sending: 'border-border-medium bg-surface-tertiary',
   cancelled: 'border-border-light bg-surface-secondary',
   failed: 'border-surface-destructive/40 bg-surface-destructive/10',
 };
 
+const formatElapsedMs = (ms?: number): string | null => {
+  if (typeof ms !== 'number' || ms <= 0) {
+    return null;
+  }
+  if (ms < 60000) {
+    return `${Math.round(ms / 1000)}s`;
+  }
+  const min = Math.floor(ms / 60000);
+  const sec = Math.round((ms % 60000) / 1000);
+  return `${min}m${sec > 0 ? ` ${sec}s` : ''}`;
+};
+
 const getStatusMessage = (state: PdfPreparationState, visibleStatus: PdfPreparationStatus) => {
   if (visibleStatus === 'failed') {
     return state.error || 'Não foi possível preparar este documento com segurança.';
+  }
+
+  if (visibleStatus === 'review_required') {
+    return 'Documento anonimizado com aviso de revisão. Verifique o conteúdo antes de enviar.';
   }
 
   if (visibleStatus === 'review' || visibleStatus === 'completed') {
@@ -145,11 +166,19 @@ const getStatusMessage = (state: PdfPreparationState, visibleStatus: PdfPreparat
     }
   }
 
-  if (state.processingStage) {
-    return `${statusText[visibleStatus]} (${state.processingStage})`;
+  if (visibleStatus === 'rebuilding') {
+    return 'Gerando arquivo anonimizado...';
   }
 
-  return statusText[visibleStatus];
+  // Prefer the message from Blurry API when available
+  if (state.blurryMessage) {
+    const elapsed = formatElapsedMs(state.elapsedMs);
+    return elapsed ? `${state.blurryMessage} (${elapsed})` : state.blurryMessage;
+  }
+
+  const elapsed = formatElapsedMs(state.elapsedMs);
+  const base = statusText[visibleStatus];
+  return elapsed ? `${base} (${elapsed})` : base;
 };
 
 export default function PdfPreparationModal({
@@ -175,7 +204,8 @@ export default function PdfPreparationModal({
     state.status === 'anonymization' ||
     state.status === 'rebuilding';
   const isFailed = state.status === 'failed';
-  const isReady = state.status === 'review' || state.status === 'completed';
+  const isReviewRequired = state.status === 'review_required';
+  const isReady = state.status === 'review' || state.status === 'completed' || isReviewRequired;
   const canSend =
     isReady && Boolean(state.providerSafe) && Boolean(state.anonymizedText) && !isSending;
   const visibleStatus = isSending ? 'sending' : state.status;
@@ -433,6 +463,22 @@ export default function PdfPreparationModal({
                       {[state.errorCode, state.errorStage, state.requestId]
                         .filter(Boolean)
                         .join(' · ')}
+                    </p>
+                  )}
+                </div>
+              )}
+              {isReviewRequired && (
+                <div className="mt-4 rounded-md border border-yellow-400/40 bg-yellow-50/10 p-3 text-sm text-text-secondary">
+                  <p className="font-medium">
+                    Aviso: documento requer revisão manual no serviço de anonimização.
+                  </p>
+                  <p className="mt-1">
+                    O conteúdo foi anonimizado mas pode conter achados pendentes de revisão. Revise o
+                    texto abaixo antes de enviar ao modelo.
+                  </p>
+                  {state.jobId && (
+                    <p className="mt-2 text-xs opacity-70">
+                      jobId: {state.jobId}
                     </p>
                   )}
                 </div>

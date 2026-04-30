@@ -104,17 +104,24 @@ const preparationErrorMessages: Record<string, string> = {
   TEXT_TOO_LARGE: 'O texto anonimizado ultrapassou o limite suportado.',
   CHUNK_FAILED: 'Falha ao processar chunks do documento.',
   TIMEOUT: 'O processamento do documento excedeu o tempo limite.',
+  BLURRY_JOB_TIMEOUT: 'O processamento do documento excedeu o tempo limite.',
   PDF_TEXT_EXTRACTION_FAILED: 'Não foi possível extrair texto deste PDF.',
   PDF_NO_SELECTABLE_TEXT: 'Este PDF não possui texto selecionável.',
   BLURRY_ANONYMIZE_FAILED: 'A anonimização falhou em uma parte do documento.',
   BLURRY_TIMEOUT: 'O serviço de anonimização demorou mais que o esperado.',
   INVALID_ANONYMIZE_RESPONSE: 'A resposta de anonimização veio inválida.',
   SANITIZED_TEXT_MISSING: 'O texto anonimizado não está disponível. O envio foi bloqueado.',
+  BLURRY_TEXT_OUTPUT_MISSING: 'O texto anonimizado não está disponível. O envio foi bloqueado.',
   PROVIDER_SAFE_MISSING: 'O documento não foi marcado como seguro pelo provedor.',
+  BLURRY_PROVIDER_UNSAFE: 'O documento não foi validado como seguro pelo provedor. O envio foi bloqueado.',
   BLURRY_STATUS_UNAVAILABLE: 'Não foi possível consultar o status do processamento.',
-  TEXT_DOWNLOAD_FAILED: 'Não foi possível baixar o texto anonimizado.',
   BLURRY_JOB_FAILED: 'O processamento do documento falhou no serviço de anonimização.',
+  BLURRY_DOCUMENT_UPLOAD_FAILED: 'Falha ao enviar o documento para processamento seguro.',
+  BLURRY_DOWNLOAD_FAILED: 'Não foi possível baixar o texto anonimizado.',
+  BLURRY_CAPABILITIES_UNAVAILABLE: 'Serviço de documentos indisponível no momento.',
+  TEXT_DOWNLOAD_FAILED: 'Não foi possível baixar o texto anonimizado.',
   REVIEW_REQUIRED: 'O documento requer revisão manual e não pode ser enviado automaticamente.',
+  DOCUMENTS_DISABLED: 'O serviço de documentos não está disponível no momento.',
 };
 
 const PREPARE_POLL_INITIAL_INTERVAL_MS = 2000;
@@ -134,7 +141,18 @@ const logPreparationTrace = (trace: {
   status?: string;
   requestId?: string;
 }) => {
-  console.debug('[file-preparation]', trace);
+  // Never log raw text, OCR output, chunks, or entity values
+  console.debug('[file-preparation]', {
+    stage: trace.stage,
+    errorCode: trace.errorCode,
+    fileType: trace.fileType,
+    fileSize: trace.fileSize,
+    pages: trace.pages,
+    chunksTotal: trace.chunksTotal,
+    chunkIndex: trace.chunkIndex,
+    status: trace.status,
+    requestId: trace.requestId,
+  });
 };
 
 const useFileHandling = (params?: UseFileHandling) => {
@@ -327,13 +345,13 @@ const useFileHandling = (params?: UseFileHandling) => {
       if (normalizedStage.includes('upload')) {
         return 'uploading';
       }
-      if (normalizedStage.includes('ocr')) {
+      if (normalizedStage === 'ocr' || normalizedStage.includes('ocr')) {
         return 'ocr';
       }
-      if (normalizedStage.includes('extract')) {
+      if (normalizedStage === 'extracting' || normalizedStage.includes('extract')) {
         return 'processing';
       }
-      if (normalizedStage.includes('redact')) {
+      if (normalizedStage === 'redacting' || normalizedStage.includes('redact')) {
         return 'anonymization';
       }
       if (normalizedStage.includes('chunk')) {
@@ -343,6 +361,7 @@ const useFileHandling = (params?: UseFileHandling) => {
         return 'anonymization';
       }
       if (
+        normalizedStage === 'packaging' ||
         normalizedStage.includes('rebuild') ||
         normalizedStage.includes('merge') ||
         normalizedStage.includes('final') ||
@@ -356,7 +375,7 @@ const useFileHandling = (params?: UseFileHandling) => {
       return 'review';
     }
     if (normalizedStatus === 'review_required') {
-      return 'failed';
+      return 'review_required';
     }
     return 'failed';
   };
@@ -439,7 +458,17 @@ const useFileHandling = (params?: UseFileHandling) => {
         sanitizedFileName: job.outputs?.sanitizedFileName,
       }));
 
-      if (responseStatus === 'completed') {
+      const isCompleted = responseStatus === 'completed';
+      const isReviewRequired = responseStatus === 'review_required';
+      const canDownloadOnReview = isReviewRequired && job.providerSafe === true;
+
+      if (isCompleted || canDownloadOnReview) {
+        if (isReviewRequired && !job.providerSafe) {
+          const unsafeError = new Error('Documento não validado como seguro pelo provedor.');
+          (unsafeError as Error & { code?: string }).code = 'BLURRY_PROVIDER_UNSAFE';
+          throw unsafeError;
+        }
+
         const output = await dataService.downloadPreparedFileText<PreparedPdfTextDownload>(
           jobId,
           signal,
@@ -447,7 +476,7 @@ const useFileHandling = (params?: UseFileHandling) => {
         const anonymizedText = output?.text?.trim();
         if (!anonymizedText) {
           const missingTextError = new Error('O texto anonimizado não está disponível.');
-          (missingTextError as Error & { code?: string }).code = 'SANITIZED_TEXT_MISSING';
+          (missingTextError as Error & { code?: string }).code = 'BLURRY_TEXT_OUTPUT_MISSING';
           throw missingTextError;
         }
 
@@ -459,13 +488,14 @@ const useFileHandling = (params?: UseFileHandling) => {
         setPdfPreparation((prev) => ({
           ...prev,
           open: true,
-          status: 'review',
+          status: isReviewRequired ? 'review_required' : 'review',
           providerSafe: true,
+          reviewRequired: isReviewRequired,
           anonymizedText,
           requestId: job.requestId || prev.requestId || fileId,
           jobId,
-          processingStatus: 'completed',
-          processingStage: 'completed',
+          processingStatus: responseStatus,
+          processingStage: isReviewRequired ? 'review_required' : 'completed',
           pages: job.pagesTotal ?? prev.pages,
           pagesProcessed: job.pagesProcessed ?? prev.pagesProcessed,
           chunkCount: job.chunksTotal ?? prev.chunkCount,
@@ -478,7 +508,13 @@ const useFileHandling = (params?: UseFileHandling) => {
         return;
       }
 
-      if (responseStatus === 'failed' || responseStatus === 'review_required') {
+      if (responseStatus === 'review_required' && !job.providerSafe) {
+        const unsafeError = new Error('Documento não validado como seguro pelo provedor.');
+        (unsafeError as Error & { code?: string }).code = 'BLURRY_PROVIDER_UNSAFE';
+        throw unsafeError;
+      }
+
+      if (responseStatus === 'failed') {
         const statusError = new Error(job.message || 'Falha ao preparar o documento.');
         (statusError as Error & { code?: string }).code = job.errorCode || 'BLURRY_JOB_FAILED';
         throw statusError;
@@ -486,7 +522,7 @@ const useFileHandling = (params?: UseFileHandling) => {
 
       if (Date.now() - startedAt >= PREPARE_POLL_TIMEOUT_MS) {
         const timeoutError = new Error('O processamento excedeu o tempo limite.');
-        (timeoutError as Error & { code?: string }).code = 'TIMEOUT';
+        (timeoutError as Error & { code?: string }).code = 'BLURRY_JOB_TIMEOUT';
         throw timeoutError;
       }
 
@@ -511,6 +547,18 @@ const useFileHandling = (params?: UseFileHandling) => {
     });
 
     const caps = await checkBlurryCapabilities();
+    if (!caps) {
+      setFilesLoading(false);
+      setPdfPreparation({
+        open: true,
+        status: 'failed',
+        fileName: file.name,
+        fileSize: file.size,
+        error: preparationErrorMessages['BLURRY_CAPABILITIES_UNAVAILABLE'],
+        errorCode: 'BLURRY_CAPABILITIES_UNAVAILABLE',
+      });
+      return;
+    }
     if (caps?.documents?.enabled === false) {
       setFilesLoading(false);
       setPdfPreparation({
@@ -518,7 +566,7 @@ const useFileHandling = (params?: UseFileHandling) => {
         status: 'failed',
         fileName: file.name,
         fileSize: file.size,
-        error: 'O serviço de documentos não está disponível no momento.',
+        error: preparationErrorMessages['DOCUMENTS_DISABLED'],
         errorCode: 'DOCUMENTS_DISABLED',
       });
       return;
@@ -582,11 +630,20 @@ const useFileHandling = (params?: UseFileHandling) => {
       }
       const err = error as TError | undefined;
       const data = err?.response?.data as PreparationErrorResponse | undefined;
-      const errorCode =
-        data?.errorCode || (error as Error & { code?: string })?.code || 'BLURRY_ANONYMIZE_FAILED';
+      const rawErrorCode =
+        data?.errorCode || (error as Error & { code?: string })?.code || 'BLURRY_JOB_FAILED';
+      // Normalize legacy error codes to canonical names
+      const errorCodeMap: Record<string, string> = {
+        TIMEOUT: 'BLURRY_JOB_TIMEOUT',
+        SANITIZED_TEXT_MISSING: 'BLURRY_TEXT_OUTPUT_MISSING',
+        TEXT_DOWNLOAD_FAILED: 'BLURRY_DOWNLOAD_FAILED',
+        PDF_DOWNLOAD_FAILED: 'BLURRY_DOWNLOAD_FAILED',
+        PROVIDER_SAFE_MISSING: 'BLURRY_PROVIDER_UNSAFE',
+      };
+      const errorCode = errorCodeMap[rawErrorCode] ?? rawErrorCode;
       const safeMessage =
-        (errorCode && preparationErrorMessages[errorCode]) ||
-        data?.message ||
+        preparationErrorMessages[errorCode] ||
+        preparationErrorMessages[rawErrorCode] ||
         'Falha ao preparar o arquivo com segurança. O envio foi bloqueado.';
       logPreparationTrace({
         stage: data?.stage || 'failed',
