@@ -23,6 +23,7 @@ import { processFileForUpload } from '~/utils/heicConverter';
 import { useChatContext } from '~/Providers/ChatContext';
 import { ephemeralAgentByConvoId } from '~/store';
 import { logger, validateFiles } from '~/utils';
+import { isAllowedForBlurry, BLURRY_FILE_REJECTED_ERROR } from '~/utils/blurryFileValidation';
 import useClientResize from './useClientResize';
 import useUpdateFiles from './useUpdateFiles';
 import store from '~/store';
@@ -852,6 +853,10 @@ const useFileHandling = (params?: UseFileHandling) => {
       const file_id = v4();
       try {
         if (anonymizeEnabled && !_toolResource && params?.onPreparedPdfConfirm) {
+          if (!isAllowedForBlurry(originalFile)) {
+            setError(BLURRY_FILE_REJECTED_ERROR);
+            continue;
+          }
           await prepareFileForChat(originalFile, file_id);
           continue;
         }

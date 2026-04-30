@@ -36,6 +36,7 @@ import { useGetStartupConfig } from '~/data-provider';
 import store, { ephemeralAgentByConvoId } from '~/store';
 import { MenuItemProps } from '~/common';
 import { cn } from '~/utils';
+import { BLURRY_ACCEPT_ATTR } from '~/utils/blurryFileValidation';
 
 interface AttachFileMenuProps {
   agentId?: string | null;
@@ -117,8 +118,14 @@ const AttachFileMenu = ({
   };
 
   const handleSecureUploadClick = () => {
+    if (!inputRef.current) {
+      return;
+    }
     setToolResource(undefined);
-    handleUploadClick();
+    inputRef.current.value = '';
+    inputRef.current.accept = BLURRY_ACCEPT_ATTR;
+    inputRef.current.click();
+    inputRef.current.accept = '';
   };
 
   const dropdownItems = useMemo(() => {
