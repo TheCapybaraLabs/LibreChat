@@ -36,21 +36,12 @@ type UseFileHandling = {
 };
 
 type PreparedPdfResponse = {
+  ok?: boolean;
   requestId?: string;
-  providerSafe: boolean;
-  anonymizedText: string;
-  filename: string;
-  mimeType?: string;
-  type?: string;
-  pages?: number;
-  lines?: number;
-  entityCount?: number;
-  chunks?: { total: number; succeeded: number; failed: number };
-  outputs?: {
-    sanitizedPdfUrl?: string;
-    sanitizedFileName?: string;
-    sanitizedTextAvailable?: boolean;
-  };
+  jobId?: string;
+  status?: string;
+  providerSafe?: boolean;
+  processingStage?: string;
 };
 
 type PreparationErrorResponse = {
@@ -66,7 +57,40 @@ type PreparationErrorResponse = {
   status?: string;
 };
 
+type PreparedPdfJobResponse = {
+  ok?: boolean;
+  requestId?: string;
+  jobId?: string;
+  status?: string;
+  providerSafe?: boolean;
+  processingStage?: string;
+  progress?: number;
+  estimatedSeconds?: number;
+  elapsedMs?: number;
+  ocrActive?: boolean;
+  pagesTotal?: number;
+  pagesProcessed?: number;
+  chunksTotal?: number;
+  chunksProcessed?: number;
+  outputs?: {
+    sanitizedPdfUrl?: string;
+    sanitizedFileName?: string;
+    sanitizedTextAvailable?: boolean;
+  };
+  errorCode?: string;
+  message?: string;
+};
+
+type PreparedPdfTextDownload = {
+  ok?: boolean;
+  text?: string;
+};
+
 const preparationErrorMessages: Record<string, string> = {
+  OCR_FAILED: 'Falha ao executar OCR no documento.',
+  TEXT_TOO_LARGE: 'O texto anonimizado ultrapassou o limite suportado.',
+  CHUNK_FAILED: 'Falha ao processar chunks do documento.',
+  TIMEOUT: 'O processamento do documento excedeu o tempo limite.',
   PDF_TEXT_EXTRACTION_FAILED: 'Não foi possível extrair texto deste PDF.',
   PDF_NO_SELECTABLE_TEXT: 'Este PDF não possui texto selecionável.',
   BLURRY_ANONYMIZE_FAILED: 'A anonimização falhou em uma parte do documento.',
@@ -74,7 +98,16 @@ const preparationErrorMessages: Record<string, string> = {
   INVALID_ANONYMIZE_RESPONSE: 'A resposta de anonimização veio inválida.',
   SANITIZED_TEXT_MISSING: 'O texto anonimizado não está disponível. O envio foi bloqueado.',
   PROVIDER_SAFE_MISSING: 'O documento não foi marcado como seguro pelo provedor.',
+  BLURRY_STATUS_UNAVAILABLE: 'Não foi possível consultar o status do processamento.',
+  TEXT_DOWNLOAD_FAILED: 'Não foi possível baixar o texto anonimizado.',
+  BLURRY_JOB_FAILED: 'O processamento do documento falhou no serviço de anonimização.',
+  REVIEW_REQUIRED: 'O documento requer revisão manual e não pode ser enviado automaticamente.',
 };
+
+const PREPARE_POLL_INITIAL_INTERVAL_MS = 2000;
+const PREPARE_POLL_MAX_INTERVAL_MS = Number(process.env.REACT_APP_PREPARE_POLL_MAX_MS) || 10000;
+const PREPARE_POLL_TIMEOUT_MS = Number(process.env.REACT_APP_PREPARE_POLL_TIMEOUT_MS) || 180000;
+const PREPARE_POLL_MAX_RETRIES = 3;
 
 const logPreparationTrace = (trace: {
   stage: string;
@@ -114,6 +147,7 @@ const useFileHandling = (params?: UseFileHandling) => {
     fileSize: 0,
   });
   const preparedPdfRef = useRef<{ filename: string; anonymizedText: string } | null>(null);
+  const preparePollingAbortRef = useRef<AbortController | null>(null);
   const retryPdfPreparationRef = useRef<{ file: File; fileId: string } | null>(null);
   const preparationCancelledRef = useRef(false);
   const preparationTimersRef = useRef<number[]>([]);
@@ -160,6 +194,15 @@ const useFileHandling = (params?: UseFileHandling) => {
 
     return () => debouncedDisplayToast.cancel();
   }, [errors, debouncedDisplayToast]);
+
+  useEffect(
+    () => () => {
+      clearPreparationTimers();
+      preparePollingAbortRef.current?.abort('Cleanup prepare polling');
+      preparePollingAbortRef.current = null;
+    },
+    [],
+  );
 
   const uploadFile = useUploadFileMutation(
     {
@@ -230,8 +273,191 @@ const useFileHandling = (params?: UseFileHandling) => {
     preparationTimersRef.current = [];
   };
 
+  const clearPreparePolling = () => {
+    preparePollingAbortRef.current?.abort('Stopped document preparation polling');
+    preparePollingAbortRef.current = null;
+  };
+
+  const mapJobToPreparationStatus = ({
+    status,
+    stage,
+  }: {
+    status?: string;
+    stage?: string;
+  }): PdfPreparationState['status'] => {
+    const normalizedStatus = (status || '').toLowerCase();
+    const normalizedStage = (stage || '').toLowerCase();
+
+    if (normalizedStatus === 'queued') {
+      return 'queued';
+    }
+    if (normalizedStatus === 'processing') {
+      if (normalizedStage.includes('upload')) {
+        return 'uploading';
+      }
+      if (normalizedStage.includes('ocr')) {
+        return 'ocr';
+      }
+      if (normalizedStage.includes('chunk')) {
+        return 'chunking';
+      }
+      if (normalizedStage.includes('anonym')) {
+        return 'anonymization';
+      }
+      if (
+        normalizedStage.includes('rebuild') ||
+        normalizedStage.includes('merge') ||
+        normalizedStage.includes('final')
+      ) {
+        return 'rebuilding';
+      }
+      return 'processing';
+    }
+    if (normalizedStatus === 'completed') {
+      return 'review';
+    }
+    if (normalizedStatus === 'review_required') {
+      return 'failed';
+    }
+    return 'failed';
+  };
+
+  const waitForPollInterval = (delayMs: number, signal?: AbortSignal | null) =>
+    new Promise<void>((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        signal?.removeEventListener('abort', onAbort);
+        resolve();
+      }, delayMs);
+
+      const onAbort = () => {
+        window.clearTimeout(timer);
+        reject(new Error('Prepare polling aborted'));
+      };
+
+      if (signal?.aborted) {
+        onAbort();
+        return;
+      }
+      signal?.addEventListener('abort', onAbort, { once: true });
+    });
+
+  const pollPreparedJobUntilComplete = async ({
+    file,
+    fileId,
+    jobId,
+    signal,
+  }: {
+    file: File;
+    fileId: string;
+    jobId: string;
+    signal: AbortSignal;
+  }) => {
+    let intervalMs = PREPARE_POLL_INITIAL_INTERVAL_MS;
+    let consecutiveErrors = 0;
+    const startedAt = Date.now();
+
+    while (!signal.aborted) {
+      let job: PreparedPdfJobResponse;
+      try {
+        job = await dataService.getPreparedFileJob<PreparedPdfJobResponse>(jobId, signal);
+        consecutiveErrors = 0;
+      } catch (pollError) {
+        if (signal.aborted) throw pollError;
+        consecutiveErrors++;
+        if (consecutiveErrors > PREPARE_POLL_MAX_RETRIES) throw pollError;
+        await waitForPollInterval(intervalMs, signal);
+        intervalMs = Math.min(Math.ceil(intervalMs * 1.5), PREPARE_POLL_MAX_INTERVAL_MS);
+        continue;
+      }
+      const responseStatus = (job.status || '').toLowerCase();
+      const uiStatus = mapJobToPreparationStatus({
+        status: responseStatus,
+        stage: job.processingStage,
+      });
+
+      setPdfPreparation((prev) => ({
+        ...prev,
+        open: true,
+        status: uiStatus,
+        fileName: prev.fileName || file.name,
+        requestId: job.requestId || prev.requestId || fileId,
+        jobId,
+        providerSafe: responseStatus === 'completed',
+        processingStatus: responseStatus,
+        processingStage: job.processingStage,
+        progress: typeof job.progress === 'number' ? job.progress : undefined,
+        estimatedSeconds: job.estimatedSeconds,
+        elapsedMs: job.elapsedMs,
+        ocrActive: job.ocrActive,
+        pages: job.pagesTotal,
+        pagesProcessed: job.pagesProcessed,
+        chunkCount: job.chunksTotal,
+        chunksProcessed: job.chunksProcessed,
+        sanitizedDownloadUrl:
+          job.outputs?.sanitizedPdfUrl ||
+          `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download?type=pdf`,
+        sanitizedFileName: job.outputs?.sanitizedFileName,
+      }));
+
+      if (responseStatus === 'completed') {
+        const output = await dataService.downloadPreparedFileText<PreparedPdfTextDownload>(
+          jobId,
+          signal,
+        );
+        const anonymizedText = output?.text?.trim();
+        if (!anonymizedText) {
+          const missingTextError = new Error('O texto anonimizado não está disponível.');
+          (missingTextError as Error & { code?: string }).code = 'SANITIZED_TEXT_MISSING';
+          throw missingTextError;
+        }
+
+        preparedPdfRef.current = {
+          filename: file.name,
+          anonymizedText,
+        };
+
+        setPdfPreparation((prev) => ({
+          ...prev,
+          open: true,
+          status: 'review',
+          providerSafe: true,
+          anonymizedText,
+          requestId: job.requestId || prev.requestId || fileId,
+          jobId,
+          processingStatus: 'completed',
+          processingStage: 'completed',
+          pages: job.pagesTotal ?? prev.pages,
+          pagesProcessed: job.pagesProcessed ?? prev.pagesProcessed,
+          chunkCount: job.chunksTotal ?? prev.chunkCount,
+          chunksProcessed: job.chunksProcessed ?? prev.chunksProcessed,
+          sanitizedDownloadUrl:
+            job.outputs?.sanitizedPdfUrl ||
+            `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download?type=pdf`,
+          sanitizedFileName: job.outputs?.sanitizedFileName,
+        }));
+        return;
+      }
+
+      if (responseStatus === 'failed' || responseStatus === 'review_required') {
+        const statusError = new Error(job.message || 'Falha ao preparar o documento.');
+        (statusError as Error & { code?: string }).code = job.errorCode || 'BLURRY_JOB_FAILED';
+        throw statusError;
+      }
+
+      if (Date.now() - startedAt >= PREPARE_POLL_TIMEOUT_MS) {
+        const timeoutError = new Error('O processamento excedeu o tempo limite.');
+        (timeoutError as Error & { code?: string }).code = 'TIMEOUT';
+        throw timeoutError;
+      }
+
+      await waitForPollInterval(intervalMs, signal);
+      intervalMs = Math.min(Math.ceil(intervalMs * 1.5), PREPARE_POLL_MAX_INTERVAL_MS);
+    }
+  };
+
   const prepareFileForChat = async (file: File, fileId: string) => {
     clearPreparationTimers();
+    clearPreparePolling();
     retryPdfPreparationRef.current = { file, fileId };
     preparedPdfRef.current = null;
     preparationCancelledRef.current = false;
@@ -245,41 +471,12 @@ const useFileHandling = (params?: UseFileHandling) => {
     });
     setPdfPreparation({
       open: true,
-      status: 'extracting',
+      status: 'uploading',
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type || 'text/plain',
       requestId: fileId,
     });
-
-    preparationTimersRef.current = [
-      window.setTimeout(() => {
-        logPreparationTrace({
-          stage: 'chunking_started',
-          fileType: file.type || 'text/plain',
-          fileSize: file.size,
-          status: 'started',
-          requestId: fileId,
-        });
-        setPdfPreparation((prev) =>
-          prev.open && prev.status === 'extracting' ? { ...prev, status: 'chunking' } : prev,
-        );
-      }, 700),
-      window.setTimeout(() => {
-        logPreparationTrace({
-          stage: 'anonymize_started',
-          fileType: file.type || 'text/plain',
-          fileSize: file.size,
-          status: 'started',
-          requestId: fileId,
-        });
-        setPdfPreparation((prev) =>
-          prev.open && (prev.status === 'extracting' || prev.status === 'chunking')
-            ? { ...prev, status: 'anonymizing' }
-            : prev,
-        );
-      }, 1400),
-    ];
 
     const formData = new FormData();
     formData.append('endpoint', endpoint);
@@ -288,51 +485,51 @@ const useFileHandling = (params?: UseFileHandling) => {
     formData.append('file_id', fileId);
 
     try {
+      const pollingAbortController = new AbortController();
+      preparePollingAbortRef.current = pollingAbortController;
+
       const result = await dataService.prepareFile<PreparedPdfResponse>(
         formData,
-        abortControllerRef.current?.signal,
+        pollingAbortController.signal,
       );
-      if (!result.providerSafe || !result.anonymizedText) {
-        throw new Error('Prepared PDF was not marked provider-safe');
+      if (!result.jobId) {
+        throw new Error('Documento não retornou jobId de preparação');
       }
-      clearPreparationTimers();
-      logPreparationTrace({
-        stage: 'ready',
-        fileType: result.mimeType || file.type || result.type,
-        fileSize: file.size,
-        pages: result.pages,
-        chunksTotal: result.chunks?.total,
-        status: 'ready',
-        requestId: result.requestId || fileId,
-      });
-      preparedPdfRef.current = {
-        filename: result.filename || file.name,
-        anonymizedText: result.anonymizedText,
-      };
-      setPdfPreparation({
+
+      setPdfPreparation((prev) => ({
+        ...prev,
         open: true,
-        status: 'review',
-        fileName: result.filename || file.name,
-        fileSize: file.size,
-        fileType: result.mimeType || file.type || result.type,
-        pages: result.pages,
-        lines: result.lines,
-        chunkCount: result.chunks?.total,
-        entityCount: result.entityCount,
-        providerSafe: result.providerSafe,
-        requestId: result.requestId || fileId,
-        anonymizedText: result.anonymizedText,
-        sanitizedDownloadUrl: result.outputs?.sanitizedPdfUrl,
-        sanitizedFileName: result.outputs?.sanitizedFileName,
+        status: mapJobToPreparationStatus({
+          status: result.status || 'processing',
+          stage: result.processingStage,
+        }),
+        requestId: result.requestId || prev.requestId || fileId,
+        jobId: result.jobId,
+        providerSafe: false,
+        processingStatus: result.status || 'processing',
+        processingStage: result.processingStage,
+      }));
+
+      await pollPreparedJobUntilComplete({
+        file,
+        fileId,
+        jobId: result.jobId,
+        signal: pollingAbortController.signal,
       });
+
+      clearPreparePolling();
+      clearPreparationTimers();
+      return;
     } catch (error) {
       clearPreparationTimers();
+      clearPreparePolling();
       if (preparationCancelledRef.current) {
         return;
       }
       const err = error as TError | undefined;
       const data = err?.response?.data as PreparationErrorResponse | undefined;
-      const errorCode = data?.errorCode;
+      const errorCode =
+        data?.errorCode || (error as Error & { code?: string })?.code || 'BLURRY_ANONYMIZE_FAILED';
       const safeMessage =
         (errorCode && preparationErrorMessages[errorCode]) ||
         data?.message ||
@@ -363,16 +560,8 @@ const useFileHandling = (params?: UseFileHandling) => {
   const cancelPdfPreparation = () => {
     clearPreparationTimers();
     preparationCancelledRef.current = true;
-    if (
-      pdfPreparation.status === 'extracting' ||
-      pdfPreparation.status === 'chunking' ||
-      pdfPreparation.status === 'anonymizing'
-    ) {
-      abortControllerRef.current?.abort('User cancelled PDF preparation');
-      abortControllerRef.current = null;
-    }
+    clearPreparePolling();
     preparedPdfRef.current = null;
-    retryPdfPreparationRef.current = null;
     setFilesLoading(false);
     setPdfPreparation((prev) => ({ ...prev, open: false, status: 'cancelled' }));
   };
@@ -387,7 +576,7 @@ const useFileHandling = (params?: UseFileHandling) => {
     preparedPdfRef.current = null;
     retryPdfPreparationRef.current = null;
     setFilesLoading(false);
-    setPdfPreparation((prev) => ({ ...prev, open: false, status: 'ready' }));
+    setPdfPreparation((prev) => ({ ...prev, open: false, status: 'completed' }));
   };
 
   const retryPdfPreparation = () => {

@@ -19,11 +19,15 @@ import { cn } from '~/utils';
 
 export type PdfPreparationStatus =
   | 'idle'
-  | 'extracting'
+  | 'uploading'
+  | 'queued'
+  | 'processing'
+  | 'ocr'
   | 'chunking'
-  | 'anonymizing'
+  | 'anonymization'
+  | 'rebuilding'
+  | 'completed'
   | 'review'
-  | 'ready'
   | 'sending'
   | 'cancelled'
   | 'failed';
@@ -40,8 +44,17 @@ export type PdfPreparationState = {
   entityCount?: number;
   providerSafe?: boolean;
   requestId?: string;
+  jobId?: string;
+  processingStatus?: string;
+  processingStage?: string;
+  progress?: number;
+  estimatedSeconds?: number;
+  elapsedMs?: number;
+  ocrActive?: boolean;
   errorCode?: string;
   errorStage?: string;
+  pagesProcessed?: number;
+  chunksProcessed?: number;
   anonymizedText?: string;
   sanitizedDownloadUrl?: string;
   sanitizedFileName?: string;
@@ -61,11 +74,15 @@ const formatBytes = (bytes: number) => {
 
 const statusText: Record<PdfPreparationStatus, string> = {
   idle: 'Preparar documento',
-  extracting: 'Extraindo texto...',
+  uploading: 'Enviando arquivo para processamento seguro...',
+  queued: 'Documento na fila de processamento...',
+  processing: 'Processando documento com segurança...',
+  ocr: 'Executando OCR...',
   chunking: 'Dividindo texto em partes seguras...',
-  anonymizing: 'Anonimizando documento...',
+  anonymization: 'Anonimizando documento...',
+  rebuilding: 'Reconstruindo resultado anonimizado...',
+  completed: 'Documento processado com sucesso.',
   review: 'Pronto para revisão',
-  ready: 'Documento anonimizado pronto.',
   sending: 'Enviando texto anonimizado...',
   cancelled: 'Preparação cancelada.',
   failed: 'Falha ao preparar documento.',
@@ -73,11 +90,15 @@ const statusText: Record<PdfPreparationStatus, string> = {
 
 const progressByStatus: Record<PdfPreparationStatus, number> = {
   idle: 0,
-  extracting: 25,
-  chunking: 50,
-  anonymizing: 75,
+  uploading: 10,
+  queued: 15,
+  processing: 35,
+  ocr: 55,
+  chunking: 70,
+  anonymization: 80,
+  rebuilding: 90,
+  completed: 100,
   review: 100,
-  ready: 100,
   sending: 100,
   cancelled: 0,
   failed: 100,
@@ -85,11 +106,15 @@ const progressByStatus: Record<PdfPreparationStatus, number> = {
 
 const statusTone: Record<PdfPreparationStatus, string> = {
   idle: 'border-border-light bg-surface-secondary',
-  extracting: 'border-border-medium bg-surface-tertiary',
+  uploading: 'border-border-medium bg-surface-tertiary',
+  queued: 'border-border-medium bg-surface-tertiary',
+  processing: 'border-border-medium bg-surface-tertiary',
+  ocr: 'border-border-medium bg-surface-tertiary',
   chunking: 'border-border-medium bg-surface-tertiary',
-  anonymizing: 'border-border-medium bg-surface-tertiary',
+  anonymization: 'border-border-medium bg-surface-tertiary',
+  rebuilding: 'border-border-medium bg-surface-tertiary',
+  completed: 'border-border-medium bg-surface-secondary',
   review: 'border-border-medium bg-surface-secondary',
-  ready: 'border-border-medium bg-surface-secondary',
   sending: 'border-border-medium bg-surface-tertiary',
   cancelled: 'border-border-light bg-surface-secondary',
   failed: 'border-surface-destructive/40 bg-surface-destructive/10',
@@ -100,12 +125,20 @@ const getStatusMessage = (state: PdfPreparationState, visibleStatus: PdfPreparat
     return state.error || 'Não foi possível preparar este documento com segurança.';
   }
 
-  if (visibleStatus === 'review' || visibleStatus === 'ready') {
+  if (visibleStatus === 'review' || visibleStatus === 'completed') {
     return 'Documento anonimizado com sucesso. Nenhum conteúdo bruto será enviado.';
   }
 
-  if (visibleStatus === 'anonymizing' && state.chunkCount && state.chunkCount > 1) {
-    return `Anonimizando ${state.chunkCount} chunks...`;
+  if (visibleStatus === 'ocr' && state.pagesProcessed && state.pages) {
+    return `OCR da página ${state.pagesProcessed} de ${state.pages}`;
+  }
+
+  if (visibleStatus === 'anonymization' && state.chunksProcessed && state.chunkCount) {
+    return `Anonimizando chunk ${state.chunksProcessed} de ${state.chunkCount}`;
+  }
+
+  if (state.processingStage) {
+    return `${statusText[visibleStatus]} (${state.processingStage})`;
   }
 
   return statusText[visibleStatus];
@@ -126,13 +159,23 @@ export default function PdfPreparationModal({
   const [isSending, setIsSending] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const isProcessing =
-    state.status === 'extracting' || state.status === 'chunking' || state.status === 'anonymizing';
+    state.status === 'uploading' ||
+    state.status === 'queued' ||
+    state.status === 'processing' ||
+    state.status === 'ocr' ||
+    state.status === 'chunking' ||
+    state.status === 'anonymization' ||
+    state.status === 'rebuilding';
   const isFailed = state.status === 'failed';
-  const isReady = state.status === 'review' || state.status === 'ready';
+  const isReady = state.status === 'review' || state.status === 'completed';
   const canSend =
     isReady && Boolean(state.providerSafe) && Boolean(state.anonymizedText) && !isSending;
   const visibleStatus = isSending ? 'sending' : state.status;
-  const progress = progressByStatus[visibleStatus];
+  const progressFromServer =
+    typeof state.progress === 'number' && Number.isFinite(state.progress)
+      ? Math.max(0, Math.min(100, Math.round(state.progress * 100)))
+      : null;
+  const progress = progressFromServer ?? progressByStatus[visibleStatus];
   const sendDisabledReason = state.anonymizedText
     ? 'Aguarde a preparação segura do documento.'
     : 'O envio fica bloqueado até o texto anonimizado estar pronto.';
@@ -146,10 +189,18 @@ export default function PdfPreparationModal({
         state.chunkCount
           ? `${state.chunkCount} ${state.chunkCount === 1 ? 'chunk' : 'chunks'}`
           : null,
+        state.processingStatus ? `status: ${state.processingStatus}` : null,
       ]
         .filter(Boolean)
         .join(' · '),
-    [state.fileSize, state.fileType, state.pages, state.lines, state.chunkCount],
+    [
+      state.fileSize,
+      state.fileType,
+      state.pages,
+      state.lines,
+      state.chunkCount,
+      state.processingStatus,
+    ],
   );
 
   useEffect(() => {
@@ -361,7 +412,7 @@ export default function PdfPreparationModal({
                         <span className="size-1.5 rounded-full bg-current" />
                       )}
                     </span>
-                    <span>{step.label}</span>
+                    <span className="break-words">{step.label}</span>
                   </div>
                 ))}
               </div>
@@ -386,6 +437,16 @@ export default function PdfPreparationModal({
                   <span className="rounded-full border border-border-light bg-surface-primary px-2 py-1">
                     providerSafe={state.providerSafe ? 'true' : 'false'}
                   </span>
+                  {typeof state.estimatedSeconds === 'number' && state.estimatedSeconds > 0 && (
+                    <span className="rounded-full border border-border-light bg-surface-primary px-2 py-1">
+                      ETA ~{state.estimatedSeconds}s
+                    </span>
+                  )}
+                  {state.ocrActive && (
+                    <span className="rounded-full border border-border-light bg-surface-primary px-2 py-1">
+                      OCR ativo
+                    </span>
+                  )}
                   {state.sanitizedDownloadUrl && (
                     <span className="rounded-full border border-border-light bg-surface-primary px-2 py-1">
                       Arquivo anonimizado disponível para download

@@ -30,7 +30,6 @@ const { refreshS3FileUrls } = require('~/server/services/Files/S3/crud');
 const { hasAccessToFilesViaAgent } = require('~/server/services/Files');
 const { getFiles, batchUpdateFiles } = require('~/models/File');
 const { cleanFileName } = require('~/server/utils/files');
-const { prepareFileWithChunkedAnonymization } = require('~/server/utils/pdfChunkAnonymizer');
 const blurryClient = require('~/server/utils/blurryClient');
 const { getAssistant } = require('~/models/Assistant');
 const { getAgent } = require('~/models/Agent');
@@ -40,6 +39,7 @@ const crypto = require('crypto');
 
 const router = express.Router();
 const preparedDownloads = new Map();
+const preparedJobs = new Map();
 const PREPARED_DOWNLOAD_TTL_MS =
   Number(process.env.BLURRY_PREPARED_DOWNLOAD_TTL_MS) || 15 * 60 * 1000;
 
@@ -91,6 +91,151 @@ const registerPreparedDownload = ({ requestId, userId, filename, sanitizedPdfUrl
   };
 };
 
+const prepareJobExpiresAt = () => Date.now() + PREPARED_DOWNLOAD_TTL_MS;
+
+const normalizeJobStatus = (status) => {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized === 'complete' || normalized === 'succeeded' || normalized === 'done') {
+    return 'completed';
+  }
+  if (normalized === 'error' || normalized === 'cancelled' || normalized === 'canceled') {
+    return 'failed';
+  }
+  if (normalized === 'review_required' || normalized === 'requires_review') {
+    return 'review_required';
+  }
+  if (normalized === 'queued' || normalized === 'processing' || normalized === 'completed') {
+    return normalized;
+  }
+  return 'processing';
+};
+
+const getSafeJobErrorCode = (job) => {
+  const rawCode =
+    job?.raw?.errorCode ??
+    job?.raw?.error_code ??
+    job?.raw?.code ??
+    job?.raw?.error?.code ??
+    job?.errorCode ??
+    job?.error?.code;
+
+  if (typeof rawCode === 'string' && rawCode.trim()) {
+    return rawCode.trim().toUpperCase();
+  }
+
+  const rawMessage = String(
+    job?.raw?.error ?? job?.raw?.errorMessage ?? job?.raw?.message ?? job?.error ?? '',
+  ).toUpperCase();
+
+  if (rawMessage.includes('OCR')) {
+    return 'OCR_FAILED';
+  }
+  if (rawMessage.includes('CHUNK')) {
+    return 'CHUNK_FAILED';
+  }
+  if (rawMessage.includes('TIMEOUT')) {
+    return 'TIMEOUT';
+  }
+  if (rawMessage.includes('TEXT') && rawMessage.includes('LARGE')) {
+    return 'TEXT_TOO_LARGE';
+  }
+
+  return 'BLURRY_JOB_FAILED';
+};
+
+const registerPreparedJob = ({ jobId, requestId, userId, filename, fileType, fileSize }) => {
+  if (!jobId || !userId) {
+    return;
+  }
+  preparedJobs.set(jobId, {
+    userId,
+    requestId,
+    filename,
+    fileType,
+    fileSize,
+    createdAt: Date.now(),
+    expiresAt: prepareJobExpiresAt(),
+  });
+};
+
+const getPreparedJobForUser = ({ jobId, userId }) => {
+  const prepared = preparedJobs.get(jobId);
+  if (!prepared) {
+    return null;
+  }
+  if (prepared.expiresAt <= Date.now()) {
+    preparedJobs.delete(jobId);
+    return null;
+  }
+  if (prepared.userId !== userId) {
+    return null;
+  }
+  return prepared;
+};
+
+const refreshPreparedJobTTL = (jobId) => {
+  const prepared = preparedJobs.get(jobId);
+  if (!prepared) {
+    return;
+  }
+  preparedJobs.set(jobId, { ...prepared, expiresAt: prepareJobExpiresAt() });
+};
+
+const toJobResponse = ({ prepared, jobId, job, includeSafeOutputs = false }) => {
+  const status = normalizeJobStatus(job?.status);
+  const raw = job?.raw ?? {};
+  let fallbackStage = status;
+  if (status === 'queued') {
+    fallbackStage = 'upload';
+  } else if (status === 'processing') {
+    fallbackStage = 'processing';
+  }
+  const processingStage =
+    raw?.stage ?? raw?.currentStage ?? raw?.phase ?? raw?.step ?? fallbackStage;
+  const pagesTotal = raw?.pagesTotal ?? raw?.pages ?? raw?.totalPages;
+  const pagesProcessed = raw?.pagesProcessed ?? raw?.ocrPagesDone ?? raw?.processedPages;
+  const chunksTotal = raw?.chunksTotal ?? raw?.chunks_count ?? raw?.chunksCount;
+  const chunksProcessed =
+    raw?.chunksProcessed ?? raw?.chunksDone ?? raw?.sanitizedChunks ?? raw?.processedChunks;
+
+  const response = {
+    ok: true,
+    requestId: prepared?.requestId,
+    jobId,
+    status,
+    providerSafe: status === 'completed' ? (raw?.providerSafe ?? job?.providerSafe ?? true) : false,
+    processingStage,
+    progress: raw?.progress,
+    estimatedSeconds: raw?.etaSeconds ?? raw?.estimatedSeconds ?? raw?.eta,
+    elapsedMs: raw?.elapsedMs ?? raw?.elapsed_ms,
+    ocrActive: raw?.ocrActive ?? raw?.ocr_enabled ?? true,
+    pagesTotal,
+    pagesProcessed,
+    chunksTotal,
+    chunksProcessed,
+    fileName: prepared?.filename,
+    fileType: prepared?.fileType,
+    fileSize: prepared?.fileSize,
+  };
+
+  if (status === 'failed' || status === 'review_required') {
+    response.errorCode =
+      status === 'review_required' ? 'REVIEW_REQUIRED' : getSafeJobErrorCode(job);
+    response.message =
+      raw?.errorMessage ?? raw?.error ?? job?.error ?? 'Document processing failed';
+  }
+
+  if (includeSafeOutputs && status === 'completed') {
+    response.outputs = {
+      sanitizedTextAvailable: true,
+      sanitizedPdfUrl: `/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}/download?type=pdf`,
+      sanitizedFileName: buildSanitizedFileName(prepared?.filename || 'documento.pdf'),
+    };
+  }
+
+  return response;
+};
+
 const prepareFile = async (req, res) => {
   const fileId = req.file_id ?? req.body?.file_id ?? v4();
   const file = req.file;
@@ -103,52 +248,35 @@ const prepareFile = async (req, res) => {
       return res.status(400).json({ message: 'No file provided' });
     }
 
-    const result = await prepareFileWithChunkedAnonymization({
-      filePath: file.path,
-      fileId,
-      filename: file.originalname,
-      mimeType: file.mimetype,
-      size: file.size,
-      maxChars: Number(process.env.BLURRY_PDF_CHUNK_MAX_CHARS) || undefined,
-      chunkTimeoutMs: Number(process.env.BLURRY_FILE_CHUNK_TIMEOUT_MS) || undefined,
+    const upload = await blurryClient.uploadDocument(file, {
+      policy: process.env.BLURRY_DOCUMENT_POLICY || 'default',
+      anonymization_level: 'full',
+      ocr: process.env.BLURRY_DOCUMENT_OCR !== 'false',
+      requestId: fileId,
     });
 
-    if (!result.providerSafe || !result.anonymizedText) {
-      throw Object.assign(
-        new Error('O texto anonimizado não está disponível. O envio foi bloqueado.'),
-        {
-          code: 'SANITIZED_TEXT_MISSING',
-          stage: 'anonymize_failed',
-          requestId: result.requestId || fileId,
-          fileType: result.mimeType || file?.mimetype || extension,
-          fileSize: file?.size,
-          pages: result.pages,
-          chunksTotal: result.chunks?.total,
-        },
-      );
-    }
-
-    const downloadOutput = registerPreparedDownload({
-      requestId: result.requestId || fileId,
+    registerPreparedJob({
+      jobId: upload.jobId,
+      requestId: upload.requestId || fileId,
       userId: req.user?.id,
-      filename: result.filename || file.originalname,
-      sanitizedPdfUrl: result.outputs?.sanitizedPdfUrl,
+      filename: file.originalname,
+      fileType: file.mimetype || extension,
+      fileSize: file.size,
     });
 
-    if (downloadOutput) {
-      result.outputs = {
-        ...result.outputs,
-        ...downloadOutput,
-      };
-    } else if (result.outputs) {
-      delete result.outputs.sanitizedPdfUrl;
-    }
-
-    res.status(200).json(result);
+    const initialStatus = normalizeJobStatus(upload.status || 'processing');
+    res.status(202).json({
+      ok: true,
+      requestId: upload.requestId || fileId,
+      jobId: upload.jobId,
+      status: initialStatus,
+      providerSafe: false,
+      processingStage: initialStatus === 'queued' ? 'upload' : 'processing',
+    });
   } catch (error) {
     const message = safePrepareErrorCodes.has(error.code)
       ? error.message
-      : 'Falha ao preparar o arquivo com segurança. O envio foi bloqueado.';
+      : 'Falha ao iniciar a preparação segura do arquivo.';
     logger.error('[prepare-file] Failed to prepare file', {
       requestId: error.requestId || fileId,
       fileNameHash: hashFilename(file?.originalname),
@@ -189,6 +317,116 @@ const prepareFile = async (req, res) => {
 
 router.post('/prepare-file', prepareFile);
 router.post('/prepare-pdf', prepareFile);
+
+router.get('/prepare-file/jobs/:jobId', async (req, res) => {
+  const { jobId } = req.params;
+  const prepared = getPreparedJobForUser({ jobId, userId: req.user?.id });
+  if (!prepared) {
+    return res.status(404).json({ message: 'Job não encontrado.' });
+  }
+
+  try {
+    const job = await blurryClient.getDocumentJob(jobId, {
+      requestId: prepared.requestId,
+    });
+    refreshPreparedJobTTL(jobId);
+
+    const status = normalizeJobStatus(job.status);
+    if (status === 'completed') {
+      const outputs = {
+        sanitizedPdfUrl: job.outputs?.sanitizedPdfUrl,
+      };
+      const downloadOutput = registerPreparedDownload({
+        requestId: prepared.requestId,
+        userId: req.user?.id,
+        filename: prepared.filename,
+        sanitizedPdfUrl: outputs.sanitizedPdfUrl,
+      });
+
+      if (downloadOutput) {
+        return res.status(200).json({
+          ...toJobResponse({ prepared, jobId, job, includeSafeOutputs: true }),
+          outputs: {
+            sanitizedTextAvailable: true,
+            sanitizedPdfUrl: downloadOutput.sanitizedPdfUrl,
+            sanitizedFileName: downloadOutput.sanitizedFileName,
+          },
+        });
+      }
+    }
+
+    return res.status(200).json(toJobResponse({ prepared, jobId, job, includeSafeOutputs: true }));
+  } catch (error) {
+    logger.error('[prepare-file-job] Failed to fetch job status', {
+      jobId,
+      requestId: prepared.requestId,
+      errorCode: error.code,
+    });
+    return res.status(502).json({
+      ok: false,
+      jobId,
+      status: 'failed',
+      providerSafe: false,
+      errorCode: 'BLURRY_STATUS_UNAVAILABLE',
+      message: 'Não foi possível consultar o status do documento.',
+    });
+  }
+});
+
+router.get('/prepare-file/jobs/:jobId/download', async (req, res) => {
+  const { jobId } = req.params;
+  const type = String(req.query.type || 'pdf').toLowerCase();
+  const prepared = getPreparedJobForUser({ jobId, userId: req.user?.id });
+  if (!prepared) {
+    return res.status(404).json({ message: 'Job não encontrado.' });
+  }
+  if (type !== 'text' && type !== 'pdf') {
+    return res.status(400).json({ message: 'Tipo de download inválido.' });
+  }
+
+  try {
+    refreshPreparedJobTTL(jobId);
+    if (type === 'text') {
+      const textOutput = await blurryClient.downloadDocumentOutput(jobId, {
+        requestId: prepared.requestId,
+        type: 'text',
+      });
+      return res.status(200).json({
+        ok: true,
+        jobId,
+        type: 'text',
+        providerSafe: true,
+        text: textOutput.text,
+      });
+    }
+
+    const pdfOutput = await blurryClient.downloadDocumentOutput(jobId, {
+      requestId: prepared.requestId,
+      type: 'pdf',
+    });
+    res.setHeader('Content-Type', pdfOutput.contentType || 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${buildSanitizedFileName(prepared.filename || 'documento.pdf')}"`,
+    );
+    res.setHeader('Cache-Control', 'private, no-store');
+    return res.status(200).send(pdfOutput.buffer);
+  } catch (error) {
+    logger.error('[prepare-file-download] Failed to download output', {
+      jobId,
+      requestId: prepared.requestId,
+      type,
+      errorCode: error.code,
+    });
+    return res.status(502).json({
+      ok: false,
+      jobId,
+      status: 'failed',
+      errorCode: type === 'text' ? 'TEXT_DOWNLOAD_FAILED' : 'PDF_DOWNLOAD_FAILED',
+      message: 'Não foi possível baixar o output anonimizado.',
+    });
+  }
+});
 
 router.get('/prepared-download/:requestId', async (req, res) => {
   const { requestId } = req.params;

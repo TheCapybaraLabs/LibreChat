@@ -383,6 +383,22 @@ export const prepareFile = <T = unknown>(
   return request.postMultiPart(endpoints.prepareFile(), data, requestConfig);
 };
 
+export const getPreparedFileJob = <T = unknown>(
+  jobId: string,
+  signal?: AbortSignal | null,
+): Promise<T> => {
+  const requestConfig = signal ? { signal } : undefined;
+  return request.get(endpoints.preparedFileJob(jobId), requestConfig);
+};
+
+export const downloadPreparedFileText = <T = unknown>(
+  jobId: string,
+  signal?: AbortSignal | null,
+): Promise<T> => {
+  const requestConfig = signal ? { signal } : undefined;
+  return request.get(endpoints.preparedFileDownload(jobId, 'text'), requestConfig);
+};
+
 /* actions */
 
 export const updateAction = (data: m.UpdateActionVariables): Promise<m.UpdateActionResponse> => {

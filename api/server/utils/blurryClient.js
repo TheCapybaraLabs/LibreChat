@@ -96,6 +96,17 @@ const buildDocumentUrl = ({ baseURL, jobId, suffix = '' }) => {
   return `${baseURL}/v1/documents${jobId ? `/${jobId}` : ''}${suffix}`;
 };
 
+const buildDocumentJobUrl = ({ baseURL, jobId, suffix = '' }) => {
+  const template = process.env.BLURRY_DOCUMENTS_JOBS_PATH;
+  if (template) {
+    const pathTemplate = template.includes(':jobId')
+      ? template.replace(':jobId', jobId ?? '')
+      : `${template}${jobId ? `/${jobId}` : ''}`;
+    return `${baseURL}${pathTemplate}${suffix}`;
+  }
+  return `${baseURL}/v1/documents/jobs${jobId ? `/${jobId}` : ''}${suffix}`;
+};
+
 const blurryClient = {
   checkHealth: async () => {
     const { baseURL, apiKey, timeout } = getConfig();
@@ -282,7 +293,7 @@ const blurryClient = {
       throw new Error('BLURRY_API_KEY is missing');
     }
 
-    const response = await axios.get(buildDocumentUrl({ baseURL, jobId }), {
+    const response = await axios.get(buildDocumentJobUrl({ baseURL, jobId }), {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         ...(requestId ? { 'X-Request-Id': requestId } : {}),
@@ -302,6 +313,52 @@ const blurryClient = {
         sanitizedPdfUrl: getSanitizedPdfUrl(response.data),
       },
       raw: response.data,
+    };
+  },
+
+  downloadDocumentOutput: async (jobId, { requestId, type = 'pdf' } = {}) => {
+    const { baseURL, apiKey, timeout } = getConfig();
+    if (!apiKey) {
+      throw new Error('BLURRY_API_KEY is missing');
+    }
+    if (!jobId) {
+      throw new Error('Blurry jobId is missing');
+    }
+
+    const responseType = type === 'text' ? 'text' : 'arraybuffer';
+    const response = await axios.get(
+      buildDocumentJobUrl({ baseURL, jobId, suffix: `/download?type=${encodeURIComponent(type)}` }),
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          ...(requestId ? { 'X-Request-Id': requestId } : {}),
+        },
+        responseType,
+        timeout: Number(process.env.BLURRY_DOCUMENT_DOWNLOAD_TIMEOUT_MS) || timeout,
+        ...(type === 'text' ? { transformResponse: [(data) => data] } : {}),
+      },
+    );
+
+    if (type === 'text') {
+      const text = typeof response.data === 'string' ? response.data.trim() : '';
+      if (!text) {
+        throw new Error('Blurry sanitized text download was empty');
+      }
+      return {
+        text,
+        contentType: response.headers?.['content-type'] || 'text/plain',
+        bytes: Buffer.byteLength(text),
+      };
+    }
+
+    const buffer = Buffer.from(response.data);
+    if (!buffer.length) {
+      throw new Error('Blurry sanitized document download was empty');
+    }
+    return {
+      buffer,
+      contentType: response.headers?.['content-type'] || 'application/pdf',
+      bytes: buffer.length,
     };
   },
 
@@ -347,14 +404,16 @@ const blurryClient = {
   },
 
   pollDocumentJob: async (jobId, { requestId } = {}) => {
-    const { timeoutMs, intervalMs } = getDocumentPollConfig();
+    const { timeoutMs, intervalMs: initialIntervalMs } = getDocumentPollConfig();
+    const maxIntervalMs = initialIntervalMs * 5;
     const deadline = Date.now() + timeoutMs;
+    let intervalMs = initialIntervalMs;
 
     logger.info('[blurryClient] document_polling_started', {
       requestId,
       job_id: jobId,
       timeout_ms: timeoutMs,
-      interval_ms: intervalMs,
+      interval_ms: initialIntervalMs,
     });
 
     while (Date.now() <= deadline) {
@@ -377,6 +436,7 @@ const blurryClient = {
         throw new Error(`Blurry document job failed: ${job.error || job.status}`);
       }
       await sleep(intervalMs);
+      intervalMs = Math.min(Math.ceil(intervalMs * 1.5), maxIntervalMs);
     }
 
     throw new Error(`Blurry document job timed out after ${timeoutMs}ms`);
