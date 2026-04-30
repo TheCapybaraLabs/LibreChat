@@ -46,6 +46,11 @@ type PreparedPdfResponse = {
   lines?: number;
   entityCount?: number;
   chunks?: { total: number; succeeded: number; failed: number };
+  outputs?: {
+    sanitizedPdfUrl?: string;
+    sanitizedFileName?: string;
+    sanitizedTextAvailable?: boolean;
+  };
 };
 
 type PreparationErrorResponse = {
@@ -67,6 +72,8 @@ const preparationErrorMessages: Record<string, string> = {
   BLURRY_ANONYMIZE_FAILED: 'A anonimização falhou em uma parte do documento.',
   BLURRY_TIMEOUT: 'O serviço de anonimização demorou mais que o esperado.',
   INVALID_ANONYMIZE_RESPONSE: 'A resposta de anonimização veio inválida.',
+  SANITIZED_TEXT_MISSING: 'O texto anonimizado não está disponível. O envio foi bloqueado.',
+  PROVIDER_SAFE_MISSING: 'O documento não foi marcado como seguro pelo provedor.',
 };
 
 const logPreparationTrace = (trace: {
@@ -315,6 +322,8 @@ const useFileHandling = (params?: UseFileHandling) => {
         providerSafe: result.providerSafe,
         requestId: result.requestId || fileId,
         anonymizedText: result.anonymizedText,
+        sanitizedDownloadUrl: result.outputs?.sanitizedPdfUrl,
+        sanitizedFileName: result.outputs?.sanitizedFileName,
       });
     } catch (error) {
       clearPreparationTimers();

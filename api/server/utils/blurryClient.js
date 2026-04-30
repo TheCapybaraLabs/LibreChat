@@ -53,6 +53,38 @@ const getDownloadUrl = (data) =>
   data?.result?.download_url ??
   data?.result?.downloadUrl;
 
+const getOutputs = (data) => data?.outputs ?? data?.result?.outputs ?? data?.data?.outputs ?? {};
+
+const getSanitizedTextUrl = (data) => {
+  const outputs = getOutputs(data);
+  return (
+    outputs?.sanitizedTextUrl ??
+    outputs?.sanitized_text_url ??
+    data?.sanitizedTextUrl ??
+    data?.sanitized_text_url
+  );
+};
+
+const getSanitizedText = (data) => {
+  const outputs = getOutputs(data);
+  return (
+    outputs?.sanitizedText ?? outputs?.sanitized_text ?? data?.sanitizedText ?? data?.sanitized_text
+  );
+};
+
+const getSanitizedPdfUrl = (data) => {
+  const outputs = getOutputs(data);
+  return (
+    outputs?.sanitizedPdfUrl ??
+    outputs?.sanitized_pdf_url ??
+    outputs?.sanitizedFileUrl ??
+    outputs?.sanitized_file_url ??
+    outputs?.sanitizedImageUrl ??
+    outputs?.sanitized_image_url ??
+    getDownloadUrl(data)
+  );
+};
+
 const buildDocumentUrl = ({ baseURL, jobId, suffix = '' }) => {
   const template = process.env.BLURRY_DOCUMENTS_PATH;
   if (template) {
@@ -234,6 +266,12 @@ const blurryClient = {
       jobId,
       status: getJobStatus(response.data),
       requestId,
+      providerSafe: response.data?.providerSafe ?? response.data?.provider_safe,
+      outputs: {
+        sanitizedTextUrl: getSanitizedTextUrl(response.data),
+        sanitizedText: getSanitizedText(response.data),
+        sanitizedPdfUrl: getSanitizedPdfUrl(response.data),
+      },
       raw: response.data,
     };
   },
@@ -257,7 +295,54 @@ const blurryClient = {
       status: getJobStatus(response.data),
       error: response.data?.error ?? response.data?.message,
       downloadUrl: getDownloadUrl(response.data),
+      providerSafe: response.data?.providerSafe ?? response.data?.provider_safe,
+      outputs: {
+        sanitizedTextUrl: getSanitizedTextUrl(response.data),
+        sanitizedText: getSanitizedText(response.data),
+        sanitizedPdfUrl: getSanitizedPdfUrl(response.data),
+      },
       raw: response.data,
+    };
+  },
+
+  downloadSanitizedText: async (downloadUrl, { requestId } = {}) => {
+    const { baseURL, apiKey, timeout } = getConfig();
+    if (!apiKey) {
+      throw new Error('BLURRY_API_KEY is missing');
+    }
+    if (!downloadUrl) {
+      throw new Error('Blurry sanitized text URL is missing');
+    }
+
+    logger.info('[blurryClient] sanitized_text_download_started', { requestId });
+    const response = await axios.get(
+      downloadUrl.startsWith('http') ? downloadUrl : `${baseURL}${downloadUrl}`,
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          ...(requestId ? { 'X-Request-Id': requestId } : {}),
+        },
+        responseType: 'text',
+        timeout: Number(process.env.BLURRY_DOCUMENT_DOWNLOAD_TIMEOUT_MS) || timeout,
+        transformResponse: [(data) => data],
+      },
+    );
+
+    const text = typeof response.data === 'string' ? response.data.trim() : '';
+    if (!text) {
+      throw new Error('Blurry sanitized text download was empty');
+    }
+
+    logger.info('[blurryClient] sanitized_text_download_completed', {
+      requestId,
+      size: text.length,
+      content_type: response.headers?.['content-type'],
+    });
+
+    return {
+      text,
+      contentType: response.headers?.['content-type'] || 'text/plain',
+      bytes: Buffer.byteLength(text),
     };
   },
 

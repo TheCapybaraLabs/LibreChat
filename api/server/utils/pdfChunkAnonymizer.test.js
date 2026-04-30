@@ -4,6 +4,9 @@ jest.mock('./pdfText', () => ({
 
 jest.mock('./blurryClient', () => ({
   anonymizeText: jest.fn(),
+  uploadDocument: jest.fn(),
+  pollDocumentJob: jest.fn(),
+  downloadSanitizedText: jest.fn(),
 }));
 
 const { extractPdfText } = require('./pdfText');
@@ -20,6 +23,7 @@ describe('pdfChunkAnonymizer', () => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
     jest.useRealTimers();
+    blurryClient.uploadDocument.mockResolvedValue(null);
   });
 
   it('chunks text by paragraphs while preserving order', () => {
@@ -172,6 +176,102 @@ describe('pdfChunkAnonymizer', () => {
       requestId: 'file-scan',
     });
     expect(blurryClient.anonymizeText).not.toHaveBeenCalled();
+  });
+
+  it('uses Blurry sanitized text and exposes sanitized PDF output for PDFs', async () => {
+    blurryClient.uploadDocument.mockResolvedValueOnce({
+      jobId: 'job-1',
+      status: 'completed',
+      providerSafe: true,
+      outputs: {
+        sanitizedTextUrl: '/signed/text',
+        sanitizedPdfUrl: '/signed/pdf',
+      },
+      raw: {
+        providerSafe: true,
+        pages: 2,
+        chunks_count: 1,
+        stats: { NAME: 1 },
+      },
+    });
+    blurryClient.downloadSanitizedText.mockResolvedValueOnce({
+      text: '[NOME] revisou o documento.',
+      contentType: 'text/plain',
+      bytes: 27,
+    });
+
+    const result = await prepareFileWithChunkedAnonymization({
+      filePath: '/tmp/ocr.pdf',
+      fileId: 'file-ocr',
+      filename: 'ocr.pdf',
+      mimeType: 'application/pdf',
+      size: 4096,
+    });
+
+    expect(extractPdfText).not.toHaveBeenCalled();
+    expect(blurryClient.anonymizeText).not.toHaveBeenCalled();
+    expect(blurryClient.downloadSanitizedText).toHaveBeenCalledWith('/signed/text', {
+      requestId: 'file-ocr',
+    });
+    expect(result.providerSafe).toBe(true);
+    expect(result.anonymizedText).toBe('[NOME] revisou o documento.');
+    expect(result.outputs).toEqual({
+      sanitizedPdfUrl: '/signed/pdf',
+      sanitizedTextAvailable: true,
+    });
+  });
+
+  it('blocks model send when Blurry returns a sanitized PDF without sanitized text', async () => {
+    blurryClient.uploadDocument.mockResolvedValueOnce({
+      jobId: 'job-2',
+      status: 'completed',
+      providerSafe: true,
+      outputs: {
+        sanitizedPdfUrl: '/signed/pdf',
+      },
+      raw: { providerSafe: true },
+    });
+
+    await expect(
+      prepareFileWithChunkedAnonymization({
+        filePath: '/tmp/no-text.pdf',
+        fileId: 'file-no-text-output',
+        filename: 'no-text.pdf',
+        mimeType: 'application/pdf',
+        size: 4096,
+      }),
+    ).rejects.toMatchObject({
+      code: 'SANITIZED_TEXT_MISSING',
+      stage: 'anonymize_failed',
+      requestId: 'file-no-text-output',
+    });
+    expect(extractPdfText).not.toHaveBeenCalled();
+    expect(blurryClient.anonymizeText).not.toHaveBeenCalled();
+  });
+
+  it('uses inline sanitized_text from Blurry without downloading raw file content', async () => {
+    blurryClient.uploadDocument.mockResolvedValueOnce({
+      jobId: 'job-3',
+      status: 'completed',
+      providerSafe: true,
+      outputs: {
+        sanitized_text: '[NOME] revisou o arquivo.',
+        sanitized_pdf_url: '/signed/pdf',
+      },
+      raw: { providerSafe: true },
+    });
+
+    const result = await prepareFileWithChunkedAnonymization({
+      filePath: '/tmp/inline.pdf',
+      fileId: 'file-inline-output',
+      filename: 'inline.pdf',
+      mimeType: 'application/pdf',
+      size: 4096,
+    });
+
+    expect(blurryClient.downloadSanitizedText).not.toHaveBeenCalled();
+    expect(result.anonymizedText).toBe('[NOME] revisou o arquivo.');
+    expect(result.outputs.sanitizedPdfUrl).toBe('/signed/pdf');
   });
 
   it('reports BLURRY_ANONYMIZE_FAILED without exposing chunk content', async () => {

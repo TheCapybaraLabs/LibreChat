@@ -1,4 +1,5 @@
 const fs = require('fs').promises;
+const path = require('path');
 const express = require('express');
 const { v4 } = require('uuid');
 const { EnvVar } = require('@librechat/agents');
@@ -30,6 +31,7 @@ const { hasAccessToFilesViaAgent } = require('~/server/services/Files');
 const { getFiles, batchUpdateFiles } = require('~/models/File');
 const { cleanFileName } = require('~/server/utils/files');
 const { prepareFileWithChunkedAnonymization } = require('~/server/utils/pdfChunkAnonymizer');
+const blurryClient = require('~/server/utils/blurryClient');
 const { getAssistant } = require('~/models/Assistant');
 const { getAgent } = require('~/models/Agent');
 const { getLogStores } = require('~/cache');
@@ -37,6 +39,9 @@ const { Readable } = require('stream');
 const crypto = require('crypto');
 
 const router = express.Router();
+const preparedDownloads = new Map();
+const PREPARED_DOWNLOAD_TTL_MS =
+  Number(process.env.BLURRY_PREPARED_DOWNLOAD_TTL_MS) || 15 * 60 * 1000;
 
 const hashFilename = (filename = '') =>
   crypto.createHash('sha256').update(filename).digest('hex').slice(0, 12);
@@ -56,7 +61,35 @@ const safePrepareErrorCodes = new Set([
   'TEXT_ENCODING_UNSUPPORTED',
   'TEXT_EXTRACTION_EMPTY',
   'TEXT_CHUNKING_EMPTY',
+  'SANITIZED_TEXT_MISSING',
+  'PROVIDER_SAFE_MISSING',
 ]);
+
+const buildSanitizedFileName = (filename = 'documento.pdf') => {
+  const cleaned = cleanFileName(filename || 'documento.pdf');
+  const extension = path.extname(cleaned) || '.pdf';
+  const baseName = path.basename(cleaned, extension) || 'documento';
+  return `${baseName}.anonimizado${extension}`;
+};
+
+const registerPreparedDownload = ({ requestId, userId, filename, sanitizedPdfUrl }) => {
+  if (!requestId || !userId || !sanitizedPdfUrl) {
+    return null;
+  }
+
+  const sanitizedFileName = buildSanitizedFileName(filename);
+  preparedDownloads.set(requestId, {
+    userId,
+    sanitizedPdfUrl,
+    sanitizedFileName,
+    expiresAt: Date.now() + PREPARED_DOWNLOAD_TTL_MS,
+  });
+
+  return {
+    sanitizedPdfUrl: `/api/files/prepared-download/${encodeURIComponent(requestId)}`,
+    sanitizedFileName,
+  };
+};
 
 const prepareFile = async (req, res) => {
   const fileId = req.file_id ?? req.body?.file_id ?? v4();
@@ -79,6 +112,37 @@ const prepareFile = async (req, res) => {
       maxChars: Number(process.env.BLURRY_PDF_CHUNK_MAX_CHARS) || undefined,
       chunkTimeoutMs: Number(process.env.BLURRY_FILE_CHUNK_TIMEOUT_MS) || undefined,
     });
+
+    if (!result.providerSafe || !result.anonymizedText) {
+      throw Object.assign(
+        new Error('O texto anonimizado não está disponível. O envio foi bloqueado.'),
+        {
+          code: 'SANITIZED_TEXT_MISSING',
+          stage: 'anonymize_failed',
+          requestId: result.requestId || fileId,
+          fileType: result.mimeType || file?.mimetype || extension,
+          fileSize: file?.size,
+          pages: result.pages,
+          chunksTotal: result.chunks?.total,
+        },
+      );
+    }
+
+    const downloadOutput = registerPreparedDownload({
+      requestId: result.requestId || fileId,
+      userId: req.user?.id,
+      filename: result.filename || file.originalname,
+      sanitizedPdfUrl: result.outputs?.sanitizedPdfUrl,
+    });
+
+    if (downloadOutput) {
+      result.outputs = {
+        ...result.outputs,
+        ...downloadOutput,
+      };
+    } else if (result.outputs) {
+      delete result.outputs.sanitizedPdfUrl;
+    }
 
     res.status(200).json(result);
   } catch (error) {
@@ -125,6 +189,41 @@ const prepareFile = async (req, res) => {
 
 router.post('/prepare-file', prepareFile);
 router.post('/prepare-pdf', prepareFile);
+
+router.get('/prepared-download/:requestId', async (req, res) => {
+  const { requestId } = req.params;
+  const prepared = preparedDownloads.get(requestId);
+
+  if (!prepared) {
+    return res.status(404).json({ message: 'Arquivo anonimizado não está mais disponível.' });
+  }
+  if (prepared.expiresAt <= Date.now()) {
+    preparedDownloads.delete(requestId);
+    return res.status(404).json({ message: 'Arquivo anonimizado não está mais disponível.' });
+  }
+  if (prepared.userId !== req.user?.id) {
+    return res.status(404).json({ message: 'Arquivo anonimizado não está mais disponível.' });
+  }
+
+  try {
+    const sanitized = await blurryClient.downloadSanitizedDocument(undefined, {
+      requestId,
+      downloadUrl: prepared.sanitizedPdfUrl,
+    });
+
+    res.setHeader('Content-Type', sanitized.contentType || 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${prepared.sanitizedFileName}"`);
+    res.setHeader('Cache-Control', 'private, no-store');
+    return res.status(200).send(sanitized.buffer);
+  } catch (error) {
+    logger.error('[prepared-download] Failed to download sanitized file', {
+      requestId,
+      errorCode: error.code,
+      status: 'failed',
+    });
+    return res.status(502).json({ message: 'Não foi possível baixar o arquivo anonimizado.' });
+  }
+});
 
 router.get('/', async (req, res) => {
   try {

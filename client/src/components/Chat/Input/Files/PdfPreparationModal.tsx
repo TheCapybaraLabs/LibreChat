@@ -7,6 +7,7 @@ import {
   Check,
   CircleCheckBig,
   Copy,
+  Download,
   FileText,
   Loader2,
   Send,
@@ -42,6 +43,8 @@ export type PdfPreparationState = {
   errorCode?: string;
   errorStage?: string;
   anonymizedText?: string;
+  sanitizedDownloadUrl?: string;
+  sanitizedFileName?: string;
   error?: string;
 };
 
@@ -121,6 +124,7 @@ export default function PdfPreparationModal({
 }) {
   const [isCopied, setIsCopied] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const isProcessing =
     state.status === 'extracting' || state.status === 'chunking' || state.status === 'anonymizing';
   const isFailed = state.status === 'failed';
@@ -152,6 +156,7 @@ export default function PdfPreparationModal({
     if (!state.open) {
       setIsCopied(false);
       setIsSending(false);
+      setIsDownloading(false);
     }
   }, [state.open]);
 
@@ -176,6 +181,31 @@ export default function PdfPreparationModal({
     }
     setIsSending(true);
     onConfirm();
+  };
+
+  const handleDownload = async () => {
+    if (!state.sanitizedDownloadUrl || isDownloading) {
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      const response = await fetch(state.sanitizedDownloadUrl, { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error('Sanitized download failed');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = state.sanitizedFileName || `${state.fileName}.anonimizado.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const renderStatusIcon = () => {
@@ -356,6 +386,11 @@ export default function PdfPreparationModal({
                   <span className="rounded-full border border-border-light bg-surface-primary px-2 py-1">
                     providerSafe={state.providerSafe ? 'true' : 'false'}
                   </span>
+                  {state.sanitizedDownloadUrl && (
+                    <span className="rounded-full border border-border-light bg-surface-primary px-2 py-1">
+                      Arquivo anonimizado disponível para download
+                    </span>
+                  )}
                 </div>
               )}
             </section>
@@ -414,24 +449,43 @@ export default function PdfPreparationModal({
                 Tentar novamente
               </Button>
             ) : (
-              <div className="flex flex-col items-stretch gap-1 sm:items-end">
-                <Button
-                  type="button"
-                  variant="submit"
-                  className="h-10 rounded-md disabled:opacity-70"
-                  disabled={!canSend}
-                  aria-label="Usar texto anonimizado"
-                  aria-describedby={!canSend ? 'pdf-preparation-send-disabled' : undefined}
-                  title={!canSend ? sendDisabledReason : undefined}
-                  onClick={handleConfirm}
-                >
-                  {isSending ? (
-                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Send size={16} aria-hidden="true" />
+              <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                  {state.sanitizedDownloadUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 rounded-md"
+                      disabled={isDownloading}
+                      aria-label="Baixar arquivo anonimizado"
+                      onClick={handleDownload}
+                    >
+                      {isDownloading ? (
+                        <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Download size={16} aria-hidden="true" />
+                      )}
+                      {isDownloading ? 'Baixando...' : 'Baixar PDF anonimizado'}
+                    </Button>
                   )}
-                  {isSending ? 'Enviando...' : 'Usar texto anonimizado'}
-                </Button>
+                  <Button
+                    type="button"
+                    variant="submit"
+                    className="h-10 rounded-md disabled:opacity-70"
+                    disabled={!canSend}
+                    aria-label="Enviar texto anonimizado"
+                    aria-describedby={!canSend ? 'pdf-preparation-send-disabled' : undefined}
+                    title={!canSend ? sendDisabledReason : undefined}
+                    onClick={handleConfirm}
+                  >
+                    {isSending ? (
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Send size={16} aria-hidden="true" />
+                    )}
+                    {isSending ? 'Enviando...' : 'Enviar texto anonimizado'}
+                  </Button>
+                </div>
                 {!canSend && (
                   <span id="pdf-preparation-send-disabled" className="text-xs text-text-secondary">
                     {sendDisabledReason}

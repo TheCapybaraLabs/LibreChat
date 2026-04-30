@@ -238,6 +238,150 @@ const withTimeout = (promise, timeoutMs, errorCode) => {
   });
 };
 
+const getDocumentOutputs = (job) => {
+  const outputs = job?.outputs ?? job?.raw?.outputs ?? job?.raw?.result?.outputs ?? {};
+  return {
+    sanitizedText:
+      outputs?.sanitizedText ??
+      outputs?.sanitized_text ??
+      job?.outputs?.sanitizedText ??
+      job?.raw?.sanitizedText ??
+      job?.raw?.sanitized_text,
+    sanitizedTextUrl:
+      outputs?.sanitizedTextUrl ??
+      outputs?.sanitized_text_url ??
+      job?.outputs?.sanitizedTextUrl ??
+      job?.raw?.sanitizedTextUrl,
+    sanitizedPdfUrl:
+      outputs?.sanitizedPdfUrl ??
+      outputs?.sanitized_pdf_url ??
+      outputs?.sanitizedFileUrl ??
+      outputs?.sanitized_file_url ??
+      job?.downloadUrl ??
+      job?.outputs?.sanitizedPdfUrl,
+  };
+};
+
+const preparePdfFromBlurryOutputs = async ({
+  filePath,
+  fileId,
+  filename,
+  mimeType,
+  size,
+  baseContext,
+}) => {
+  if (process.env.BLURRY_DOCUMENT_OUTPUTS_ENABLED === 'false') {
+    return null;
+  }
+
+  let upload;
+  try {
+    upload = await blurryClient.uploadDocument?.(
+      {
+        path: filePath,
+        originalname: filename,
+        mimetype: mimeType || 'application/pdf',
+        size,
+      },
+      {
+        policy: process.env.BLURRY_DOCUMENT_POLICY || 'default',
+        anonymization_level: 'full',
+        ocr: process.env.BLURRY_DOCUMENT_OCR !== 'false',
+        requestId: fileId,
+      },
+    );
+  } catch (error) {
+    if (error.message === 'BLURRY_API_KEY is missing') {
+      return null;
+    }
+    throw createSafeError(
+      'A anonimização falhou em uma parte do documento.',
+      'BLURRY_ANONYMIZE_FAILED',
+      'anonymize_failed',
+      baseContext,
+    );
+  }
+
+  if (!upload?.jobId) {
+    return null;
+  }
+
+  const job =
+    upload.status === 'completed' || upload.status === 'complete' || upload.status === 'succeeded'
+      ? upload
+      : await blurryClient.pollDocumentJob(upload.jobId, { requestId: fileId });
+  const outputs = getDocumentOutputs(job);
+
+  if (!outputs.sanitizedText && !outputs.sanitizedTextUrl && !outputs.sanitizedPdfUrl) {
+    return null;
+  }
+
+  if (!outputs.sanitizedText && !outputs.sanitizedTextUrl) {
+    throw createSafeError(
+      'O texto anonimizado não foi retornado pelo Blurry. O envio foi bloqueado.',
+      'SANITIZED_TEXT_MISSING',
+      'anonymize_failed',
+      baseContext,
+    );
+  }
+
+  if (
+    job.providerSafe === false ||
+    job.raw?.providerSafe === false ||
+    job.raw?.provider_safe === false
+  ) {
+    throw createSafeError(
+      'O documento não foi marcado como seguro pelo provedor. O envio foi bloqueado.',
+      'PROVIDER_SAFE_MISSING',
+      'anonymize_failed',
+      baseContext,
+    );
+  }
+
+  const sanitizedText = outputs.sanitizedText
+    ? {
+        text: normalizeText(outputs.sanitizedText),
+        contentType: 'text/plain',
+        bytes: Buffer.byteLength(outputs.sanitizedText),
+      }
+    : await blurryClient.downloadSanitizedText(outputs.sanitizedTextUrl, {
+        requestId: fileId,
+      });
+
+  if (!sanitizedText.text) {
+    throw createSafeError(
+      'O texto anonimizado não foi retornado pelo Blurry. O envio foi bloqueado.',
+      'SANITIZED_TEXT_MISSING',
+      'anonymize_failed',
+      baseContext,
+    );
+  }
+
+  return {
+    fileId,
+    requestId: fileId,
+    filename,
+    mimeType: mimeType || 'application/pdf',
+    type: 'pdf',
+    providerSafe: true,
+    anonymizedText: sanitizedText.text,
+    pages: job.raw?.pages ?? job.raw?.pagesProcessed,
+    lines: sanitizedText.text.split('\n').length,
+    stats: job.raw?.stats ?? {},
+    entityCount: Array.isArray(job.raw?.entities) ? job.raw.entities.length : 0,
+    processingMs: job.raw?.processing_ms ?? job.raw?.processingMs,
+    chunks: {
+      total: job.raw?.chunks_count ?? job.raw?.chunksCount ?? 1,
+      succeeded: job.raw?.chunks_count ?? job.raw?.chunksCount ?? 1,
+      failed: 0,
+    },
+    outputs: {
+      sanitizedPdfUrl: outputs.sanitizedPdfUrl,
+      sanitizedTextAvailable: true,
+    },
+  };
+};
+
 async function prepareFileWithChunkedAnonymization({
   filePath,
   fileId,
@@ -279,6 +423,27 @@ async function prepareFileWithChunkedAnonymization({
     stage: 'extract_started',
     status: 'started',
   });
+
+  if (isPdf) {
+    const blurryOutput = await preparePdfFromBlurryOutputs({
+      filePath,
+      fileId,
+      filename,
+      mimeType: normalizedMimeType || 'application/pdf',
+      size,
+      baseContext,
+    });
+    if (blurryOutput) {
+      logSafeStage({
+        ...baseContext,
+        stage: 'ready',
+        pages: blurryOutput.pages,
+        chunksTotal: blurryOutput.chunks?.total,
+        status: 'ready',
+      });
+      return blurryOutput;
+    }
+  }
 
   let extracted;
   try {
