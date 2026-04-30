@@ -73,6 +73,7 @@ const AttachFileMenu = ({
   } = useFileHandling({ onPreparedPdfConfirm });
   const { handleSharePointFiles, isProcessing, downloadProgress } = useSharePointFileHandling({
     toolResource,
+    onPreparedPdfConfirm,
   });
 
   const { agentsConfig } = useGetAgentsConfig();

@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import type { TFile } from 'librechat-data-provider';
 import type { ExtendedFile } from '~/common';
 import { useRecoilValue } from 'recoil';
@@ -58,7 +59,7 @@ const FileContainer = ({
               {uploadedButNotYetAnonymized && (
                 <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
                   <Spinner size={10} color="currentColor" />
-                  Escaneando…
+                  Preparando…
                 </div>
               )}
               {isAnonymizedPdf && !uploadedButNotYetAnonymized && (

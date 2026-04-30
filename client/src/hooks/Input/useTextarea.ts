@@ -27,17 +27,19 @@ export default function useTextarea({
   submitButtonRef,
   setIsScrollable,
   disabled = false,
+  onPreparedFileConfirm,
 }: {
   textAreaRef: React.RefObject<HTMLTextAreaElement>;
   submitButtonRef: React.RefObject<HTMLButtonElement>;
   setIsScrollable: React.Dispatch<React.SetStateAction<boolean>>;
   disabled?: boolean;
+  onPreparedFileConfirm?: (payload: { filename: string; anonymizedText: string }) => void;
 }) {
   const localize = useLocalize();
   const getSender = useGetSender();
   const isComposing = useRef(false);
   const agentsMap = useAgentsMapContext();
-  const { handleFiles } = useFileHandling();
+  const { handleFiles } = useFileHandling({ onPreparedPdfConfirm: onPreparedFileConfirm });
   const assistantMap = useAssistantsMapContext();
   const checkHealth = useInteractionHealthCheck();
   const enterToSend = useRecoilValue(store.enterToSend);

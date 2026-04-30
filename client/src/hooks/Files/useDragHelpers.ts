@@ -22,6 +22,7 @@ import store, { ephemeralAgentByConvoId } from '~/store';
 import useFileHandling from './useFileHandling';
 import { isEphemeralAgent } from '~/common';
 import useLocalize from '../useLocalize';
+import useSubmitMessage from '../Messages/useSubmitMessage';
 
 export default function useDragHelpers() {
   const queryClient = useQueryClient();
@@ -29,6 +30,7 @@ export default function useDragHelpers() {
   const localize = useLocalize();
   const [showModal, setShowModal] = useState(false);
   const [draggedFiles, setDraggedFiles] = useState<File[]>([]);
+  const { submitMessage } = useSubmitMessage();
   const conversation = useRecoilValue(store.conversationByIndex(0)) || undefined;
   const setEphemeralAgent = useSetRecoilState(
     ephemeralAgentByConvoId(conversation?.conversationId ?? Constants.NEW_CONVO),
@@ -39,7 +41,16 @@ export default function useDragHelpers() {
     [conversation?.endpoint],
   );
 
-  const { handleFiles } = useFileHandling();
+  const handlePreparedFileConfirm = useCallback(
+    ({ filename, anonymizedText }: { filename: string; anonymizedText: string }) => {
+      submitMessage({
+        text: `[Documento anonimizado: ${filename}]\n\n${anonymizedText}`,
+      });
+    },
+    [submitMessage],
+  );
+
+  const { handleFiles } = useFileHandling({ onPreparedPdfConfirm: handlePreparedFileConfirm });
 
   const handleOptionSelect = useCallback(
     (toolResource: EToolResources | undefined) => {

@@ -375,6 +375,14 @@ export const preparePdf = <T = unknown>(
   return request.postMultiPart(endpoints.preparePdf(), data, requestConfig);
 };
 
+export const prepareFile = <T = unknown>(
+  data: FormData,
+  signal?: AbortSignal | null,
+): Promise<T> => {
+  const requestConfig = signal ? { signal } : undefined;
+  return request.postMultiPart(endpoints.prepareFile(), data, requestConfig);
+};
+
 /* actions */
 
 export const updateAction = (data: m.UpdateActionVariables): Promise<m.UpdateActionResponse> => {

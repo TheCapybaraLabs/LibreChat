@@ -30,6 +30,7 @@ const initialize = async () => {
 
   const { fileUploadIpLimiter, fileUploadUserLimiter } = createFileLimiters();
   router.post('*', fileUploadIpLimiter, fileUploadUserLimiter);
+  router.post('/prepare-file', upload.single('file'));
   router.post('/prepare-pdf', upload.single('file'));
   router.post('/', upload.single('file'));
   router.post('/images', upload.single('file'));

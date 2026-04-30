@@ -29,43 +29,67 @@ const { refreshS3FileUrls } = require('~/server/services/Files/S3/crud');
 const { hasAccessToFilesViaAgent } = require('~/server/services/Files');
 const { getFiles, batchUpdateFiles } = require('~/models/File');
 const { cleanFileName } = require('~/server/utils/files');
-const { preparePdfWithChunkedAnonymization } = require('~/server/utils/pdfChunkAnonymizer');
+const { prepareFileWithChunkedAnonymization } = require('~/server/utils/pdfChunkAnonymizer');
 const { getAssistant } = require('~/models/Assistant');
 const { getAgent } = require('~/models/Agent');
 const { getLogStores } = require('~/cache');
 const { Readable } = require('stream');
+const crypto = require('crypto');
 
 const router = express.Router();
 
-router.post('/prepare-pdf', async (req, res) => {
+const hashFilename = (filename = '') =>
+  crypto.createHash('sha256').update(filename).digest('hex').slice(0, 12);
+
+const safePrepareErrorCodes = new Set([
+  'FILE_TYPE_UNSUPPORTED',
+  'FILE_CHUNK_TIMEOUT',
+  'PDF_TEXT_EXTRACTION_EMPTY',
+  'PDF_CHUNKING_EMPTY',
+  'PDF_PARSER_NOT_AVAILABLE',
+  'PDF_READ_FAILED',
+  'PDF_EXTRACTION_FAILED',
+  'TEXT_BINARY_UNSUPPORTED',
+  'TEXT_ENCODING_UNSUPPORTED',
+  'TEXT_EXTRACTION_EMPTY',
+  'TEXT_CHUNKING_EMPTY',
+]);
+
+const prepareFile = async (req, res) => {
   const fileId = req.file_id ?? req.body?.file_id ?? v4();
   const file = req.file;
+  const extension = file?.originalname
+    ? cleanFileName(file.originalname).split('.').pop()
+    : undefined;
 
   try {
     if (!file) {
-      return res.status(400).json({ message: 'No PDF file provided' });
-    }
-    if (file.mimetype !== 'application/pdf') {
-      return res.status(400).json({ message: 'Only PDF files can be prepared' });
+      return res.status(400).json({ message: 'No file provided' });
     }
 
-    const result = await preparePdfWithChunkedAnonymization({
+    const result = await prepareFileWithChunkedAnonymization({
       filePath: file.path,
       fileId,
       filename: file.originalname,
+      mimeType: file.mimetype,
+      size: file.size,
       maxChars: Number(process.env.BLURRY_PDF_CHUNK_MAX_CHARS) || undefined,
+      chunkTimeoutMs: Number(process.env.BLURRY_FILE_CHUNK_TIMEOUT_MS) || undefined,
     });
 
     res.status(200).json(result);
   } catch (error) {
-    const message =
-      ['PDF_TEXT_EXTRACTION_EMPTY', 'PDF_CHUNKING_EMPTY', 'PDF_PARSER_NOT_AVAILABLE', 'PDF_READ_FAILED', 'PDF_EXTRACTION_FAILED'].includes(error.code) 
-        ? error.message
-        : 'Falha ao anonimizar uma parte do PDF. O envio foi bloqueado por segurança.';
-    logger.error('[prepare-pdf] Failed to prepare PDF', {
+    const message = safePrepareErrorCodes.has(error.code)
+      ? error.message
+      : 'Falha ao preparar o arquivo com segurança. O envio foi bloqueado.';
+    logger.error('[prepare-file] Failed to prepare file', {
       fileId,
+      fileNameHash: hashFilename(file?.originalname),
+      extension,
+      size: file?.size,
+      mimeType: file?.mimetype,
       errorCode: error.code,
-      message: error.message,
+      providerSafe: false,
     });
     res.status(500).json({ message, errorCode: error.code });
   } finally {
@@ -73,11 +97,17 @@ router.post('/prepare-pdf', async (req, res) => {
       try {
         await fs.unlink(file.path);
       } catch (error) {
-        logger.error('[prepare-pdf] Error deleting temp PDF:', error);
+        logger.error('[prepare-file] Error deleting temp file:', {
+          fileId,
+          errorCode: error.code,
+        });
       }
     }
   }
-});
+};
+
+router.post('/prepare-file', prepareFile);
+router.post('/prepare-pdf', prepareFile);
 
 router.get('/', async (req, res) => {
   try {

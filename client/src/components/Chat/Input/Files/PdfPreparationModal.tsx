@@ -24,6 +24,7 @@ export type PdfPreparationStatus =
   | 'review'
   | 'ready'
   | 'sending'
+  | 'cancelled'
   | 'failed';
 
 export type PdfPreparationState = {
@@ -31,8 +32,12 @@ export type PdfPreparationState = {
   status: PdfPreparationStatus;
   fileName: string;
   fileSize: number;
+  fileType?: string;
   pages?: number;
+  lines?: number;
   chunkCount?: number;
+  entityCount?: number;
+  providerSafe?: boolean;
   anonymizedText?: string;
   error?: string;
 };
@@ -56,6 +61,7 @@ const statusText: Record<PdfPreparationStatus, string> = {
   review: 'Pronto para revisão',
   ready: 'Documento anonimizado pronto.',
   sending: 'Enviando texto anonimizado...',
+  cancelled: 'Preparação cancelada.',
   failed: 'Falha ao preparar documento.',
 };
 
@@ -67,6 +73,7 @@ const progressByStatus: Record<PdfPreparationStatus, number> = {
   review: 100,
   ready: 100,
   sending: 100,
+  cancelled: 0,
   failed: 100,
 };
 
@@ -78,6 +85,7 @@ const statusTone: Record<PdfPreparationStatus, string> = {
   review: 'border-border-medium bg-surface-secondary',
   ready: 'border-border-medium bg-surface-secondary',
   sending: 'border-border-medium bg-surface-tertiary',
+  cancelled: 'border-border-light bg-surface-secondary',
   failed: 'border-surface-destructive/40 bg-surface-destructive/10',
 };
 
@@ -114,7 +122,8 @@ export default function PdfPreparationModal({
     state.status === 'extracting' || state.status === 'chunking' || state.status === 'anonymizing';
   const isFailed = state.status === 'failed';
   const isReady = state.status === 'review' || state.status === 'ready';
-  const canSend = isReady && Boolean(state.anonymizedText) && !isSending;
+  const canSend =
+    isReady && Boolean(state.providerSafe) && Boolean(state.anonymizedText) && !isSending;
   const visibleStatus = isSending ? 'sending' : state.status;
   const progress = progressByStatus[visibleStatus];
   const sendDisabledReason = state.anonymizedText
@@ -124,14 +133,16 @@ export default function PdfPreparationModal({
     () =>
       [
         formatBytes(state.fileSize),
+        state.fileType || null,
         state.pages ? `${state.pages} ${state.pages === 1 ? 'página' : 'páginas'}` : null,
+        state.lines ? `${state.lines} ${state.lines === 1 ? 'linha' : 'linhas'}` : null,
         state.chunkCount
           ? `${state.chunkCount} ${state.chunkCount === 1 ? 'chunk' : 'chunks'}`
           : null,
       ]
         .filter(Boolean)
         .join(' · '),
-    [state.fileSize, state.pages, state.chunkCount],
+    [state.fileSize, state.fileType, state.pages, state.lines, state.chunkCount],
   );
 
   useEffect(() => {
@@ -295,7 +306,12 @@ export default function PdfPreparationModal({
                 {[
                   { label: 'Texto extraído', complete: progress >= 25 && !isFailed },
                   { label: 'Anonimização concluída', complete: progress >= 100 && !isFailed },
-                  { label: 'Conteúdo seguro para envio', complete: isReady && !isSending },
+                  {
+                    label: state.providerSafe
+                      ? 'providerSafe confirmado'
+                      : 'Conteúdo seguro para envio',
+                    complete: isReady && Boolean(state.providerSafe) && !isSending,
+                  },
                 ].map((step) => (
                   <div key={step.label} className="flex items-center gap-2 text-text-secondary">
                     <span
@@ -321,6 +337,16 @@ export default function PdfPreparationModal({
                 <p className="border-surface-destructive/30 mt-4 rounded-md border bg-surface-primary p-3 text-sm text-text-secondary">
                   O envio foi bloqueado para evitar exposição de dados brutos.
                 </p>
+              )}
+              {isReady && (
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-text-secondary">
+                  <span className="rounded-full border border-border-light bg-surface-primary px-2 py-1">
+                    {state.entityCount ?? 0} entidades
+                  </span>
+                  <span className="rounded-full border border-border-light bg-surface-primary px-2 py-1">
+                    providerSafe={state.providerSafe ? 'true' : 'false'}
+                  </span>
+                </div>
               )}
             </section>
 
@@ -384,7 +410,7 @@ export default function PdfPreparationModal({
                   variant="submit"
                   className="h-10 rounded-md disabled:opacity-70"
                   disabled={!canSend}
-                  aria-label="Enviar texto anonimizado"
+                  aria-label="Usar texto anonimizado"
                   aria-describedby={!canSend ? 'pdf-preparation-send-disabled' : undefined}
                   title={!canSend ? sendDisabledReason : undefined}
                   onClick={handleConfirm}
@@ -394,7 +420,7 @@ export default function PdfPreparationModal({
                   ) : (
                     <Send size={16} aria-hidden="true" />
                   )}
-                  {isSending ? 'Enviando...' : 'Enviar texto anonimizado'}
+                  {isSending ? 'Enviando...' : 'Usar texto anonimizado'}
                 </Button>
                 {!canSend && (
                   <span id="pdf-preparation-send-disabled" className="text-xs text-text-secondary">

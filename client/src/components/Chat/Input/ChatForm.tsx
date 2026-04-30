@@ -160,6 +160,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     submitButtonRef,
     setIsScrollable,
     disabled: disableInputs,
+    onPreparedFileConfirm: handlePreparedPdfConfirm,
   });
 
   useQueryParams({ textAreaRef });

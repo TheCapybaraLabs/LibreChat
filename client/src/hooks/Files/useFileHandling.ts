@@ -39,7 +39,11 @@ type PreparedPdfResponse = {
   providerSafe: boolean;
   anonymizedText: string;
   filename: string;
+  mimeType?: string;
+  type?: string;
   pages?: number;
+  lines?: number;
+  entityCount?: number;
   chunks?: { total: number; succeeded: number; failed: number };
 };
 
@@ -183,7 +187,7 @@ const useFileHandling = (params?: UseFileHandling) => {
     preparationTimersRef.current = [];
   };
 
-  const preparePdfForChat = async (file: File, fileId: string) => {
+  const prepareFileForChat = async (file: File, fileId: string) => {
     clearPreparationTimers();
     retryPdfPreparationRef.current = { file, fileId };
     preparedPdfRef.current = null;
@@ -194,6 +198,7 @@ const useFileHandling = (params?: UseFileHandling) => {
       status: 'extracting',
       fileName: file.name,
       fileSize: file.size,
+      fileType: file.type || 'text/plain',
     });
 
     preparationTimersRef.current = [
@@ -218,7 +223,7 @@ const useFileHandling = (params?: UseFileHandling) => {
     formData.append('file_id', fileId);
 
     try {
-      const result = await dataService.preparePdf<PreparedPdfResponse>(
+      const result = await dataService.prepareFile<PreparedPdfResponse>(
         formData,
         abortControllerRef.current?.signal,
       );
@@ -235,8 +240,12 @@ const useFileHandling = (params?: UseFileHandling) => {
         status: 'review',
         fileName: result.filename || file.name,
         fileSize: file.size,
+        fileType: result.mimeType || file.type || result.type,
         pages: result.pages,
+        lines: result.lines,
         chunkCount: result.chunks?.total,
+        entityCount: result.entityCount,
+        providerSafe: result.providerSafe,
         anonymizedText: result.anonymizedText,
       });
     } catch (error) {
@@ -251,10 +260,8 @@ const useFileHandling = (params?: UseFileHandling) => {
         status: 'failed',
         error:
           err?.response?.data?.message ||
-          'Falha ao anonimizar uma parte do PDF. O envio foi bloqueado por segurança.',
+          'Falha ao preparar o arquivo com segurança. O envio foi bloqueado.',
       }));
-    } finally {
-      setFilesLoading(false);
     }
   };
 
@@ -272,7 +279,7 @@ const useFileHandling = (params?: UseFileHandling) => {
     preparedPdfRef.current = null;
     retryPdfPreparationRef.current = null;
     setFilesLoading(false);
-    setPdfPreparation((prev) => ({ ...prev, open: false }));
+    setPdfPreparation((prev) => ({ ...prev, open: false, status: 'cancelled' }));
   };
 
   const confirmPdfPreparation = () => {
@@ -284,6 +291,7 @@ const useFileHandling = (params?: UseFileHandling) => {
     params?.onPreparedPdfConfirm?.(prepared);
     preparedPdfRef.current = null;
     retryPdfPreparationRef.current = null;
+    setFilesLoading(false);
     setPdfPreparation((prev) => ({ ...prev, open: false, status: 'ready' }));
   };
 
@@ -292,7 +300,7 @@ const useFileHandling = (params?: UseFileHandling) => {
     if (!retry) {
       return;
     }
-    preparePdfForChat(retry.file, retry.fileId);
+    prepareFileForChat(retry.file, retry.fileId);
   };
 
   const startUpload = async (extendedFile: ExtendedFile) => {
@@ -420,13 +428,8 @@ const useFileHandling = (params?: UseFileHandling) => {
     for (const originalFile of fileList) {
       const file_id = v4();
       try {
-        if (
-          anonymizeEnabled &&
-          originalFile.type === 'application/pdf' &&
-          !_toolResource &&
-          params?.onPreparedPdfConfirm
-        ) {
-          await preparePdfForChat(originalFile, file_id);
+        if (anonymizeEnabled && !_toolResource && params?.onPreparedPdfConfirm) {
+          await prepareFileForChat(originalFile, file_id);
           continue;
         }
 
