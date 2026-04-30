@@ -57,6 +57,19 @@ type PreparationErrorResponse = {
   status?: string;
 };
 
+type BlurryCapabilities = {
+  documents?: {
+    enabled?: boolean;
+    maxFileMb?: number;
+    allowedMime?: string[];
+    ocrEnabled?: boolean;
+  };
+  anonymize?: {
+    enabled?: boolean;
+    maxTextChars?: number;
+  };
+};
+
 type PreparedPdfJobResponse = {
   ok?: boolean;
   requestId?: string;
@@ -64,6 +77,7 @@ type PreparedPdfJobResponse = {
   status?: string;
   providerSafe?: boolean;
   processingStage?: string;
+  message?: string;
   progress?: number;
   estimatedSeconds?: number;
   elapsedMs?: number;
@@ -78,7 +92,6 @@ type PreparedPdfJobResponse = {
     sanitizedTextAvailable?: boolean;
   };
   errorCode?: string;
-  message?: string;
 };
 
 type PreparedPdfTextDownload = {
@@ -108,6 +121,7 @@ const PREPARE_POLL_INITIAL_INTERVAL_MS = 2000;
 const PREPARE_POLL_MAX_INTERVAL_MS = Number(process.env.REACT_APP_PREPARE_POLL_MAX_MS) || 10000;
 const PREPARE_POLL_TIMEOUT_MS = Number(process.env.REACT_APP_PREPARE_POLL_TIMEOUT_MS) || 180000;
 const PREPARE_POLL_MAX_RETRIES = 3;
+const BLURRY_CAPABILITIES_CACHE_TTL_MS = 5 * 60 * 1000;
 
 const logPreparationTrace = (trace: {
   stage: string;
@@ -151,6 +165,10 @@ const useFileHandling = (params?: UseFileHandling) => {
   const retryPdfPreparationRef = useRef<{ file: File; fileId: string } | null>(null);
   const preparationCancelledRef = useRef(false);
   const preparationTimersRef = useRef<number[]>([]);
+  const blurryCapsRef = useRef<{ data: BlurryCapabilities | null; cachedAt: number }>({
+    data: null,
+    cachedAt: 0,
+  });
 
   const agent_id = params?.additionalMetadata?.agent_id ?? '';
   const assistant_id = params?.additionalMetadata?.assistant_id ?? '';
@@ -278,6 +296,20 @@ const useFileHandling = (params?: UseFileHandling) => {
     preparePollingAbortRef.current = null;
   };
 
+  const checkBlurryCapabilities = useCallback(async (): Promise<BlurryCapabilities | null> => {
+    const cache = blurryCapsRef.current;
+    if (cache.data && Date.now() - cache.cachedAt < BLURRY_CAPABILITIES_CACHE_TTL_MS) {
+      return cache.data;
+    }
+    try {
+      const caps = await dataService.getBlurryCapabilities<BlurryCapabilities>();
+      blurryCapsRef.current = { data: caps, cachedAt: Date.now() };
+      return caps;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const mapJobToPreparationStatus = ({
     status,
     stage,
@@ -298,6 +330,12 @@ const useFileHandling = (params?: UseFileHandling) => {
       if (normalizedStage.includes('ocr')) {
         return 'ocr';
       }
+      if (normalizedStage.includes('extract')) {
+        return 'processing';
+      }
+      if (normalizedStage.includes('redact')) {
+        return 'anonymization';
+      }
       if (normalizedStage.includes('chunk')) {
         return 'chunking';
       }
@@ -307,7 +345,8 @@ const useFileHandling = (params?: UseFileHandling) => {
       if (
         normalizedStage.includes('rebuild') ||
         normalizedStage.includes('merge') ||
-        normalizedStage.includes('final')
+        normalizedStage.includes('final') ||
+        normalizedStage.includes('packag')
       ) {
         return 'rebuilding';
       }
@@ -385,6 +424,7 @@ const useFileHandling = (params?: UseFileHandling) => {
         providerSafe: responseStatus === 'completed',
         processingStatus: responseStatus,
         processingStage: job.processingStage,
+        blurryMessage: job.message ?? undefined,
         progress: typeof job.progress === 'number' ? job.progress : undefined,
         estimatedSeconds: job.estimatedSeconds,
         elapsedMs: job.elapsedMs,
@@ -469,6 +509,20 @@ const useFileHandling = (params?: UseFileHandling) => {
       status: 'started',
       requestId: fileId,
     });
+
+    const caps = await checkBlurryCapabilities();
+    if (caps?.documents?.enabled === false) {
+      setFilesLoading(false);
+      setPdfPreparation({
+        open: true,
+        status: 'failed',
+        fileName: file.name,
+        fileSize: file.size,
+        error: 'O serviço de documentos não está disponível no momento.',
+        errorCode: 'DOCUMENTS_DISABLED',
+      });
+      return;
+    }
     setPdfPreparation({
       open: true,
       status: 'uploading',

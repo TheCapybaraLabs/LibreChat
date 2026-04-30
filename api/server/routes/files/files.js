@@ -43,6 +43,10 @@ const preparedJobs = new Map();
 const PREPARED_DOWNLOAD_TTL_MS =
   Number(process.env.BLURRY_PREPARED_DOWNLOAD_TTL_MS) || 15 * 60 * 1000;
 
+let _capabilitiesCache = null;
+let _capabilitiesCachedAt = 0;
+const CAPABILITIES_CACHE_TTL_MS = Number(process.env.BLURRY_CAPABILITIES_CACHE_TTL_MS) || 5 * 60 * 1000;
+
 const hashFilename = (filename = '') =>
   crypto.createHash('sha256').update(filename).digest('hex').slice(0, 12);
 
@@ -205,6 +209,7 @@ const toJobResponse = ({ prepared, jobId, job, includeSafeOutputs = false }) => 
     status,
     providerSafe: status === 'completed' ? (raw?.providerSafe ?? job?.providerSafe ?? true) : false,
     processingStage,
+    message: raw?.message ?? null,
     progress: raw?.progress,
     estimatedSeconds: raw?.etaSeconds ?? raw?.estimatedSeconds ?? raw?.eta,
     elapsedMs: raw?.elapsedMs ?? raw?.elapsed_ms,
@@ -252,6 +257,7 @@ const prepareFile = async (req, res) => {
       policy: process.env.BLURRY_DOCUMENT_POLICY || 'default',
       anonymization_level: 'full',
       ocr: process.env.BLURRY_DOCUMENT_OCR !== 'false',
+      return_entities: true,
       requestId: fileId,
     });
 
@@ -314,6 +320,28 @@ const prepareFile = async (req, res) => {
     }
   }
 };
+
+router.get('/blurry/capabilities', async (req, res) => {
+  if (_capabilitiesCache && Date.now() - _capabilitiesCachedAt < CAPABILITIES_CACHE_TTL_MS) {
+    return res.status(200).json(_capabilitiesCache);
+  }
+  try {
+    const caps = await blurryClient.getCapabilities();
+    if (caps) {
+      _capabilitiesCache = caps;
+      _capabilitiesCachedAt = Date.now();
+    }
+    return res.status(200).json(
+      caps ?? { documents: { enabled: true, ocrEnabled: true }, anonymize: { enabled: true } },
+    );
+  } catch (error) {
+    logger.warn('[blurry/capabilities] Failed to fetch capabilities:', error.message);
+    return res.status(200).json({
+      documents: { enabled: true, ocrEnabled: true },
+      anonymize: { enabled: true },
+    });
+  }
+});
 
 router.post('/prepare-file', prepareFile);
 router.post('/prepare-pdf', prepareFile);

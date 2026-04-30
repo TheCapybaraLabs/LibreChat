@@ -47,6 +47,7 @@ export type PdfPreparationState = {
   jobId?: string;
   processingStatus?: string;
   processingStage?: string;
+  blurryMessage?: string;
   progress?: number;
   estimatedSeconds?: number;
   elapsedMs?: number;
@@ -129,12 +130,19 @@ const getStatusMessage = (state: PdfPreparationState, visibleStatus: PdfPreparat
     return 'Documento anonimizado com sucesso. Nenhum conteúdo bruto será enviado.';
   }
 
-  if (visibleStatus === 'ocr' && state.pagesProcessed && state.pages) {
-    return `OCR da página ${state.pagesProcessed} de ${state.pages}`;
+  if (visibleStatus === 'ocr') {
+    if (state.pagesProcessed && state.pages) {
+      return `OCR da página ${state.pagesProcessed} de ${state.pages}`;
+    }
+    if (state.pages) {
+      return `Executando OCR (${state.pages} ${state.pages === 1 ? 'página' : 'páginas'})`;
+    }
   }
 
-  if (visibleStatus === 'anonymization' && state.chunksProcessed && state.chunkCount) {
-    return `Anonimizando chunk ${state.chunksProcessed} de ${state.chunkCount}`;
+  if (visibleStatus === 'anonymization') {
+    if (state.chunksProcessed && state.chunkCount) {
+      return `Anonimizando chunk ${state.chunksProcessed} de ${state.chunkCount}`;
+    }
   }
 
   if (state.processingStage) {
@@ -173,7 +181,7 @@ export default function PdfPreparationModal({
   const visibleStatus = isSending ? 'sending' : state.status;
   const progressFromServer =
     typeof state.progress === 'number' && Number.isFinite(state.progress)
-      ? Math.max(0, Math.min(100, Math.round(state.progress * 100)))
+      ? Math.max(0, Math.min(100, state.progress > 1 ? Math.round(state.progress) : Math.round(state.progress * 100)))
       : null;
   const progress = progressFromServer ?? progressByStatus[visibleStatus];
   const sendDisabledReason = state.anonymizedText

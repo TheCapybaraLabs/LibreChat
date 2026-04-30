@@ -108,6 +108,23 @@ const buildDocumentJobUrl = ({ baseURL, jobId, suffix = '' }) => {
 };
 
 const blurryClient = {
+  getCapabilities: async () => {
+    const { baseURL, apiKey, timeout } = getConfig();
+    if (!apiKey) {
+      return null;
+    }
+    try {
+      const response = await axios.get(`${baseURL}/v1/capabilities`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        timeout,
+      });
+      return response.data;
+    } catch (error) {
+      logger.warn('[blurryClient] capabilities_check_failed:', error.message);
+      return null;
+    }
+  },
+
   checkHealth: async () => {
     const { baseURL, apiKey, timeout } = getConfig();
 

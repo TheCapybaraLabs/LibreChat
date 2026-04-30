@@ -240,6 +240,7 @@ export const preparedFileJob = (jobId: string) =>
   `${BASE_URL}/api/files/prepare-file/jobs/${encodeURIComponent(jobId)}`;
 export const preparedFileDownload = (jobId: string, type: 'text' | 'pdf') =>
   `${preparedFileJob(jobId)}/download?type=${encodeURIComponent(type)}`;
+export const blurryCapabilities = () => `${BASE_URL}/api/files/blurry/capabilities`;
 export const fileDelete = () => `${BASE_URL}/api/files`;
 export const fileDownload = (userId: string, fileId: string) =>
   `${BASE_URL}/api/files/download/${userId}/${fileId}`;

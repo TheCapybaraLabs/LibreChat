@@ -399,6 +399,13 @@ export const downloadPreparedFileText = <T = unknown>(
   return request.get(endpoints.preparedFileDownload(jobId, 'text'), requestConfig);
 };
 
+export const getBlurryCapabilities = <T = unknown>(
+  signal?: AbortSignal | null,
+): Promise<T> => {
+  const requestConfig = signal ? { signal } : undefined;
+  return request.get(endpoints.blurryCapabilities(), requestConfig);
+};
+
 /* actions */
 
 export const updateAction = (data: m.UpdateActionVariables): Promise<m.UpdateActionResponse> => {
