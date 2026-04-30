@@ -67,6 +67,7 @@ const useFileHandling = (params?: UseFileHandling) => {
     fileSize: 0,
   });
   const preparedPdfRef = useRef<{ filename: string; anonymizedText: string } | null>(null);
+  const retryPdfPreparationRef = useRef<{ file: File; fileId: string } | null>(null);
   const preparationCancelledRef = useRef(false);
   const preparationTimersRef = useRef<number[]>([]);
 
@@ -184,6 +185,7 @@ const useFileHandling = (params?: UseFileHandling) => {
 
   const preparePdfForChat = async (file: File, fileId: string) => {
     clearPreparationTimers();
+    retryPdfPreparationRef.current = { file, fileId };
     preparedPdfRef.current = null;
     preparationCancelledRef.current = false;
     setFilesLoading(true);
@@ -268,6 +270,7 @@ const useFileHandling = (params?: UseFileHandling) => {
       abortControllerRef.current = null;
     }
     preparedPdfRef.current = null;
+    retryPdfPreparationRef.current = null;
     setFilesLoading(false);
     setPdfPreparation((prev) => ({ ...prev, open: false }));
   };
@@ -277,9 +280,19 @@ const useFileHandling = (params?: UseFileHandling) => {
     if (!prepared) {
       return;
     }
+    setPdfPreparation((prev) => ({ ...prev, status: 'sending' }));
     params?.onPreparedPdfConfirm?.(prepared);
     preparedPdfRef.current = null;
+    retryPdfPreparationRef.current = null;
     setPdfPreparation((prev) => ({ ...prev, open: false, status: 'ready' }));
+  };
+
+  const retryPdfPreparation = () => {
+    const retry = retryPdfPreparationRef.current;
+    if (!retry) {
+      return;
+    }
+    preparePdfForChat(retry.file, retry.fileId);
   };
 
   const startUpload = async (extendedFile: ExtendedFile) => {
@@ -570,6 +583,7 @@ const useFileHandling = (params?: UseFileHandling) => {
     pdfPreparation,
     cancelPdfPreparation,
     confirmPdfPreparation,
+    retryPdfPreparation,
     setFiles,
     files,
   };
