@@ -64,8 +64,13 @@ const AttachFileMenu = ({
     ephemeralAgentByConvoId(conversationId),
   );
   const [toolResource, setToolResource] = useState<EToolResources | undefined>();
-  const { handleFileChange, pdfPreparation, cancelPdfPreparation, confirmPdfPreparation } =
-    useFileHandling({ onPreparedPdfConfirm });
+  const {
+    handleFileChange,
+    pdfPreparation,
+    cancelPdfPreparation,
+    confirmPdfPreparation,
+    retryPdfPreparation,
+  } = useFileHandling({ onPreparedPdfConfirm });
   const { handleSharePointFiles, isProcessing, downloadProgress } = useSharePointFileHandling({
     toolResource,
   });
@@ -278,6 +283,7 @@ const AttachFileMenu = ({
         state={pdfPreparation}
         onCancel={cancelPdfPreparation}
         onConfirm={confirmPdfPreparation}
+        onRetry={retryPdfPreparation}
       />
     </>
   );

@@ -15,8 +15,13 @@ const AttachFile = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const isUploadDisabled = disabled ?? false;
 
-  const { handleFileChange, pdfPreparation, cancelPdfPreparation, confirmPdfPreparation } =
-    useFileHandling({ onPreparedPdfConfirm });
+  const {
+    handleFileChange,
+    pdfPreparation,
+    cancelPdfPreparation,
+    confirmPdfPreparation,
+    retryPdfPreparation,
+  } = useFileHandling({ onPreparedPdfConfirm });
 
   return (
     <FileUpload ref={inputRef} handleFileChange={handleFileChange}>
@@ -59,6 +64,7 @@ const AttachFile = ({
         state={pdfPreparation}
         onCancel={cancelPdfPreparation}
         onConfirm={confirmPdfPreparation}
+        onRetry={retryPdfPreparation}
       />
     </FileUpload>
   );
