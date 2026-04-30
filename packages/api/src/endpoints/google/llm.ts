@@ -218,10 +218,17 @@ export function getGoogleConfig(
     if (thinkingLevel) {
       thinkingConfig.thinkingLevel = thinkingLevel as string;
     }
+    /**
+     * `@langchain/google-common` v0.2.x ignores nested `thinkingConfig` on input options;
+     * it only propagates thinking when a top-level `thinkingBudget`/`maxReasoningTokens`
+     * is set. Set `-1` (dynamic) so the request body includes `includeThoughts: true`.
+     */
     if (provider === Providers.GOOGLE) {
       (llmConfig as GoogleClientOptions).thinkingConfig = thinkingConfig;
+      (llmConfig as GoogleClientOptions).thinkingBudget = -1;
     } else if (provider === Providers.VERTEXAI) {
       (llmConfig as Record<string, unknown>).thinkingConfig = thinkingConfig;
+      (llmConfig as VertexAIClientOptions).thinkingBudget = -1;
       (llmConfig as VertexAIClientOptions).includeThoughts = true;
     }
   } else if (!isGemini3Plus) {
@@ -229,10 +236,12 @@ export function getGoogleConfig(
       thinking && thinkingBudget != null && (thinkingBudget > 0 || thinkingBudget === -1);
 
     if (shouldEnableThinking && provider === Providers.GOOGLE) {
+      const resolvedBudget = thinking ? thinkingBudget : googleSettings.thinkingBudget.default;
       (llmConfig as GoogleClientOptions).thinkingConfig = {
-        thinkingBudget: thinking ? thinkingBudget : googleSettings.thinkingBudget.default,
+        thinkingBudget: resolvedBudget,
         includeThoughts: Boolean(thinking),
       };
+      (llmConfig as GoogleClientOptions).thinkingBudget = resolvedBudget;
     } else if (shouldEnableThinking && provider === Providers.VERTEXAI) {
       (llmConfig as VertexAIClientOptions).thinkingBudget = thinking
         ? thinkingBudget
