@@ -136,6 +136,40 @@ const countEntities = (entitiesByChunk) =>
 
 const getExtension = (filename = '') => path.extname(filename).toLowerCase();
 
+const createSafeContext = ({
+  requestId,
+  stage,
+  errorCode,
+  fileType,
+  fileSize,
+  pages,
+  chunksTotal,
+  chunkIndex,
+  status,
+}) => ({
+  stage,
+  errorCode,
+  fileType,
+  fileSize,
+  pages,
+  chunksTotal,
+  chunkIndex,
+  status,
+  requestId,
+});
+
+const logSafeStage = (context) => {
+  logger.info('[prepareFileWithChunkedAnonymization] trace', createSafeContext(context));
+};
+
+const createSafeError = (message, code, stage, context = {}) => {
+  const error = new Error(message);
+  error.code = code;
+  error.stage = stage;
+  Object.assign(error, createSafeContext({ ...context, stage, errorCode: code, status: 'failed' }));
+  return error;
+};
+
 const isSupportedTextFile = ({ filename, mimeType }) => {
   const normalizedMimeType = (mimeType || '').split(';')[0].trim().toLowerCase();
   return (
@@ -187,9 +221,13 @@ const withTimeout = (promise, timeoutMs, errorCode) => {
   let timeout;
   const timeoutPromise = new Promise((_, reject) => {
     timeout = setTimeout(() => {
-      const error = new Error('Falha ao preparar o arquivo com segurança. O envio foi bloqueado.');
-      error.code = errorCode;
-      reject(error);
+      reject(
+        createSafeError(
+          'O serviço de anonimização demorou mais que o esperado.',
+          errorCode,
+          'anonymize_failed',
+        ),
+      );
     }, timeoutMs);
   });
 
@@ -213,78 +251,140 @@ async function prepareFileWithChunkedAnonymization({
   const normalizedMimeType = (mimeType || '').split(';')[0].trim().toLowerCase();
   const isPdf = normalizedMimeType === 'application/pdf' || extension === '.pdf';
   const timeoutMs = Number(chunkTimeoutMs) || DEFAULT_CHUNK_TIMEOUT_MS;
+  const requestId = fileId;
+  const fileType = isPdf ? 'application/pdf' : normalizedMimeType || extension || 'unknown';
+  const baseContext = {
+    requestId,
+    fileType,
+    fileSize: size,
+  };
 
   if (!isPdf && !isSupportedTextFile({ filename, mimeType: normalizedMimeType })) {
-    const error = new Error('Tipo de arquivo não suportado para preparação segura.');
-    error.code = 'FILE_TYPE_UNSUPPORTED';
+    throw createSafeError(
+      'Tipo de arquivo não suportado para preparação segura.',
+      'FILE_TYPE_UNSUPPORTED',
+      'file_selected',
+      baseContext,
+    );
+  }
+
+  logSafeStage({
+    ...baseContext,
+    stage: 'file_selected',
+    status: 'started',
+  });
+
+  logSafeStage({
+    ...baseContext,
+    stage: 'extract_started',
+    status: 'started',
+  });
+
+  let extracted;
+  try {
+    extracted = isPdf ? await extractPdfText({ filePath }) : await extractTextFile({ filePath });
+  } catch (error) {
+    if (isPdf) {
+      throw createSafeError(
+        'Não foi possível extrair texto deste PDF.',
+        'PDF_TEXT_EXTRACTION_FAILED',
+        'failed',
+        baseContext,
+      );
+    }
+    error.stage = 'failed';
+    Object.assign(
+      error,
+      createSafeContext({ ...baseContext, errorCode: error.code, status: 'failed' }),
+    );
     throw error;
   }
 
-  logger.info('[prepareFileWithChunkedAnonymization] stage_started', {
-    fileId,
-    stage: 'extracting',
-    extension,
-    mimeType: normalizedMimeType,
-    size,
-  });
-
-  const extracted = isPdf
-    ? await extractPdfText({ filePath })
-    : await extractTextFile({ filePath });
-
-  logger.info('[prepareFileWithChunkedAnonymization] stage_completed', {
-    fileId,
-    stage: 'extracting',
-    chars: extracted.chars,
+  logSafeStage({
+    ...baseContext,
+    stage: 'extract_completed',
     pages: extracted.pagesProcessed,
-    lines: extracted.lines,
-    extension,
-    mimeType: normalizedMimeType,
-    size,
+    status: 'completed',
   });
 
   if (!extracted.text) {
-    const error = new Error(
+    throw createSafeError(
       isPdf
-        ? 'Não foi possível extrair texto selecionável deste PDF. O envio foi bloqueado por segurança.'
+        ? 'Este PDF não possui texto selecionável.'
         : 'Não foi possível extrair texto deste arquivo. O envio foi bloqueado por segurança.',
+      isPdf ? 'PDF_NO_SELECTABLE_TEXT' : 'TEXT_EXTRACTION_EMPTY',
+      'failed',
+      {
+        ...baseContext,
+        pages: extracted.pagesProcessed,
+      },
     );
-    error.code = isPdf ? 'PDF_TEXT_EXTRACTION_EMPTY' : 'TEXT_EXTRACTION_EMPTY';
-    throw error;
   }
 
-  const chunks = chunkText(extracted.text, maxChars);
+  logSafeStage({
+    ...baseContext,
+    stage: 'chunking_started',
+    pages: extracted.pagesProcessed,
+    status: 'started',
+  });
+
+  let chunks;
+  try {
+    chunks = chunkText(extracted.text, maxChars);
+  } catch (_error) {
+    throw createSafeError(
+      'Não foi possível dividir o texto em partes seguras.',
+      'CHUNKING_FAILED',
+      'failed',
+      {
+        ...baseContext,
+        pages: extracted.pagesProcessed,
+      },
+    );
+  }
+
   if (!chunks.length) {
-    const error = new Error(
+    throw createSafeError(
       isPdf
-        ? 'Não foi possível extrair texto selecionável deste PDF. O envio foi bloqueado por segurança.'
+        ? 'Este PDF não possui texto selecionável.'
         : 'Não foi possível preparar chunks deste arquivo. O envio foi bloqueado por segurança.',
+      isPdf ? 'PDF_NO_SELECTABLE_TEXT' : 'TEXT_CHUNKING_EMPTY',
+      'failed',
+      {
+        ...baseContext,
+        pages: extracted.pagesProcessed,
+        chunksTotal: 0,
+      },
     );
-    error.code = isPdf ? 'PDF_CHUNKING_EMPTY' : 'TEXT_CHUNKING_EMPTY';
-    throw error;
   }
 
-  logger.info('[prepareFileWithChunkedAnonymization] stage_completed', {
-    fileId,
-    stage: 'chunking',
-    chunkCount: chunks.length,
-    extension,
-    mimeType: normalizedMimeType,
-    size,
+  logSafeStage({
+    ...baseContext,
+    stage: 'chunking_completed',
+    pages: extracted.pagesProcessed,
+    chunksTotal: chunks.length,
+    status: 'completed',
+  });
+
+  logSafeStage({
+    ...baseContext,
+    stage: 'anonymize_started',
+    pages: extracted.pagesProcessed,
+    chunksTotal: chunks.length,
+    status: 'started',
   });
 
   const results = [];
   const start = Date.now();
 
   for (const chunk of chunks) {
-    logger.info('[prepareFileWithChunkedAnonymization] stage_started', {
-      fileId,
-      stage: 'anonymizing',
+    logSafeStage({
+      ...baseContext,
+      stage: 'anonymize_chunk_started',
+      pages: extracted.pagesProcessed,
+      chunksTotal: chunks.length,
       chunkIndex: chunk.chunkIndex,
-      totalChunks: chunk.totalChunks,
-      extension,
-      mimeType: normalizedMimeType,
-      size,
+      status: 'started',
     });
     let result;
     try {
@@ -296,22 +396,64 @@ async function prepareFileWithChunkedAnonymization({
           return_entities: true,
         }),
         timeoutMs,
-        'FILE_CHUNK_TIMEOUT',
+        'BLURRY_TIMEOUT',
       );
     } catch (error) {
-      if (!error.code) {
-        error.code = isPdf ? 'PDF_CHUNK_ANONYMIZE_FAILED' : 'TEXT_CHUNK_ANONYMIZE_FAILED';
-      }
-      throw error;
+      logSafeStage({
+        ...baseContext,
+        stage: 'anonymize_failed',
+        errorCode: error.code || 'BLURRY_ANONYMIZE_FAILED',
+        pages: extracted.pagesProcessed,
+        chunksTotal: chunks.length,
+        chunkIndex: chunk.chunkIndex,
+        status: 'failed',
+      });
+      throw createSafeError(
+        error.code === 'BLURRY_TIMEOUT'
+          ? 'O serviço de anonimização demorou mais que o esperado.'
+          : 'A anonimização falhou em uma parte do documento.',
+        error.code === 'BLURRY_TIMEOUT' ? 'BLURRY_TIMEOUT' : 'BLURRY_ANONYMIZE_FAILED',
+        'anonymize_failed',
+        {
+          ...baseContext,
+          pages: extracted.pagesProcessed,
+          chunksTotal: chunks.length,
+          chunkIndex: chunk.chunkIndex,
+        },
+      );
     }
 
     if (!result.anonymized_text) {
-      const error = new Error(
-        'Falha ao anonimizar uma parte do arquivo. O envio foi bloqueado por segurança.',
+      logSafeStage({
+        ...baseContext,
+        stage: 'anonymize_failed',
+        errorCode: 'INVALID_ANONYMIZE_RESPONSE',
+        pages: extracted.pagesProcessed,
+        chunksTotal: chunks.length,
+        chunkIndex: chunk.chunkIndex,
+        status: 'failed',
+      });
+      throw createSafeError(
+        'A resposta de anonimização veio inválida.',
+        'INVALID_ANONYMIZE_RESPONSE',
+        'anonymize_failed',
+        {
+          ...baseContext,
+          pages: extracted.pagesProcessed,
+          chunksTotal: chunks.length,
+          chunkIndex: chunk.chunkIndex,
+        },
       );
-      error.code = isPdf ? 'PDF_CHUNK_EMPTY_RESPONSE' : 'TEXT_CHUNK_EMPTY_RESPONSE';
-      throw error;
     }
+
+    logSafeStage({
+      ...baseContext,
+      stage: 'anonymize_chunk_completed',
+      pages: extracted.pagesProcessed,
+      chunksTotal: chunks.length,
+      chunkIndex: chunk.chunkIndex,
+      status: 'completed',
+    });
 
     results.push({
       chunkIndex: chunk.chunkIndex,
@@ -322,23 +464,37 @@ async function prepareFileWithChunkedAnonymization({
     });
   }
 
+  logSafeStage({
+    ...baseContext,
+    stage: 'merge_started',
+    pages: extracted.pagesProcessed,
+    chunksTotal: chunks.length,
+    status: 'started',
+  });
+
   const ordered = results.sort((a, b) => a.chunkIndex - b.chunkIndex);
   const entitiesByChunk = ordered.map(({ chunkIndex, entities }) => ({ chunkIndex, entities }));
   const processingMs = Date.now() - start;
 
-  logger.info('[prepareFileWithChunkedAnonymization] stage_completed', {
-    fileId,
-    stage: 'merge',
-    chunkCount: chunks.length,
-    processingMs,
-    providerSafe: true,
-    extension,
-    mimeType: normalizedMimeType,
-    size,
+  logSafeStage({
+    ...baseContext,
+    stage: 'merge_completed',
+    pages: extracted.pagesProcessed,
+    chunksTotal: chunks.length,
+    status: 'completed',
+  });
+
+  logSafeStage({
+    ...baseContext,
+    stage: 'ready',
+    pages: extracted.pagesProcessed,
+    chunksTotal: chunks.length,
+    status: 'ready',
   });
 
   return {
     fileId,
+    requestId,
     filename,
     mimeType: normalizedMimeType,
     type: isPdf ? 'pdf' : 'text',

@@ -36,6 +36,7 @@ type UseFileHandling = {
 };
 
 type PreparedPdfResponse = {
+  requestId?: string;
   providerSafe: boolean;
   anonymizedText: string;
   filename: string;
@@ -45,6 +46,41 @@ type PreparedPdfResponse = {
   lines?: number;
   entityCount?: number;
   chunks?: { total: number; succeeded: number; failed: number };
+};
+
+type PreparationErrorResponse = {
+  message?: string;
+  errorCode?: string;
+  stage?: string;
+  requestId?: string;
+  fileType?: string;
+  fileSize?: number;
+  pages?: number;
+  chunksTotal?: number;
+  chunkIndex?: number;
+  status?: string;
+};
+
+const preparationErrorMessages: Record<string, string> = {
+  PDF_TEXT_EXTRACTION_FAILED: 'Não foi possível extrair texto deste PDF.',
+  PDF_NO_SELECTABLE_TEXT: 'Este PDF não possui texto selecionável.',
+  BLURRY_ANONYMIZE_FAILED: 'A anonimização falhou em uma parte do documento.',
+  BLURRY_TIMEOUT: 'O serviço de anonimização demorou mais que o esperado.',
+  INVALID_ANONYMIZE_RESPONSE: 'A resposta de anonimização veio inválida.',
+};
+
+const logPreparationTrace = (trace: {
+  stage: string;
+  errorCode?: string;
+  fileType?: string;
+  fileSize?: number;
+  pages?: number;
+  chunksTotal?: number;
+  chunkIndex?: number;
+  status?: string;
+  requestId?: string;
+}) => {
+  console.debug('[file-preparation]', trace);
 };
 
 const useFileHandling = (params?: UseFileHandling) => {
@@ -193,21 +229,43 @@ const useFileHandling = (params?: UseFileHandling) => {
     preparedPdfRef.current = null;
     preparationCancelledRef.current = false;
     setFilesLoading(true);
+    logPreparationTrace({
+      stage: 'file_selected',
+      fileType: file.type || 'text/plain',
+      fileSize: file.size,
+      status: 'started',
+      requestId: fileId,
+    });
     setPdfPreparation({
       open: true,
       status: 'extracting',
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type || 'text/plain',
+      requestId: fileId,
     });
 
     preparationTimersRef.current = [
       window.setTimeout(() => {
+        logPreparationTrace({
+          stage: 'chunking_started',
+          fileType: file.type || 'text/plain',
+          fileSize: file.size,
+          status: 'started',
+          requestId: fileId,
+        });
         setPdfPreparation((prev) =>
           prev.open && prev.status === 'extracting' ? { ...prev, status: 'chunking' } : prev,
         );
       }, 700),
       window.setTimeout(() => {
+        logPreparationTrace({
+          stage: 'anonymize_started',
+          fileType: file.type || 'text/plain',
+          fileSize: file.size,
+          status: 'started',
+          requestId: fileId,
+        });
         setPdfPreparation((prev) =>
           prev.open && (prev.status === 'extracting' || prev.status === 'chunking')
             ? { ...prev, status: 'anonymizing' }
@@ -231,6 +289,15 @@ const useFileHandling = (params?: UseFileHandling) => {
         throw new Error('Prepared PDF was not marked provider-safe');
       }
       clearPreparationTimers();
+      logPreparationTrace({
+        stage: 'ready',
+        fileType: result.mimeType || file.type || result.type,
+        fileSize: file.size,
+        pages: result.pages,
+        chunksTotal: result.chunks?.total,
+        status: 'ready',
+        requestId: result.requestId || fileId,
+      });
       preparedPdfRef.current = {
         filename: result.filename || file.name,
         anonymizedText: result.anonymizedText,
@@ -246,6 +313,7 @@ const useFileHandling = (params?: UseFileHandling) => {
         chunkCount: result.chunks?.total,
         entityCount: result.entityCount,
         providerSafe: result.providerSafe,
+        requestId: result.requestId || fileId,
         anonymizedText: result.anonymizedText,
       });
     } catch (error) {
@@ -254,13 +322,31 @@ const useFileHandling = (params?: UseFileHandling) => {
         return;
       }
       const err = error as TError | undefined;
+      const data = err?.response?.data as PreparationErrorResponse | undefined;
+      const errorCode = data?.errorCode;
+      const safeMessage =
+        (errorCode && preparationErrorMessages[errorCode]) ||
+        data?.message ||
+        'Falha ao preparar o arquivo com segurança. O envio foi bloqueado.';
+      logPreparationTrace({
+        stage: data?.stage || 'failed',
+        errorCode,
+        fileType: data?.fileType || file.type || 'text/plain',
+        fileSize: data?.fileSize || file.size,
+        pages: data?.pages,
+        chunksTotal: data?.chunksTotal,
+        chunkIndex: data?.chunkIndex,
+        status: data?.status || 'failed',
+        requestId: data?.requestId || fileId,
+      });
       setPdfPreparation((prev) => ({
         ...prev,
         open: true,
         status: 'failed',
-        error:
-          err?.response?.data?.message ||
-          'Falha ao preparar o arquivo com segurança. O envio foi bloqueado.',
+        error: safeMessage,
+        errorCode,
+        errorStage: data?.stage || 'failed',
+        requestId: data?.requestId || fileId,
       }));
     }
   };

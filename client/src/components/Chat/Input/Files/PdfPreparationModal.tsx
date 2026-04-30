@@ -38,6 +38,9 @@ export type PdfPreparationState = {
   chunkCount?: number;
   entityCount?: number;
   providerSafe?: boolean;
+  requestId?: string;
+  errorCode?: string;
+  errorStage?: string;
   anonymizedText?: string;
   error?: string;
 };
@@ -91,7 +94,7 @@ const statusTone: Record<PdfPreparationStatus, string> = {
 
 const getStatusMessage = (state: PdfPreparationState, visibleStatus: PdfPreparationStatus) => {
   if (visibleStatus === 'failed') {
-    return 'Não foi possível preparar este documento com segurança.';
+    return state.error || 'Não foi possível preparar este documento com segurança.';
   }
 
   if (visibleStatus === 'review' || visibleStatus === 'ready') {
@@ -334,9 +337,16 @@ export default function PdfPreparationModal({
               </div>
 
               {isFailed && (
-                <p className="border-surface-destructive/30 mt-4 rounded-md border bg-surface-primary p-3 text-sm text-text-secondary">
-                  O envio foi bloqueado para evitar exposição de dados brutos.
-                </p>
+                <div className="border-surface-destructive/30 mt-4 rounded-md border bg-surface-primary p-3 text-sm text-text-secondary">
+                  <p>O envio foi bloqueado para evitar exposição de dados brutos.</p>
+                  {(state.errorCode || state.errorStage || state.requestId) && (
+                    <p className="mt-2 text-xs">
+                      {[state.errorCode, state.errorStage, state.requestId]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
+                  )}
+                </div>
               )}
               {isReady && (
                 <div className="mt-4 flex flex-wrap gap-2 text-xs text-text-secondary">

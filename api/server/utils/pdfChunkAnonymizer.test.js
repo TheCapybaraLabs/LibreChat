@@ -154,6 +154,70 @@ describe('pdfChunkAnonymizer', () => {
     expect(result.anonymizedText).toContain('[CPF]');
   });
 
+  it('reports PDF_NO_SELECTABLE_TEXT for PDFs without selectable text in the unified pipeline', async () => {
+    extractPdfText.mockResolvedValue({ text: '', chars: 0, pagesProcessed: 2 });
+
+    await expect(
+      prepareFileWithChunkedAnonymization({
+        filePath: '/tmp/scan.pdf',
+        fileId: 'file-scan',
+        filename: 'scan.pdf',
+        mimeType: 'application/pdf',
+        size: 1000,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PDF_NO_SELECTABLE_TEXT',
+      stage: 'failed',
+      pages: 2,
+      requestId: 'file-scan',
+    });
+    expect(blurryClient.anonymizeText).not.toHaveBeenCalled();
+  });
+
+  it('reports BLURRY_ANONYMIZE_FAILED without exposing chunk content', async () => {
+    jest.spyOn(fs, 'readFile').mockResolvedValue(Buffer.from('Ana tem CPF 123.', 'utf8'));
+    blurryClient.anonymizeText.mockRejectedValueOnce(new Error('upstream failed'));
+
+    await expect(
+      prepareFileWithChunkedAnonymization({
+        filePath: '/tmp/file.txt',
+        fileId: 'file-blurry',
+        filename: 'file.txt',
+        mimeType: 'text/plain',
+        size: 16,
+      }),
+    ).rejects.toMatchObject({
+      code: 'BLURRY_ANONYMIZE_FAILED',
+      stage: 'anonymize_failed',
+      chunkIndex: 0,
+      requestId: 'file-blurry',
+    });
+  });
+
+  it('reports INVALID_ANONYMIZE_RESPONSE for empty Blurry responses', async () => {
+    jest.spyOn(fs, 'readFile').mockResolvedValue(Buffer.from('Ana tem CPF 123.', 'utf8'));
+    blurryClient.anonymizeText.mockResolvedValueOnce({
+      anonymized_text: '',
+      stats: {},
+      entities: [],
+    });
+
+    await expect(
+      prepareFileWithChunkedAnonymization({
+        filePath: '/tmp/file.txt',
+        fileId: 'file-invalid',
+        filename: 'file.txt',
+        mimeType: 'text/plain',
+        size: 16,
+      }),
+    ).rejects.toMatchObject({
+      code: 'INVALID_ANONYMIZE_RESPONSE',
+      stage: 'anonymize_failed',
+      chunkIndex: 0,
+      requestId: 'file-invalid',
+    });
+  });
+
   it('prepares CSV and JSON text files through the same pipeline', async () => {
     jest
       .spyOn(fs, 'readFile')
@@ -219,6 +283,10 @@ describe('pdfChunkAnonymizer', () => {
 
     const rejection = promise.catch((error) => error);
     await jest.advanceTimersByTimeAsync(11);
-    await expect(rejection).resolves.toMatchObject({ code: 'FILE_CHUNK_TIMEOUT' });
+    await expect(rejection).resolves.toMatchObject({
+      code: 'BLURRY_TIMEOUT',
+      stage: 'anonymize_failed',
+      chunkIndex: 0,
+    });
   });
 });

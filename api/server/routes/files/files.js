@@ -43,12 +43,15 @@ const hashFilename = (filename = '') =>
 
 const safePrepareErrorCodes = new Set([
   'FILE_TYPE_UNSUPPORTED',
-  'FILE_CHUNK_TIMEOUT',
-  'PDF_TEXT_EXTRACTION_EMPTY',
-  'PDF_CHUNKING_EMPTY',
+  'BLURRY_TIMEOUT',
+  'PDF_TEXT_EXTRACTION_FAILED',
+  'PDF_NO_SELECTABLE_TEXT',
   'PDF_PARSER_NOT_AVAILABLE',
   'PDF_READ_FAILED',
   'PDF_EXTRACTION_FAILED',
+  'BLURRY_ANONYMIZE_FAILED',
+  'INVALID_ANONYMIZE_RESPONSE',
+  'CHUNKING_FAILED',
   'TEXT_BINARY_UNSUPPORTED',
   'TEXT_ENCODING_UNSUPPORTED',
   'TEXT_EXTRACTION_EMPTY',
@@ -83,15 +86,29 @@ const prepareFile = async (req, res) => {
       ? error.message
       : 'Falha ao preparar o arquivo com segurança. O envio foi bloqueado.';
     logger.error('[prepare-file] Failed to prepare file', {
-      fileId,
+      requestId: error.requestId || fileId,
       fileNameHash: hashFilename(file?.originalname),
-      extension,
-      size: file?.size,
-      mimeType: file?.mimetype,
+      stage: error.stage || 'failed',
+      fileType: error.fileType || file?.mimetype || extension,
+      fileSize: error.fileSize || file?.size,
+      pages: error.pages,
+      chunksTotal: error.chunksTotal,
+      chunkIndex: error.chunkIndex,
       errorCode: error.code,
-      providerSafe: false,
+      status: 'failed',
     });
-    res.status(500).json({ message, errorCode: error.code });
+    res.status(500).json({
+      message,
+      errorCode: error.code,
+      stage: error.stage || 'failed',
+      requestId: error.requestId || fileId,
+      fileType: error.fileType || file?.mimetype || extension,
+      fileSize: error.fileSize || file?.size,
+      pages: error.pages,
+      chunksTotal: error.chunksTotal,
+      chunkIndex: error.chunkIndex,
+      status: 'failed',
+    });
   } finally {
     if (file?.path) {
       try {
