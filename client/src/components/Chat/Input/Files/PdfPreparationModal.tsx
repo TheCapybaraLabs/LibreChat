@@ -195,6 +195,7 @@ export default function PdfPreparationModal({
   const [isCopied, setIsCopied] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const isProcessing =
     state.status === 'uploading' ||
     state.status === 'queued' ||
@@ -246,6 +247,7 @@ export default function PdfPreparationModal({
       setIsCopied(false);
       setIsSending(false);
       setIsDownloading(false);
+      setDownloadError(null);
     }
   }, [state.open]);
 
@@ -278,20 +280,46 @@ export default function PdfPreparationModal({
     }
 
     setIsDownloading(true);
+    setDownloadError(null);
     try {
       const response = await fetch(state.sanitizedDownloadUrl, { credentials: 'include' });
+
       if (!response.ok) {
-        throw new Error('Sanitized download failed');
+        let code = 'BLURRY_DOWNLOAD_FAILED';
+        if (response.status === 404) {
+          code = 'ARTIFACT_NOT_FOUND';
+        } else if (response.status === 410) {
+          code = 'ARTIFACT_EXPIRED';
+        }
+        const err = new Error(`Download falhou: ${response.status}`) as Error & { code?: string };
+        err.code = code;
+        throw err;
       }
-      const blob = await response.blob();
+
+      const contentType = response.headers.get('content-type') || 'application/pdf';
+      const disposition = response.headers.get('content-disposition') || '';
+
+      let filename = 'documento.anonimizado.pdf';
+      const filenameMatch = disposition.match(/filename[^;=\n]*=(['"]?)([^;\n'"]+)\1/);
+      if (filenameMatch?.[2]) {
+        filename = filenameMatch[2].trim();
+      } else if (state.sanitizedFileName) {
+        filename = state.sanitizedFileName;
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const blob = new Blob([arrayBuffer], { type: contentType });
       const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = state.sanitizedFileName || `${state.fileName}.anonimizado.pdf`;
+      anchor.download = filename;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
       window.URL.revokeObjectURL(url);
+    } catch (err) {
+      const code = (err as Error & { code?: string }).code || 'BLURRY_DOWNLOAD_FAILED';
+      setDownloadError(code);
     } finally {
       setIsDownloading(false);
     }
@@ -601,6 +629,15 @@ export default function PdfPreparationModal({
                     {isSending ? 'Enviando...' : 'Enviar texto anonimizado'}
                   </Button>
                 </div>
+                {downloadError && (
+                  <span className="text-xs text-red-500" role="alert">
+                    {downloadError === 'ARTIFACT_NOT_FOUND'
+                      ? 'Arquivo anonimizado não encontrado.'
+                      : downloadError === 'ARTIFACT_EXPIRED'
+                        ? 'O arquivo anonimizado expirou. Reprocesse o documento.'
+                        : 'Falha ao baixar o arquivo anonimizado.'}
+                  </span>
+                )}
                 {!canSend && (
                   <span id="pdf-preparation-send-disabled" className="text-xs text-text-secondary">
                     {sendDisabledReason}

@@ -425,7 +425,9 @@ router.get('/prepare-file/jobs/:jobId/download', async (req, res) => {
   const type = String(req.query.type || 'pdf').toLowerCase();
   const prepared = getPreparedJobForUser({ jobId, userId: req.user?.id });
   if (!prepared) {
-    return res.status(404).json({ message: 'Job não encontrado.' });
+    return res
+      .status(404)
+      .json({ ok: false, jobId, errorCode: 'ARTIFACT_NOT_FOUND', message: 'Job não encontrado.' });
   }
   if (type !== 'text' && type !== 'pdf') {
     return res.status(400).json({ message: 'Tipo de download inválido.' });
@@ -465,16 +467,21 @@ router.get('/prepare-file/jobs/:jobId/download', async (req, res) => {
       type,
       errorCode: error.code,
     });
-    const isExpired = error?.response?.status === 410;
-    return res.status(isExpired ? 410 : 502).json({
-      ok: false,
-      jobId,
-      status: 'failed',
-      errorCode: isExpired ? 'ARTIFACT_EXPIRED' : 'BLURRY_DOWNLOAD_FAILED',
-      message: isExpired
-        ? 'O arquivo anonimizado expirou e não está mais disponível.'
-        : 'Não foi possível baixar o output anonimizado.',
-    });
+    const upstreamStatus = error?.response?.status;
+    const isExpired = upstreamStatus === 410;
+    const isNotFound = upstreamStatus === 404;
+    const httpStatus = isExpired ? 410 : isNotFound ? 404 : 502;
+    const errorCode = isExpired
+      ? 'ARTIFACT_EXPIRED'
+      : isNotFound
+        ? 'ARTIFACT_NOT_FOUND'
+        : 'BLURRY_DOWNLOAD_FAILED';
+    const message = isExpired
+      ? 'O arquivo anonimizado expirou e não está mais disponível.'
+      : isNotFound
+        ? 'O arquivo anonimizado não foi encontrado.'
+        : 'Não foi possível baixar o output anonimizado.';
+    return res.status(httpStatus).json({ ok: false, jobId, status: 'failed', errorCode, message });
   }
 });
 
