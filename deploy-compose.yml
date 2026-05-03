@@ -5,9 +5,6 @@ services:
       dockerfile: Dockerfile.multi
       target: api-build
       args:
-        VITE_CLIENT_BANNER: ${VITE_CLIENT_BANNER:-}
-        VITE_PLATFORM_IMAGE: ${VITE_PLATFORM_IMAGE:-}
-        VITE_DEV_LOGO: ${VITE_DEV_LOGO:-}
         VITE_APP_TITLE: ${VITE_APP_TITLE:-LabsChat}
         # Theme variables - Light mode
         VITE_THEME_LIGHT_SURFACE_SUBMIT: ${VITE_THEME_LIGHT_SURFACE_SUBMIT:-}

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { apiBaseUrl } from './api-endpoints';
 import { fileConfigSchema } from './file-config';
 import { MCPServersSchema } from './mcp';
-import { specsConfigSchema, TSpecsConfig } from './models';
+import { specsConfigSchema, type TSpecsConfig } from './models';
 import { EModelEndpoint, eModelEndpointSchema, isAgentsEndpoint } from './schemas';
 import type { TConfig, TEndpointsConfig, TModelsConfig } from './types';
 import { FileSources } from './types/files';
@@ -149,7 +149,10 @@ export type TAzureModelMapSchema = {
 export type TAzureModelGroupMap = Record<string, TAzureModelMapSchema | undefined>;
 export type TAzureGroupMap = Record<
   string,
-  (TAzureBaseSchema & { models: Record<string, TAzureModelConfig | undefined> }) | undefined
+  | (TAzureBaseSchema & {
+      models: Record<string, TAzureModelConfig | undefined>;
+    })
+  | undefined
 >;
 
 export type TValidatedAzureConfig = {
@@ -635,6 +638,8 @@ export const interfaceSchema = z
     termsOfService: termsOfServiceSchema.optional(),
     cookiesPolicy: cookiesPolicySchema.optional(),
     customWelcome: z.string().optional(),
+    tenantBanner: z.boolean().optional(),
+    tenantBannerPath: z.string().optional(),
     mcpServers: mcpServersSchema.optional(),
     endpointsMenu: z.boolean().optional(),
     modelSelect: z.boolean().optional(),
@@ -702,6 +707,8 @@ export const interfaceSchema = z
     multiConvo: true,
     bookmarks: true,
     memories: true,
+    tenantBanner: false,
+    tenantBannerPath: '/assets/customization/tenant-banner.png',
     prompts: {
       use: true,
       create: true,

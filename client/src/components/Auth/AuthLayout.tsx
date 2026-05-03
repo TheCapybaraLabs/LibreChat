@@ -2,7 +2,7 @@ import { ThemeSelector } from '@librechat/client';
 import type { TStartupConfig } from 'librechat-data-provider';
 import { ErrorMessage } from '~/components/Auth/ErrorMessage';
 import { type TranslationKeys, useLocalize } from '~/hooks';
-import { CLIENT_BANNER, DEV_LOGO, PLATFORM_IMAGE } from '~/utils/logoPath';
+import { DEV_LOGO, PLATFORM_IMAGE, TENANT_BANNER } from '~/utils/logoPath';
 import { Banner } from '../Banners';
 import Footer from './Footer';
 import SocialLoginRender from './SocialLoginRender';
@@ -89,9 +89,9 @@ function AuthLayout({
 
           <section className="flex min-h-[560px] flex-col justify-center px-6 py-8 sm:px-10">
             <div className="mb-6 flex items-center justify-center">
-              {CLIENT_BANNER ? (
+              {startupConfig?.interface?.tenantBanner === true ? (
                 <img
-                  src={CLIENT_BANNER}
+                  src={startupConfig?.interface?.tenantBannerPath ?? TENANT_BANNER}
                   className="max-h-20 w-full object-contain"
                   alt={localize('com_ui_logo', {
                     0: startupConfig?.appTitle ?? import.meta.env.VITE_APP_TITLE ?? 'LabsChat',

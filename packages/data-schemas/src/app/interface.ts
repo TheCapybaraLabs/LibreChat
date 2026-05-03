@@ -40,6 +40,8 @@ export async function loadDefaultInterface({
     privacyPolicy: interfaceConfig?.privacyPolicy ?? defaults.privacyPolicy,
     termsOfService: interfaceConfig?.termsOfService ?? defaults.termsOfService,
     cookiesPolicy: interfaceConfig?.cookiesPolicy,
+    tenantBanner: interfaceConfig?.tenantBanner ?? defaults.tenantBanner,
+    tenantBannerPath: interfaceConfig?.tenantBannerPath ?? defaults.tenantBannerPath,
     mcpServers: interfaceConfig?.mcpServers ?? defaults.mcpServers,
     customWelcome: interfaceConfig?.customWelcome ?? defaults.customWelcome,
 

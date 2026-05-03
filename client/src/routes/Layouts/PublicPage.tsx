@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useGetStartupConfig } from '~/data-provider';
 import { useLocalize } from '~/hooks';
-import { CLIENT_BANNER, DEV_LOGO } from '~/utils/logoPath';
+import { DEV_LOGO, TENANT_BANNER } from '~/utils/logoPath';
 
 export default function PublicPageLayout() {
   const localize = useLocalize();
@@ -21,13 +21,15 @@ export default function PublicPageLayout() {
       <header className="bg-surface-secondary/70 supports-[backdrop-filter]:bg-surface-secondary/50 border-b border-border-light backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8 md:px-10">
           <div className="flex items-center gap-3">
-            <img
-              src={CLIENT_BANNER ?? '/assets/customization/logo.svg'}
-              className="h-9 w-auto object-contain"
-              alt={localize('com_ui_logo', {
-                0: startupConfig?.appTitle ?? 'LabsChat',
-              })}
-            />
+            {startupConfig?.interface?.tenantBanner === true && (
+              <img
+                src={startupConfig?.interface?.tenantBannerPath ?? TENANT_BANNER}
+                className="h-9 w-auto object-contain"
+                alt={localize('com_ui_logo', {
+                  0: startupConfig?.appTitle ?? 'LabsChat',
+                })}
+              />
+            )}
             <span className="text-lg font-semibold text-text-primary">
               {startupConfig?.appTitle ?? 'LabsChat'}
             </span>
