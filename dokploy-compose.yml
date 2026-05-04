@@ -13,66 +13,78 @@ services:
       - mongodb
       - rag_api
       - meilisearch
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     environment:
       # Server Configuration
       - HOST=${HOST:-localhost}
       - PORT=${PORT:-3080}
-      - NODE_ENV=production
-      - TRUST_PROXY=${TRUST_PROXY:-1}
-      - DEBUG_LOGGING=${DEBUG_LOGGING:-true}
-      - DEBUG_CONSOLE=${DEBUG_CONSOLE:-false}
+      - MONGO_URI=mongodb://mongodb:27017/LibreChat
       # Domain Configuration
       - DOMAIN_CLIENT=${DOMAIN_CLIENT}
       - DOMAIN_SERVER=${DOMAIN_SERVER}
-      # Database and Search Configuration
-      - MONGO_URI=mongodb://mongodb:27017/LibreChat
-      - MEILI_HOST=http://meilisearch:7700
-      - SEARCH=true
       - NO_INDEX=true
-      - MEILI_NO_ANALYTICS=true
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
-      # Security & Sessions
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - CREDS_KEY=${CREDS_KEY}
-      - CREDS_IV=${CREDS_IV}
-      # RAG Configuration
-      - RAG_PORT=${RAG_PORT:-8000}
-      - RAG_API_URL=http://rag_api:${RAG_PORT:-8000}
-      # API Keys and Secrets
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_MODELS=${OPENAI_MODELS:-gpt-5-mini,gpt-5.1,gpt-4o}
-      - DEBUG_OPENAI=${DEBUG_OPENAI:-false}
+      - TRUST_PROXY=${TRUST_PROXY:-1}
+      # Logging
+      - CONSOLE_JSON=${CONSOLE_JSON:-false}
+      - DEBUG_LOGGING=${DEBUG_LOGGING:-true}
+      - DEBUG_CONSOLE=${DEBUG_CONSOLE:-false}
+      # Endpoints
+      - ENDPOINTS=${ENDPOINTS:-google,openAI,agents,anthropic}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - XAI_API_KEY=${XAI_API_KEY}
+      - DIGITALOCEAN_API_KEY=${DIGITALOCEAN_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - ANTHROPIC_MODELS=${ANTHROPIC_MODELS:-claude-haiku-4-5}
       - GOOGLE_KEY=${GOOGLE_KEY}
-      - GOOGLE_MODELS=${GOOGLE_MODELS:-gemini-2.5-flash,gemini-2.5-pro,gemini-2.0-flash}
+      - GOOGLE_MODELS=${GOOGLE_MODELS:-gemini-2.5-flash-lite,gemini-2.5-flash,gemini-2.5-pro}
       - GOOGLE_SERVICE_KEY_FILE=${GOOGLE_SERVICE_KEY_FILE}
-      - GOOGLE_LOC=${GOOGLE_LOC}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - XAI_API_KEY=${XAI_API_KEY}
-      - ENDPOINTS=${ENDPOINTS:-google,openAI,agents,anthropic}
-      # Email Configuration
-      - EMAIL_HOST=${EMAIL_HOST}
-      - EMAIL_PORT=${EMAIL_PORT}
-      - EMAIL_ENCRYPTION=${EMAIL_ENCRYPTION}
-      - EMAIL_USERNAME=${EMAIL_USERNAME}
-      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
-      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-LabsChat}
-      - EMAIL_FROM=${EMAIL_FROM:-noreply@updates.capybaralabs.com.br}
-      # UI
-      - APP_TITLE=${APP_TITLE:-LabsChat}
-      - CUSTOM_FOOTER=${CUSTOM_FOOTER:-Capybara Labs}
-      - HELP_AND_FAQ_URL=${HELP_AND_FAQ_URL:-https://capybaralabs.com.br}
+      - GOOGLE_LOC=${GOOGLE_LOC:-global}
+      - MISTRAL_OCR_LOC=${MISTRAL_OCR_LOC:-us-central1}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODELS=${OPENAI_MODELS:-gpt-5-nano,gpt-5-mini,gpt-5,gpt-5.4-nano,gpt-5.4-mini,gpt-5.4}
+      - DEBUG_OPENAI=${DEBUG_OPENAI:-false}
+      # Search
+      - MEILI_HOST=http://meilisearch:7700
+      - SEARCH=true
+      - MEILI_NO_ANALYTICS=true
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      # Moderation
+      - OPENAI_MODERATION=${OPENAI_MODERATION:-false}
+      - OPENAI_MODERATION_API_KEY=${OPENAI_API_KEY}
+      - BAN_VIOLATIONS=${BAN_VIOLATIONS:-true}
       # Authentication & Registration
       - ALLOW_EMAIL_LOGIN=${ALLOW_EMAIL_LOGIN:-true}
       - ALLOW_SOCIAL_LOGIN=${ALLOW_SOCIAL_LOGIN:-false}
       - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-false}
       - ALLOW_PASSWORD_RESET=${ALLOW_PASSWORD_RESET:-true}
+      - ALLOW_UNVERIFIED_EMAIL_LOGIN=${ALLOW_UNVERIFIED_EMAIL_LOGIN:-true}
+      # Security & Sessions
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - CREDS_KEY=${CREDS_KEY}
+      - CREDS_IV=${CREDS_IV}
+      # Email Configuration
+      - EMAIL_HOST=${EMAIL_HOST:-smtp.resend.com}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_ENCRYPTION=${EMAIL_ENCRYPTION:-starttls}
+      - EMAIL_USERNAME=${EMAIL_USERNAME:-resend}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-LabsChat.Ai}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@updates.capybaralabs.com.br}
+      - EMAIL_SUPPORT=${EMAIL_SUPPORT:-}
+      # RAG Configuration
+      - RAG_PORT=${RAG_PORT:-8000}
+      - RAG_API_URL=http://rag_api:${RAG_PORT:-8000}
+      # UI
+      - APP_TITLE=${APP_TITLE:-LabsChat.Ai}
+      - CUSTOM_FOOTER=${CUSTOM_FOOTER:-LabsChat.Ai}
+      - HELP_AND_FAQ_URL=${HELP_AND_FAQ_URL:-https://docs.labschat.ai}
+      - SHOW_BIRTHDAY_ICON=false
       # Extras
       - CHECK_BALANCE=${CHECK_BALANCE:-false}
-      - START_BALANCE=${START_BALANCE:-1000000}
-      - JINA_API_KEY=${JINA_API_KEY}
+      - START_BALANCE=${START_BALANCE:-10000000}
+      - NODE_ENV=production
     volumes:
       - ../files/images:/app/client/public/images
       - ../files/uploads:/app/uploads
@@ -86,7 +98,7 @@ services:
     volumes:
       - mongo_data:/data/db
     command: mongod --noauth
-  
+
   meilisearch:
     image: getmeili/meilisearch:v1.12.3
     restart: always
@@ -96,7 +108,7 @@ services:
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
     volumes:
       - meili_data:/meili_data
-  
+
   vectordb:
     image: pgvector/pgvector:0.8.0-pg15-trixie
     environment:
@@ -106,7 +118,7 @@ services:
     restart: always
     volumes:
       - pgdata2:/var/lib/postgresql/data
-  
+
   rag_api:
     image: ghcr.io/danny-avila/librechat-rag-api-dev-lite:latest
     environment:
