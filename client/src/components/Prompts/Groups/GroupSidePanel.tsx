@@ -30,7 +30,7 @@ export default function GroupSidePanel({
     <div
       id="prompts-panel"
       className={cn(
-        'flex h-full w-full flex-col md:mr-2 md:w-auto md:min-w-72 lg:w-1/4 xl:w-1/4',
+        'flex h-full w-full flex-col md:mr-2 md:w-auto md:min-w-72 lg:w-72 xl:w-80',
         className,
       )}
     >

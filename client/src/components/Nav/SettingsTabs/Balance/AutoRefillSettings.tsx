@@ -167,7 +167,7 @@ const AutoRefillSettings: React.FC<AutoRefillSettingsProps> = ({
         </div>
 
         {/* Right Section: tokenCredits Value */}
-        <span className="text-sm font-medium text-gray-800 dark:text-gray-200" role="note">
+        <span className="text-sm font-medium text-text-primary" role="note">
           {nextRefill ? nextRefill.toLocaleString() : '-'}
         </span>
       </div>

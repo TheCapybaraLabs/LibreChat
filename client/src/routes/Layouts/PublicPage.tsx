@@ -61,7 +61,7 @@ export default function PublicPageLayout() {
             alt={localize('com_ui_logo', { 0: 'Capybara Labs' })}
           />
           {/* eslint-disable-next-line i18next/no-literal-string */}
-          <p className="hidden text-sm dark:text-white md:block">Capybara Labs</p>
+          <p className="hidden text-sm text-text-primary md:block">Capybara Labs</p>
         </div>
       </div>
     </div>

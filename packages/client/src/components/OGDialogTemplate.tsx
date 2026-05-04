@@ -88,7 +88,7 @@ const OGDialogTemplate = forwardRef((props: DialogTemplateProps, ref: Ref<HTMLDi
   } = isLegacySelection ? selection : {};
 
   const defaultSelect =
-    'bg-gray-800 text-white transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-200 dark:text-gray-800 dark:hover:bg-gray-200';
+    'bg-surface-primary-contrast text-surface-primary transition-colors hover:bg-surface-primary-contrast/90 disabled:cursor-not-allowed disabled:opacity-50';
 
   let selectionContent = null;
   if (isLegacySelection) {

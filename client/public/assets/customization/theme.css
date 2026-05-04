@@ -1,0 +1,12 @@
+/*
+ * Tenant theme overrides. Replace this file via the dokploy volume mount
+ * (files/customization/theme.css) to override CSS custom properties without
+ * a rebuild. Defaults live in client/src/style.css.
+ *
+ * Use html:root / html.dark selectors (specificity 0,1,1) so overrides win
+ * over the bundle's plain :root / .dark regardless of stylesheet load order.
+ *
+ * Example:
+ *   html:root  { --surface-primary: #ffffff; --text-primary: #0f172a; }
+ *   html.dark  { --surface-primary: #0d0d0d; --text-primary: #f5f5f5; }
+ */

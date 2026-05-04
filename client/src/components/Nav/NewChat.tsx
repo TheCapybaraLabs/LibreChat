@@ -90,7 +90,7 @@ export default function NewChat({
           'bg-text-primary text-surface-primary hover:opacity-90',
         )}
       >
-        <NewChatIcon className="icon-md shrink-0 text-white dark:text-gray-900" />
+        <NewChatIcon className="icon-md shrink-0 text-surface-primary" />
         {localize('com_ui_new_chat')}
       </Link>
       {subHeaders != null ? subHeaders : null}

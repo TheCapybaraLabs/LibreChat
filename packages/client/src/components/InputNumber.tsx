@@ -17,7 +17,7 @@ const InputNumber = React.forwardRef<
   return (
     <RCInputNumber
       className={cn(
-        'flex max-h-5 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-50',
+        'flex max-h-5 w-full rounded-md border border-border-medium bg-transparent px-3 py-2 text-sm placeholder:text-text-tertiary focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:text-text-primary',
         className ?? '',
       )}
       ref={ref}

@@ -108,6 +108,8 @@ html {
   --surface-destructive: var(--red-700);
   --surface-destructive-hover: var(--red-800);
   --surface-chat: var(--white);
+  --surface-chat-temp: rgba(46, 16, 101, 0.1); /* violet-950 @ 10% */
+  --border-chat-temp: rgba(91, 33, 182, 0.6); /* violet-800 @ 60% */
   --border-light: var(--gray-200);
   --border-medium-alt: var(--gray-300);
   --border-medium: var(--gray-300);
@@ -144,8 +146,8 @@ html {
 .dark {
   --brand-border: var(--blue-500);
   --brand-footer: var(--blue-500);
-  --brand-primary: var(--blue-400);
-  --brand-primary-hover: var(--blue-300);
+  --brand-primary: var(--blue-600);
+  --brand-primary-hover: var(--blue-800);
   --brand-bg: var(--blue-600);
   --brand-purple: #ab68ff;
   --presentation: var(--gray-800);
@@ -175,6 +177,8 @@ html {
   --surface-destructive: var(--red-800);
   --surface-destructive-hover: var(--red-900);
   --surface-chat: var(--gray-700);
+  --surface-chat-temp: rgba(46, 16, 101, 0.1);
+  --border-chat-temp: rgba(91, 33, 182, 0.6);
   --border-light: var(--gray-700);
   --border-medium-alt: var(--gray-600);
   --border-medium: var(--gray-600);
@@ -2177,15 +2181,16 @@ html {
 
 .webkit-dark-styles,
 .webkit-dark-styles:focus {
+  -webkit-text-fill-color: var(--text-primary);
   background-clip: content-box;
-  -webkit-box-shadow: 0 0 0 50vh #fff inset;
+  -webkit-box-shadow: 0 0 0 50vh var(--surface-primary) inset;
 }
 
 .dark .webkit-dark-styles,
 .dark .webkit-dark-styles:focus {
-  -webkit-text-fill-color: #fff;
+  -webkit-text-fill-color: var(--text-primary);
   background-clip: content-box;
-  -webkit-box-shadow: 0 0 0 50vh #0d0d0d inset;
+  -webkit-box-shadow: 0 0 0 50vh var(--surface-primary) inset;
 }
 
 /* Ordered Listing */

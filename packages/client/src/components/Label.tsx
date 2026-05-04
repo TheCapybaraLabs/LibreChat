@@ -13,7 +13,7 @@ const Label = React.forwardRef<
     {...props}
     {...{
       className: cn(
-        'block w-full break-all text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 dark:text-gray-200',
+        'block w-full break-all text-sm leading-none text-text-primary peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
         className,
       ),
     }}

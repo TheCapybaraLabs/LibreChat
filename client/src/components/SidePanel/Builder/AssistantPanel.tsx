@@ -34,7 +34,7 @@ import Action from './Action';
 const labelClass = 'mb-2 text-token-text-primary block font-medium';
 const inputClass = cn(
   defaultTextProps,
-  'flex w-full px-3 py-2 dark:border-gray-800 dark:bg-gray-800 rounded-xl mb-2',
+  'flex w-full px-3 py-2 dark:border-border-light dark:bg-surface-secondary rounded-xl mb-2',
   removeFocusOutlines,
 );
 

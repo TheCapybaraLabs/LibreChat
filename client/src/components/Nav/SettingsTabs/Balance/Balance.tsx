@@ -51,7 +51,7 @@ function Balance() {
           </div>
         )
       ) : (
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-text-tertiary">
           {localize('com_nav_balance_auto_refill_disabled')}
         </div>
       )}

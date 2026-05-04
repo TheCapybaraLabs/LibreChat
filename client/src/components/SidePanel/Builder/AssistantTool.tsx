@@ -82,7 +82,7 @@ export default function AssistantTool({
           <OGDialogTrigger asChild>
             <button
               type="button"
-              className="flex h-9 w-9 min-w-9 items-center justify-center rounded-lg transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="flex h-9 w-9 min-w-9 items-center justify-center rounded-lg transition-colors duration-200 hover:bg-surface-hover"
             >
               <TrashIcon />
             </button>

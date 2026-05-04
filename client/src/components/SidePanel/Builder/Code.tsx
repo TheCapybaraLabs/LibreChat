@@ -52,13 +52,13 @@ export default function Code({ version }: { version: number | string }) {
               {localize('com_assistants_code_interpreter')}
             </label>
             <HoverCardTrigger>
-              <CircleHelpIcon className="h-5 w-5 text-gray-500" />
+              <CircleHelpIcon className="h-5 w-5 text-text-tertiary" />
             </HoverCardTrigger>
           </button>
           <HoverCardPortal>
             <HoverCardContent side={ESide.Top} className="w-80">
               <div className="space-y-2">
-                <p className="text-sm text-gray-600 dark:text-gray-300">
+                <p className="text-sm text-text-secondary">
                   {version == 2 && localize('com_assistants_code_interpreter_info')}
                 </p>
               </div>

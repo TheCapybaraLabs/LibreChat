@@ -119,6 +119,8 @@ module.exports = {
         'surface-destructive': 'var(--surface-destructive)',
         'surface-destructive-hover': 'var(--surface-destructive-hover)',
         'surface-chat': 'var(--surface-chat)',
+        'surface-chat-temp': 'var(--surface-chat-temp)',
+        'border-chat-temp': 'var(--border-chat-temp)',
         'border-light': 'var(--border-light)',
         'border-medium': 'var(--border-medium)',
         'border-medium-alt': 'var(--border-medium-alt)',

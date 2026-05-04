@@ -61,7 +61,7 @@ export default function AgentTool({
   return (
     <OGDialog>
       <div
-        className="group relative flex w-full items-center gap-1 rounded-lg p-1 text-sm hover:bg-gray-50 dark:hover:bg-gray-800/50"
+        className="group relative flex w-full items-center gap-1 rounded-lg p-1 text-sm hover:bg-surface-hover"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         onFocus={() => setIsFocused(true)}
@@ -97,7 +97,7 @@ export default function AgentTool({
             type="button"
             className={cn(
               'flex h-7 w-7 items-center justify-center rounded transition-all duration-200',
-              'hover:bg-gray-200 dark:hover:bg-gray-700',
+              'hover:bg-surface-active',
               'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
               'focus:opacity-100',
               isHovering || isFocused ? 'opacity-100' : 'pointer-events-none opacity-0',

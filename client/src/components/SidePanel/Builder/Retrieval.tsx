@@ -84,13 +84,13 @@ export default function Retrieval({
                 : localize('com_assistants_file_search')}
             </label>
             <HoverCardTrigger>
-              <CircleHelpIcon className="h-5 w-5 text-gray-500" />
+              <CircleHelpIcon className="h-5 w-5 text-text-tertiary" />
             </HoverCardTrigger>
           </div>
           <HoverCardPortal>
             <HoverCardContent side={ESide.Top} disabled={isDisabled} className="ml-16 w-80">
               <div className="space-y-2">
-                <p className="text-sm text-gray-600 dark:text-gray-300">
+                <p className="text-sm text-text-secondary">
                   {version == 2 && localize('com_assistants_file_search_info')}
                 </p>
               </div>

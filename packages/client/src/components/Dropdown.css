@@ -1,6 +1,7 @@
 .popover-ui {
   display: flex;
   max-height: min(var(--popover-available-height, 1700px), 1700px);
+  max-width: min(20rem, calc(100vw - 2rem));
   flex-direction: column;
   overflow: auto;
   overscroll-behavior: contain;

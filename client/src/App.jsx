@@ -9,7 +9,6 @@ import { Toast, ThemeProvider, ToastProvider } from '@librechat/client';
 import { QueryClient, QueryClientProvider, QueryCache } from '@tanstack/react-query';
 import { ScreenshotProvider, useApiErrorBoundary } from './hooks';
 import WakeLockManager from '~/components/System/WakeLockManager';
-import { getThemeFromEnv } from './utils/getThemeFromEnv';
 import { initializeFontSize } from '~/store/fontSize';
 import { LiveAnnouncer } from '~/a11y';
 import { router } from './routes';
@@ -41,24 +40,11 @@ const App = () => {
     initializeFontSize();
   }, []);
 
-  // Load theme from environment variables if available
-  const envThemeSet = getThemeFromEnv();
-
   return (
     <QueryClientProvider client={queryClient}>
       <RecoilRoot>
         <LiveAnnouncer>
-          <ThemeProvider
-            // Only pass themeSet if environment theme exists; never override initialTheme
-            // so localStorage preference (dark/light/system) is always respected
-            {...(envThemeSet && { themeSet: envThemeSet })}
-          >
-            {/* The ThemeProvider will automatically:
-                1. Apply dark/light mode classes
-                2. Apply custom theme colors if envThemeSet is provided
-                3. Switch between light/dark variants when theme mode changes
-                4. Otherwise use stored theme preferences from localStorage
-                5. Fall back to default theme colors if nothing is stored */}
+          <ThemeProvider>
             <RadixToast.Provider>
               <ToastProvider>
                 <DndProvider backend={HTML5Backend}>

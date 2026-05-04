@@ -60,7 +60,7 @@ export default function DashBreadcrumb({
 
   return (
     <div className="mr-2 mt-2 flex h-10 items-center justify-between">
-      <Breadcrumb className="mt-1 px-2 dark:text-gray-200">
+      <Breadcrumb className="mt-1 px-2 text-text-primary">
         <BreadcrumbList>
           {showToggle && onToggle && (
             <>
@@ -80,7 +80,7 @@ export default function DashBreadcrumb({
               <BreadcrumbSeparator />
             </>
           )}
-          <BreadcrumbItem className="hover:dark:text-white">
+          <BreadcrumbItem className="hover:text-text-primary">
             <BreadcrumbLink
               href="/"
               className="flex flex-row items-center gap-1"
@@ -111,13 +111,13 @@ export default function DashBreadcrumb({
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         */}
-          <BreadcrumbItem className="hover:dark:text-white">
+          <BreadcrumbItem className="hover:text-text-primary">
             <BreadcrumbLink
               href="/d/prompts"
               className="flex flex-row items-center gap-1"
               onClick={promptsLinkHandler}
             >
-              <MessageSquareQuote className="h-4 w-4 dark:text-gray-300" aria-hidden="true" />
+              <MessageSquareQuote className="h-4 w-4 text-text-secondary" aria-hidden="true" />
               {localize('com_ui_prompts')}
             </BreadcrumbLink>
           </BreadcrumbItem>

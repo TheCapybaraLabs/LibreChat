@@ -9,7 +9,7 @@ import { useLocalize, useAuthContext } from '~/hooks';
 import { getIconEndpoint, getEntity } from '~/utils';
 
 const containerClassName =
-  'shadow-stroke relative flex h-full items-center justify-center rounded-full bg-white dark:bg-presentation dark:text-white text-black dark:after:shadow-none ';
+  'shadow-stroke relative flex h-full items-center justify-center rounded-full bg-surface-primary text-text-primary dark:after:shadow-none ';
 
 function getTextSizeClass(text: string | undefined | null) {
   if (!text) {
@@ -153,7 +153,7 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
               endpointsConfig={endpointsConfig}
               containerClassName={containerClassName}
               context="landing"
-              className="h-2/3 w-2/3 text-black dark:text-white"
+              className="h-2/3 w-2/3 text-text-primary"
               size={41}
             />
             {startupConfig?.showBirthdayIcon && (

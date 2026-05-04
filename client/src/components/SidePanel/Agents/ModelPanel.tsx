@@ -173,7 +173,7 @@ export default function ModelPanel({
             id="model-label"
             className={cn(
               'text-token-text-primary model-panel-label mb-2 block font-medium',
-              !provider && 'text-gray-500 dark:text-gray-400',
+              !provider && 'text-text-tertiary',
             )}
             htmlFor="model"
           >
