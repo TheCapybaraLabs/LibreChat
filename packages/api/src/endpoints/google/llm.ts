@@ -225,7 +225,7 @@ export function getGoogleConfig(
      */
     if (provider === Providers.GOOGLE) {
       (llmConfig as GoogleClientOptions).thinkingConfig = thinkingConfig;
-      (llmConfig as GoogleClientOptions).thinkingBudget = -1;
+      (llmConfig as Record<string, unknown>).thinkingBudget = -1;
     } else if (provider === Providers.VERTEXAI) {
       (llmConfig as Record<string, unknown>).thinkingConfig = thinkingConfig;
       (llmConfig as VertexAIClientOptions).thinkingBudget = -1;
@@ -241,7 +241,7 @@ export function getGoogleConfig(
         thinkingBudget: resolvedBudget,
         includeThoughts: Boolean(thinking),
       };
-      (llmConfig as GoogleClientOptions).thinkingBudget = resolvedBudget;
+      (llmConfig as Record<string, unknown>).thinkingBudget = resolvedBudget;
     } else if (shouldEnableThinking && provider === Providers.VERTEXAI) {
       (llmConfig as VertexAIClientOptions).thinkingBudget = thinking
         ? thinkingBudget
