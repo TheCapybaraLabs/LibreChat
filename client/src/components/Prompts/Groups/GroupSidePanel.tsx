@@ -29,10 +29,7 @@ export default function GroupSidePanel({
   return (
     <div
       id="prompts-panel"
-      className={cn(
-        'flex h-full w-full flex-col md:mr-2 md:w-72 xl:w-80',
-        className,
-      )}
+      className={cn('flex h-full w-full flex-col md:mr-2 md:w-72 xl:w-80', className)}
     >
       {onClose && (
         <div className="flex items-center justify-between px-2 py-[2px] md:py-2">
