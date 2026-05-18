@@ -86,5 +86,5 @@ COPY --from=client-build /app/client/dist ./client/dist
 WORKDIR /app/api
 EXPOSE 3080
 ENV HOST=0.0.0.0
-ENTRYPOINT ["sh", "-c", "node /app/config/pwa-bust-cache.js; exec \"$@\"", "--"]
+ENTRYPOINT ["sh", "-c", "node /app/config/apply-app-title.js; node /app/config/pwa-bust-cache.js; exec \"$@\"", "--"]
 CMD ["node", "server/index.js"]
