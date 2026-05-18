@@ -253,7 +253,7 @@ const AgentMarketplace: React.FC<AgentMarketplaceProps> = ({ className = '' }) =
           fullPanelCollapse={fullCollapse}
           defaultCollapsed={defaultCollapsed}
         >
-          <main className="flex h-full flex-col overflow-hidden" role="main">
+          <main className="flex h-full flex-col overflow-hidden">
             {/* Scrollable container */}
             <div
               ref={scrollContainerRef}
