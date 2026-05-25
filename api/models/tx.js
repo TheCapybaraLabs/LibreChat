@@ -139,8 +139,11 @@ const tokenValues = Object.assign(
     'gpt-5.2': { prompt: 1.75, completion: 14 },
     'gpt-5.3': { prompt: 1.75, completion: 14 },
     'gpt-5.4': { prompt: 2.5, completion: 15 },
-    // TODO: gpt-5.4-pro pricing not yet officially published — verify before release
-    'gpt-5.4-pro': { prompt: 5, completion: 30 },
+    'gpt-5.4-mini': { prompt: 0.75, completion: 4.5 },
+    'gpt-5.4-nano': { prompt: 0.2, completion: 1.25 },
+    'gpt-5.4-pro': { prompt: 30, completion: 180 },
+    'gpt-5.5': { prompt: 5, completion: 30 },
+    'gpt-5.5-pro': { prompt: 30, completion: 180 },
     'gpt-5-nano': { prompt: 0.05, completion: 0.4 },
     'gpt-5-mini': { prompt: 0.25, completion: 2 },
     'gpt-5-pro': { prompt: 15, completion: 120 },
@@ -148,8 +151,10 @@ const tokenValues = Object.assign(
     o1: { prompt: 15, completion: 60 },
     'o1-mini': { prompt: 1.1, completion: 4.4 },
     'o1-preview': { prompt: 15, completion: 60 },
+    'o1-pro': { prompt: 150, completion: 600 },
     o3: { prompt: 2, completion: 8 },
     'o3-mini': { prompt: 1.1, completion: 4.4 },
+    'o3-pro': { prompt: 20, completion: 80 },
     'o4-mini': { prompt: 1.1, completion: 4.4 },
     'claude-instant': { prompt: 0.8, completion: 2.4 },
     'claude-2': { prompt: 8, completion: 24 },
@@ -167,6 +172,7 @@ const tokenValues = Object.assign(
     'claude-opus-4': { prompt: 15, completion: 75 },
     'claude-opus-4-5': { prompt: 5, completion: 25 },
     'claude-opus-4-6': { prompt: 5, completion: 25 },
+    'claude-opus-4-7': { prompt: 5, completion: 25 },
     'claude-sonnet-4': { prompt: 3, completion: 15 },
     'claude-sonnet-4-6': { prompt: 3, completion: 15 },
     'command-r': { prompt: 0.5, completion: 1.5 },
@@ -191,6 +197,7 @@ const tokenValues = Object.assign(
     'gemini-2.5-flash': { prompt: 0.3, completion: 2.5 },
     'gemini-2.5-flash-lite': { prompt: 0.1, completion: 0.4 },
     'gemini-2.5-pro': { prompt: 1.25, completion: 10 },
+    'gemini-2.5-computer-use': { prompt: 1.25, completion: 10 },
     'gemini-2.5-flash-image': { prompt: 0.3, completion: 30 },
     'gemini-3': { prompt: 2, completion: 12 },
     'gemini-3-flash': { prompt: 0.5, completion: 3 },
@@ -198,6 +205,7 @@ const tokenValues = Object.assign(
     'gemini-3.1': { prompt: 2, completion: 12 },
     'gemini-3.1-flash-lite': { prompt: 0.25, completion: 1.5 },
     'gemini-3.1-flash-image': { prompt: 0.5, completion: 60 },
+    'gemini-3.5-flash': { prompt: 1.5, completion: 9 },
     'gemini-pro-vision': { prompt: 0.5, completion: 1.5 },
     grok: { prompt: 2.0, completion: 10.0 }, // Base pattern defaults to grok-2
     'grok-beta': { prompt: 5.0, completion: 15.0 },
@@ -215,6 +223,9 @@ const tokenValues = Object.assign(
     'grok-4': { prompt: 3.0, completion: 15.0 },
     'grok-4-fast': { prompt: 0.2, completion: 0.5 },
     'grok-4-1-fast': { prompt: 0.2, completion: 0.5 }, // covers reasoning & non-reasoning variants
+    'grok-4.3': { prompt: 1.25, completion: 2.5 },
+    'grok-4.20': { prompt: 1.25, completion: 2.5 }, // covers reasoning, non-reasoning, multi-agent variants
+    'grok-build-0.1': { prompt: 1.0, completion: 2.0 },
     'grok-code-fast': { prompt: 0.2, completion: 1.5 },
     codestral: { prompt: 0.3, completion: 0.9 },
     'ministral-3b': { prompt: 0.04, completion: 0.04 },
@@ -318,11 +329,12 @@ const cacheTokenValues = {
   'claude-opus-4': { write: 18.75, read: 1.5 },
   'claude-opus-4-5': { write: 6.25, read: 0.5 },
   'claude-opus-4-6': { write: 6.25, read: 0.5 },
+  'claude-opus-4-7': { write: 6.25, read: 0.5 },
   // OpenAI models — cached input discount varies by family:
   //   gpt-4o (incl. mini), o1 (incl. mini/preview): 50% off
   //   gpt-4.1 (incl. mini/nano), o3 (incl. mini), o4-mini: 75% off
   //   gpt-5.x (excl. pro variants): 90% off
-  //   gpt-5-pro, gpt-5.2-pro, gpt-5.4-pro: no caching
+  //   gpt-5-pro, gpt-5.2-pro, gpt-5.4-pro, gpt-5.5-pro, o1-pro, o3-pro: no caching
   'gpt-4o': { write: 2.5, read: 1.25 },
   'gpt-4o-mini': { write: 0.15, read: 0.075 },
   'gpt-4.1': { write: 2, read: 0.5 },
@@ -333,6 +345,9 @@ const cacheTokenValues = {
   'gpt-5.2': { write: 1.75, read: 0.175 },
   'gpt-5.3': { write: 1.75, read: 0.175 },
   'gpt-5.4': { write: 2.5, read: 0.25 },
+  'gpt-5.4-mini': { write: 0.75, read: 0.075 },
+  'gpt-5.4-nano': { write: 0.2, read: 0.02 },
+  'gpt-5.5': { write: 5, read: 0.5 },
   'gpt-5-mini': { write: 0.25, read: 0.025 },
   'gpt-5-nano': { write: 0.05, read: 0.005 },
   o1: { write: 15, read: 7.5 },
@@ -365,6 +380,8 @@ const cacheTokenValues = {
   'gemini-3.1': { write: 2, read: 0.2 },
   // Gemini 3.1 Flash-Lite - cache write: $0.25/1M, cache read: $0.025/1M
   'gemini-3.1-flash-lite': { write: 0.25, read: 0.025 },
+  // Gemini 3.5 Flash - cache write: $1.50/1M (input rate), cache read: $0.15/1M
+  'gemini-3.5-flash': { write: 1.5, read: 0.15 },
 };
 
 /**
@@ -373,9 +390,10 @@ const cacheTokenValues = {
  * @type {Object.<string, {threshold: number, prompt: number, completion: number}>}
  */
 const premiumTokenValues = {
-  'claude-opus-4-6': { threshold: 200000, prompt: 10, completion: 37.5 },
-  'claude-sonnet-4-6': { threshold: 200000, prompt: 6, completion: 22.5 },
+  'gemini-2.5-pro': { threshold: 200000, prompt: 2.5, completion: 15 },
+  'gemini-2.5-computer-use': { threshold: 200000, prompt: 2.5, completion: 15 },
   'gemini-3.1': { threshold: 200000, prompt: 4, completion: 18 },
+  'gpt-5.5': { threshold: 272000, prompt: 10, completion: 45 },
 };
 
 /**
