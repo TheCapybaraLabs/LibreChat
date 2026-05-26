@@ -54,13 +54,6 @@ const extractMessageContent = (message: TMessage): string => {
         if ('text' in part) {
           return part.text || '';
         }
-        if ('think' in part) {
-          const think = part.think;
-          if (typeof think === 'string') {
-            return think;
-          }
-          return think && 'text' in think ? think.text || '' : '';
-        }
         return '';
       })
       .join('');
