@@ -106,7 +106,12 @@ export default function useMessageActions(props: TMessageActions) {
     regenerate(message, { addedConvo: getAddedConvo() });
   }, [isSubmitting, isCreatedByUser, message, regenerate, getAddedConvo]);
 
-  const copyToClipboard = useCopyToClipboard({ text, content, searchResults });
+  const copyToClipboard = useCopyToClipboard({
+    text,
+    content,
+    searchResults,
+    messageId: messageId ?? undefined,
+  });
 
   const messageLabel = useMemo(() => {
     if (message?.isCreatedByUser === true) {

@@ -15,6 +15,7 @@ export default function MinimalHoverButtons({ message, searchResults }: THoverBu
     text: message.text,
     content: message.content,
     searchResults,
+    messageId: message.messageId,
   });
 
   return (

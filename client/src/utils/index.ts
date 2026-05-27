@@ -8,6 +8,7 @@ export * from './map';
 export * from './json';
 export * from './files';
 export * from './latex';
+export * from './copyRichText';
 export * from './forms';
 export * from './agents';
 export * from './drafts';

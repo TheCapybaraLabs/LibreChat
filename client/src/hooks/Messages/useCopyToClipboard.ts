@@ -9,6 +9,7 @@ import {
   STANDALONE_PATTERN,
   INVALID_CITATION_REGEX,
 } from '~/utils/citations';
+import { buildRichTextHtml } from '~/utils/copyRichText';
 
 type Source = {
   link: string;
@@ -31,7 +32,8 @@ export default function useCopyToClipboard({
   text,
   content,
   searchResults,
-}: Partial<Pick<TMessage, 'text' | 'content'>> & {
+  messageId,
+}: Partial<Pick<TMessage, 'text' | 'content' | 'messageId'>> & {
   searchResults?: { [key: string]: SearchResultData };
 }) {
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -51,59 +53,75 @@ export default function useCopyToClipboard({
       }
       setIsCopied(true);
 
-      // Get the message text from content or text
-      let messageText = text ?? '';
-      if (content) {
-        messageText = content.reduce((acc, curr, i) => {
-          if (curr.type === ContentTypes.TEXT) {
-            const text = typeof curr.text === 'string' ? curr.text : (curr.text?.value ?? '');
-            return acc + text + (i === content.length - 1 ? '' : '\n');
-          }
-          return acc;
-        }, '');
-      }
+      const plainText = buildPlainText(text, content, searchResults);
+      const html = messageId ? scrapeHtml(messageId) : '';
 
-      // Early return if no search data
-      if (!searchResults || Object.keys(searchResults).length === 0) {
-        // Clean up any citation markers before returning
-        const cleanedText = messageText
-          .replace(INVALID_CITATION_REGEX, '')
-          .replace(CLEANUP_REGEX, '');
+      writeClipboard(html, plainText);
 
-        copy(cleanedText, { format: 'text/plain' });
-        copyTimeoutRef.current = setTimeout(() => {
-          setIsCopied(false);
-        }, 3000);
-        return;
-      }
-
-      // Process citations and build a citation manager
-      const citationManager = processCitations(messageText, searchResults);
-      let processedText = citationManager.formattedText;
-
-      // Add citations list at the end if we have any
-      if (citationManager.citations.size > 0) {
-        processedText += '\n\nCitations:\n';
-        // Sort citations by their reference number
-        const sortedCitations = Array.from(citationManager.citations.entries()).sort(
-          (a, b) => a[1].referenceNumber - b[1].referenceNumber,
-        );
-
-        // Add each citation to the text
-        for (const [_, citation] of sortedCitations) {
-          processedText += `[${citation.referenceNumber}] ${citation.link}\n`;
-        }
-      }
-
-      copy(processedText, { format: 'text/plain' });
       copyTimeoutRef.current = setTimeout(() => {
         setIsCopied(false);
       }, 3000);
     },
-    [text, content, searchResults],
+    [text, content, searchResults, messageId],
   );
 
   return copyToClipboard;
+}
+
+function buildPlainText(
+  text?: string,
+  content?: TMessage['content'],
+  searchResults?: { [key: string]: SearchResultData },
+): string {
+  let messageText = text ?? '';
+  if (content) {
+    messageText = content.reduce((acc, curr, i) => {
+      if (curr.type === ContentTypes.TEXT) {
+        const value = typeof curr.text === 'string' ? curr.text : (curr.text?.value ?? '');
+        return acc + value + (i === content.length - 1 ? '' : '\n');
+      }
+      return acc;
+    }, '');
+  }
+
+  if (!searchResults || Object.keys(searchResults).length === 0) {
+    return messageText.replace(INVALID_CITATION_REGEX, '').replace(CLEANUP_REGEX, '');
+  }
+
+  const citationManager = processCitations(messageText, searchResults);
+  let processedText = citationManager.formattedText;
+
+  if (citationManager.citations.size > 0) {
+    processedText += '\n\nCitations:\n';
+    const sortedCitations = Array.from(citationManager.citations.entries()).sort(
+      (a, b) => a[1].referenceNumber - b[1].referenceNumber,
+    );
+    for (const [_, citation] of sortedCitations) {
+      processedText += `[${citation.referenceNumber}] ${citation.link}\n`;
+    }
+  }
+
+  return processedText;
+}
+
+function scrapeHtml(messageId: string): string {
+  const root = typeof document !== 'undefined' ? document.getElementById(messageId) : null;
+  return root ? buildRichTextHtml(root) : '';
+}
+
+function writeClipboard(html: string, plain: string): void {
+  if (!html || typeof ClipboardItem === 'undefined' || !navigator.clipboard?.write) {
+    copy(plain, { format: 'text/plain' });
+    return;
+  }
+  navigator.clipboard
+    .write([
+      new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([plain], { type: 'text/plain' }),
+      }),
+    ])
+    .catch(() => copy(plain, { format: 'text/plain' }));
 }
 
 /**
