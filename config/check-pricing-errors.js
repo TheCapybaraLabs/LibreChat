@@ -19,17 +19,20 @@ const printSection = (title) => {
   await connect();
 
   let days = 7;
+  let modelFilter = null;
   for (const arg of process.argv.slice(2)) {
     if (arg.startsWith('--days=')) days = Number(arg.slice(7)) || days;
+    else if (arg.startsWith('--model=')) modelFilter = arg.slice(8) || null;
   }
 
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   console.blue(`Checking transactions since ${since.toISOString()} (last ${days} days)...`);
+  if (modelFilter) console.blue(`Filtering to models matching /${modelFilter}/i`);
 
   const txns = await Transaction.find({
     tokenType: { $in: ['prompt', 'completion'] },
     createdAt: { $gte: since },
-    model: { $exists: true, $ne: null },
+    model: modelFilter ? { $regex: modelFilter, $options: 'i' } : { $exists: true, $ne: null },
   })
     .select('user model tokenType valueKey rawAmount tokenValue createdAt conversationId')
     .lean();

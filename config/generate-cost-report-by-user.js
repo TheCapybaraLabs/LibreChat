@@ -2,18 +2,44 @@ const path = require('path');
 const mongoose = require('mongoose');
 const { Transaction, User } = require('@librechat/data-schemas').createModels(mongoose);
 require('module-alias')({ base: path.resolve(__dirname, '..', 'api') });
+const { getMultiplier, getCacheMultiplier } = require('../api/models/tx');
 const { silentExit } = require('./helpers');
+const connect = require('./connect');
+
+const DAYS = Number(process.env.DAYS || 30);
+const creditsToUSD = (c) => (Number(c) * 1e-6).toFixed(4);
 
 const printSection = (title) => {
   console.purple('-----------------------------');
   console.purple(title);
   console.purple('-----------------------------');
 };
-const connect = require('./connect');
 
-const DAYS = Number(process.env.DAYS || 30);
-const creditsToUSD = (c) => (Number(c) * 1e-6).toFixed(4);
-const fmt = (n, d = 0) => Number(n || 0).toFixed(d);
+// Recompute cost from the stored raw token counts at CURRENT tx.js rates rather
+// than trusting the charged `tokenValue`, which froze any historical mispricing
+// (e.g. pre-fix gpt-5.4-mini billed at gpt-5.4 rates). Token counts are stored
+// directly (`rawAmount`, or `inputTokens`/`writeTokens`/`readTokens` for cached
+// rows), so no knowledge of the old rate is needed.
+const costForGroup = ({
+  model,
+  promptRaw,
+  completionRaw,
+  inputTokens,
+  writeTokens,
+  readTokens,
+}) => {
+  const promptRate = getMultiplier({ model, tokenType: 'prompt' });
+  const completionRate = getMultiplier({ model, tokenType: 'completion' });
+  const writeRate = getCacheMultiplier({ model, cacheType: 'write' }) ?? promptRate;
+  const readRate = getCacheMultiplier({ model, cacheType: 'read' }) ?? promptRate;
+  return (
+    Math.abs(promptRaw) * promptRate +
+    Math.abs(completionRaw) * completionRate +
+    Math.abs(inputTokens) * promptRate +
+    Math.abs(writeTokens) * writeRate +
+    Math.abs(readTokens) * readRate
+  );
+};
 
 (async () => {
   await connect();
@@ -21,110 +47,79 @@ const fmt = (n, d = 0) => Number(n || 0).toFixed(d);
   const since = new Date(Date.now() - DAYS * 24 * 60 * 60 * 1000);
 
   printSection(
-    `Cost Report by User & Model — last ${DAYS} days (since ${since.toISOString().slice(0, 10)})`,
+    `Cost Report by User — last ${DAYS} days (since ${since.toISOString().slice(0, 10)})`,
   );
 
-  // ── Per-user + per-model breakdown ─────────────────────────────────────────
-  const byUserModelPipeline = [
+  // Group by (user, model) so the correct per-model rate can be applied; totals
+  // are then summed per user for display.
+  const pipeline = [
     { $match: { createdAt: { $gte: since }, tokenType: { $in: ['prompt', 'completion'] } } },
     {
       $group: {
-        _id: {
-          user: '$user',
-          model: { $ifNull: ['$model', 'unknown'] },
+        _id: { user: '$user', model: { $ifNull: ['$model', 'unknown'] } },
+        promptRaw: {
+          $sum: { $cond: [{ $eq: ['$tokenType', 'prompt'] }, { $ifNull: ['$rawAmount', 0] }, 0] },
         },
-        totalTokenValue: { $sum: { $ifNull: ['$tokenValue', 0] } },
-        totalInputTokens: { $sum: { $ifNull: ['$inputTokens', 0] } },
-        totalWriteTokens: { $sum: { $ifNull: ['$writeTokens', 0] } },
-        totalReadTokens: { $sum: { $ifNull: ['$readTokens', 0] } },
-        requests: { $sum: 1 },
+        completionRaw: {
+          $sum: {
+            $cond: [{ $eq: ['$tokenType', 'completion'] }, { $ifNull: ['$rawAmount', 0] }, 0],
+          },
+        },
+        inputTokens: { $sum: { $ifNull: ['$inputTokens', 0] } },
+        writeTokens: { $sum: { $ifNull: ['$writeTokens', 0] } },
+        readTokens: { $sum: { $ifNull: ['$readTokens', 0] } },
+        billed: { $sum: { $multiply: [-1, { $ifNull: ['$tokenValue', 0] }] } },
+        requests: { $sum: { $cond: [{ $eq: ['$tokenType', 'completion'] }, 1, 0] } },
       },
     },
-    {
-      $project: {
-        _id: 0,
-        userId: '$_id.user',
-        model: '$_id.model',
-        cost: { $multiply: [-1, '$totalTokenValue'] },
-        totalInputTokens: { $multiply: [-1, '$totalInputTokens'] },
-        totalWriteTokens: { $multiply: [-1, '$totalWriteTokens'] },
-        totalReadTokens: { $multiply: [-1, '$totalReadTokens'] },
-        requests: 1,
-      },
-    },
-    { $sort: { cost: -1 } },
-  ];
-
-  // ── Per-user totals ─────────────────────────────────────────────────────────
-  const byUserPipeline = [
-    { $match: { createdAt: { $gte: since }, tokenType: { $in: ['prompt', 'completion'] } } },
-    {
-      $group: {
-        _id: '$user',
-        totalTokenValue: { $sum: { $ifNull: ['$tokenValue', 0] } },
-        requests: { $sum: 1 },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        userId: '$_id',
-        cost: { $multiply: [-1, '$totalTokenValue'] },
-        requests: 1,
-      },
-    },
-    { $sort: { cost: -1 } },
   ];
 
   try {
-    const [byUserModel, byUser, users] = await Promise.all([
-      Transaction.aggregate(byUserModelPipeline).allowDiskUse(true),
-      Transaction.aggregate(byUserPipeline).allowDiskUse(true),
+    const [groups, users] = await Promise.all([
+      Transaction.aggregate(pipeline).allowDiskUse(true),
       User.find({}, '_id name email').lean(),
     ]);
 
-    if (!byUserModel.length) {
+    if (!groups.length) {
       console.yellow(`No spend transactions found in the last ${DAYS} days.`);
       silentExit(0);
     }
 
     const userMap = new Map(users.map((u) => [String(u._id), u]));
-    const totalSpent = byUser.reduce((s, r) => s + Number(r.cost || 0), 0);
 
-    // ── Per-user summary ──────────────────────────────────────────────────────
-    printSection('Cost by User');
+    const byUser = new Map();
+    for (const g of groups) {
+      const uid = String(g._id.user);
+      if (!byUser.has(uid)) {
+        byUser.set(uid, { userId: g._id.user, billed: 0, cost: 0, requests: 0 });
+      }
+      const entry = byUser.get(uid);
+      entry.cost += costForGroup({ model: g._id.model, ...g });
+      entry.billed += Number(g.billed || 0);
+      entry.requests += Number(g.requests || 0);
+    }
+
+    const rows = [...byUser.values()].sort((a, b) => b.cost - a.cost);
+    const totalBilled = rows.reduce((s, r) => s + r.billed, 0);
+    const totalCost = rows.reduce((s, r) => s + r.cost, 0);
+
+    printSection('Cost by User (billed vs recomputed at current rates)');
     console.table(
-      byUser.map((r) => {
+      rows.map((r) => {
         const user = userMap.get(String(r.userId));
         return {
           Name: user?.name ?? 'unknown',
           Email: user?.email ?? String(r.userId),
-          Credits: fmt(r.cost),
-          USD: `$${creditsToUSD(r.cost)}`,
-          '% of Total': `${totalSpent > 0 ? ((Number(r.cost) / totalSpent) * 100).toFixed(1) : '0.0'}%`,
-          Requests: Number(r.requests || 0),
+          'Billed $': creditsToUSD(r.billed),
+          'Correct $': creditsToUSD(r.cost),
+          'Δ $': creditsToUSD(r.billed - r.cost),
+          Requests: r.requests,
         };
       }),
     );
 
-    // ── Per-user + per-model detail ───────────────────────────────────────────
-    printSection('Cost by User & Model');
-    console.table(
-      byUserModel.map((r) => {
-        const user = userMap.get(String(r.userId));
-        return {
-          Name: user?.name ?? 'unknown',
-          Email: user?.email ?? String(r.userId),
-          Model: r.model,
-          Credits: fmt(r.cost),
-          USD: `$${creditsToUSD(r.cost)}`,
-          '% of Total': `${totalSpent > 0 ? ((Number(r.cost) / totalSpent) * 100).toFixed(1) : '0.0'}%`,
-          Requests: Number(r.requests || 0),
-          'Input Tokens': Number(fmt(r.totalInputTokens)),
-          'Write Tokens': Number(fmt(r.totalWriteTokens)),
-          'Read Tokens': Number(fmt(r.totalReadTokens)),
-        };
-      }),
+    console.purple(
+      `\nBilled: $${creditsToUSD(totalBilled)}  |  Correct: $${creditsToUSD(totalCost)}  |  Overcharged: $${creditsToUSD(totalBilled - totalCost)}  (across ${rows.length} users)`,
     );
 
     silentExit(0);

@@ -12,6 +12,7 @@ const connect = require('./connect');
 const creditsToUSD = (c) => (Math.abs(Number(c)) * 1e-6).toFixed(6);
 const credits = (c) => Number(c || 0).toFixed(0);
 const sep = () => console.purple('─'.repeat(60));
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 (async () => {
   await connect();
@@ -19,22 +20,25 @@ const sep = () => console.purple('─'.repeat(60));
   let days = 7;
   let minCredits = 1000;
   let dryRun = false;
+  let modelFilter = null;
 
   for (const arg of process.argv.slice(2)) {
     if (arg.startsWith('--days=')) days = Number(arg.slice(7)) || days;
     else if (arg.startsWith('--min=')) minCredits = Number(arg.slice(6)) || minCredits;
+    else if (arg.startsWith('--model=')) modelFilter = arg.slice(8) || null;
     else if (arg === '--dry-run') dryRun = true;
   }
 
   if (dryRun) console.yellow('[DRY RUN] No transactions will be created.');
   console.blue(`Scanning last ${days} days for overcharges ≥ ${minCredits} credits...`);
+  if (modelFilter) console.blue(`Filtering to models matching /${modelFilter}/i`);
 
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const txns = await Transaction.find({
     tokenType: { $in: ['prompt', 'completion'] },
     createdAt: { $gte: since },
-    model: { $exists: true, $ne: null },
+    model: modelFilter ? { $regex: modelFilter, $options: 'i' } : { $exists: true, $ne: null },
   })
     .select('user model tokenType valueKey rawAmount tokenValue')
     .lean();
@@ -68,19 +72,26 @@ const sep = () => console.purple('─'.repeat(60));
 
   const userIds = eligible.map((e) => e.userId);
 
-  // Skip users already refunded for a pricing correction in this window
+  // A campaign is identified by what it corrects (the model), not when it ran.
+  // Dedupe matches this campaign's prefix exactly and is independent of --days,
+  // so prior corrections for other models can't suppress this one and a wider
+  // scan window can't pull in unrelated refunds.
+  const campaign = modelFilter ? modelFilter : 'all';
+  const contextPrefix = `pricing-correction-${campaign}`;
+  const reason = `${contextPrefix}-${new Date().toISOString().slice(0, 10)}`;
+
+  // Skip users already refunded for THIS correction campaign (any prior run).
   const existingRefunds = await Transaction.find({
     user: { $in: userIds },
     tokenType: 'credits',
-    context: /^pricing-correction-/,
-    createdAt: { $gte: since },
+    context: { $regex: `^${escapeRegex(contextPrefix)}-` },
   })
     .select('user')
     .lean();
   const alreadyRefunded = new Set(existingRefunds.map((t) => String(t.user)));
 
   if (alreadyRefunded.size) {
-    console.yellow(`Skipping ${alreadyRefunded.size} user(s) already refunded in this window.`);
+    console.yellow(`Skipping ${alreadyRefunded.size} user(s) already refunded for "${campaign}".`);
   }
 
   const toRefund = eligible.filter((e) => !alreadyRefunded.has(String(e.userId)));
@@ -106,7 +117,6 @@ const sep = () => console.purple('─'.repeat(60));
   const sorted = toRefund.sort((a, b) => b.overcharge - a.overcharge);
   let grandTotal = 0;
   let successCount = 0;
-  const reason = `pricing-correction-${new Date().toISOString().slice(0, 10)}`;
 
   for (const entry of sorted) {
     const email = userMap.get(String(entry.userId)) ?? '(unknown)';
